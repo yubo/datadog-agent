@@ -798,6 +798,9 @@ func InitConfig(config Config) {
 	config.BindEnvAndSetDefault("runtime_security_config.event_server.burst", 40)
 	config.BindEnvAndSetDefault("runtime_security_config.event_server.rate", 10)
 
+	// Deep Database Monitoring
+	config.BindEnvAndSetDefault("deep_database_monitoring", false)
+
 	// command line options
 	config.SetKnown("cmd.check.fullsketches")
 
