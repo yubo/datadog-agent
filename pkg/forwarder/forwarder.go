@@ -359,7 +359,7 @@ func (f *DefaultForwarder) createPriorityHTTPTransactions(endpoint endpoint, pay
 				t.Headers.Set(apiHTTPHeaderKey, apiKey)
 				t.Headers.Set(versionHTTPHeaderKey, version.AgentVersion)
 				t.Headers.Set(useragentHTTPHeaderKey, fmt.Sprintf("datadog-agent/%s", version.AgentVersion))
-				if config.Datadog.GetBool("allow_arbitrary_tags") {
+				if config.Datadog.GetBool("deep_database_monitoring") {
 					t.Headers.Set(arbitraryTagHTTPHeaderKey, "true")
 				}
 
