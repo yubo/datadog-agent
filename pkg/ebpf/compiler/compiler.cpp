@@ -19,6 +19,7 @@ ClangCompiler::ClangCompiler(const char *name) :
     textDiagnosticPrinter(new clang::TextDiagnosticPrinter(errStream, diagOpts.get())),
     diagnosticsEngine(new clang::DiagnosticsEngine(diagID, diagOpts, textDiagnosticPrinter.get(), false)),
     defaultCflags({
+        "-O0", // not included somehow?
         "-O2",
         "-D__KERNEL__",
         "-fno-color-diagnostics",
@@ -116,7 +117,7 @@ std::unique_ptr<clang::CompilerInvocation> ClangCompiler::buildCompilation(
 	const llvm::opt::ArgStringList &ccargs = cmd.getArguments();
 
 #if LLVM_MAJOR_VERSION >= 10
-	clang::CompilerInvocation::CreateFromArgs(*invocation, ccargs, diagnosticsEngine);
+	clang::CompilerInvocation::CreateFromArgs(*invocation, ccargs, *diagnosticsEngine);
 #else
 	clang::CompilerInvocation::CreateFromArgs(
 		*invocation, const_cast<const char **>(ccargs.data()),
@@ -235,7 +236,7 @@ int ClangCompiler::bytecodeToObjectFile(llvm::Module *module, const char *output
 	}
 
 	llvm::legacy::PassManager pass;
-	if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, llvm::TargetMachine::CGFT_ObjectFile)) {
+	if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, llvm::CGFT_ObjectFile)) {
 		llvm::errs() << "TargetMachine can't emit a file of this type";
 		return -1;
 	}

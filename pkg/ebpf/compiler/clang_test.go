@@ -3,6 +3,7 @@
 package compiler
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -33,5 +34,5 @@ func TestCompilerMatch(t *testing.T) {
 	actual, err := ioutil.ReadAll(actualReader)
 	require.NoError(t, err)
 
-	assert.Equal(t, bs, actual, fmt.Sprintf("on-disk file %s and statically-linked clang compiled content %s are different", onDiskFilename, bundleFilename))
+	assert.True(t, bytes.Equal(bs, actual), fmt.Sprintf("on-disk file %s and statically-linked clang compiled content %s are different", onDiskFilename, bundleFilename))
 }

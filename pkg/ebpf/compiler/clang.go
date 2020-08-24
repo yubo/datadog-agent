@@ -4,7 +4,7 @@ package compiler
 
 /*
 #cgo LDFLAGS: -lclangCodeGen -lclangFrontend -lclangSerialization -lclangDriver -lclangParse -lclangSema -lclangAnalysis -lclangASTMatchers -lclangRewrite -lclangEdit -lclangAST -lclangLex -lclangBasic
-#cgo LDFLAGS: -L/opt/datadog-agent/embedded/lib -lLLVMXRay -lLLVMWindowsManifest -lLLVMTextAPI -lLLVMTableGen -lLLVMSymbolize -lLLVMDebugInfoPDB -lLLVMOrcJIT -lLLVMJITLink -lLLVMObjectYAML -lLLVMMIRParser -lLLVMMCJIT -lLLVMMCA -lLLVMLTO -lLLVMPasses -lLLVMObjCARCOpts -lLLVMLineEditor -lLLVMLibDriver -lLLVMGlobalISel -lLLVMFuzzMutate -lLLVMInterpreter -lLLVMExecutionEngine -lLLVMRuntimeDyld -lLLVMDlltoolDriver -lLLVMOption -lLLVMDebugInfoGSYM -lLLVMCoverage -lLLVMCoroutines -lLLVMipo -lLLVMInstrumentation -lLLVMVectorize -lLLVMLinker -lLLVMIRReader -lLLVMAsmParser -lLLVMBPFDisassembler -lLLVMMCDisassembler -lLLVMBPFCodeGen -lLLVMSelectionDAG -lLLVMAsmPrinter -lLLVMDebugInfoDWARF -lLLVMCodeGen -lLLVMTarget -lLLVMScalarOpts -lLLVMInstCombine -lLLVMAggressiveInstCombine -lLLVMTransformUtils -lLLVMBitWriter -lLLVMAnalysis -lLLVMProfileData -lLLVMObject -lLLVMBitReader -lLLVMBitstreamReader -lLLVMCore -lLLVMRemarks -lLLVMBPFAsmParser -lLLVMMCParser -lLLVMBPFDesc -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMDebugInfoMSF -lLLVMBinaryFormat -lLLVMBPFInfo -lLLVMSupport -lLLVMDemangle 
+#cgo LDFLAGS: -L/opt/datadog-agent/embedded/lib -lLLVMXRay -lLLVMWindowsManifest -lLLVMTableGen -lLLVMSymbolize -lLLVMDebugInfoPDB -lLLVMOrcJIT -lLLVMOrcError -lLLVMJITLink -lLLVMObjectYAML -lLLVMMIRParser -lLLVMMCJIT -lLLVMMCA -lLLVMLTO -lLLVMPasses -lLLVMObjCARCOpts -lLLVMExtensions -lLLVMLineEditor -lLLVMLibDriver -lLLVMGlobalISel -lLLVMFuzzMutate -lLLVMFrontendOpenMP -lLLVMInterpreter -lLLVMExecutionEngine -lLLVMRuntimeDyld -lLLVMDWARFLinker -lLLVMDlltoolDriver -lLLVMOption -lLLVMDebugInfoGSYM -lLLVMCoverage -lLLVMCoroutines -lLLVMipo -lLLVMInstrumentation -lLLVMVectorize -lLLVMLinker -lLLVMIRReader -lLLVMAsmParser -lLLVMCFGuard -lLLVMBPFDisassembler -lLLVMMCDisassembler -lLLVMBPFCodeGen -lLLVMSelectionDAG -lLLVMAsmPrinter -lLLVMDebugInfoDWARF -lLLVMCodeGen -lLLVMTarget -lLLVMScalarOpts -lLLVMInstCombine -lLLVMAggressiveInstCombine -lLLVMTransformUtils -lLLVMBitWriter -lLLVMAnalysis -lLLVMProfileData -lLLVMObject -lLLVMTextAPI -lLLVMBitReader -lLLVMCore -lLLVMRemarks -lLLVMBitstreamReader -lLLVMBPFAsmParser -lLLVMMCParser -lLLVMBPFDesc -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMDebugInfoMSF -lLLVMBinaryFormat -lLLVMBPFInfo -lLLVMSupport -lLLVMDemangle
 #cgo LDFLAGS: -ldl
 #cgo CPPFLAGS: -I/usr/include -I/opt/datadog-agent/embedded/include -D_GNU_SOURCE -D_DEBUG -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 
@@ -119,7 +119,7 @@ func NewEBPFCompiler(verbose bool) (*EBPFCompiler, error) {
 		"-DCONFIG_64BIT",
 		"-D__BPF_TRACING__",
 		"-resource-dir",
-		"/opt/datadog-agent/embedded/lib/clang/9.0.1",
+		"/opt/datadog-agent/embedded/lib/clang/10.0.1",
 	}
 	subdirs := []string{
 		"include",
