@@ -211,6 +211,12 @@ func (s *CheckScheduler) GetChecksFromConfigs(configs []integration.Config, popu
 		}
 	}
 
+	// CELENE add a log line here to know what checks are in allChecks
+	log.Infof("CELENE logging all checks from configs")
+	for _, c := range allChecks {
+		log.Infof("CELENE check name is %s, source is %s", c.String(), c.ConfigSource())
+	}
+
 	return allChecks
 }
 
