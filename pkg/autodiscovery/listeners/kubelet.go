@@ -269,6 +269,8 @@ func (l *KubeletListener) createService(entity string, pod *kubelet.Pod, firstRu
 		}
 	}
 
+	log.Infof("CELENE kubelet ad identifiers are %v", svc.adIdentifiers)
+
 	// Hosts
 	podIP := pod.Status.PodIP
 	if podIP == "" {

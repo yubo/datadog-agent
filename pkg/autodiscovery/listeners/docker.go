@@ -188,6 +188,7 @@ func (l *DockerListener) init() {
 				logsExcluded:    logsExcluded,
 			}
 		}
+		log.Infof("CELENE docker ad identifiers in init are %v", l.getConfigIDFromPs(co))
 		l.newService <- svc
 		l.services[co.ID] = svc
 	}
@@ -435,6 +436,8 @@ func (s *DockerService) GetADIdentifiers() ([]string, error) {
 		entity := docker.ContainerIDToEntityName(s.cID)
 		s.adIdentifiers = ComputeContainerServiceIDs(entity, image, cj.Config.Labels)
 	}
+
+	log.Infof("CELENE docker ad identifiers are %v", s.adIdentifiers)
 
 	return s.adIdentifiers, nil
 }
