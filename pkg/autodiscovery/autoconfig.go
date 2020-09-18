@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/configresolver"
@@ -66,6 +67,8 @@ type AutoConfig struct {
 	delService         chan listeners.Service
 	store              *store
 	m                  sync.RWMutex
+	// ranOnce is an atomic uint32 set to 1 once the AutoConfig has been executed
+	ranOnce uint32
 }
 
 // NewAutoConfig creates an AutoConfig instance.
@@ -191,6 +194,16 @@ func (ac *AutoConfig) AddConfigProvider(provider providers.ConfigProvider, shoul
 func (ac *AutoConfig) LoadAndRun() {
 	resolvedConfigs := ac.GetAllConfigs()
 	ac.schedule(resolvedConfigs)
+	atomic.StoreUint32(&ac.ranOnce, 1)
+	log.Debug("LoadAndRun done.")
+}
+
+// HasRunOnce returns true if the AutoConfig has ran once.
+func (ac *AutoConfig) HasRunOnce() bool {
+	if ac == nil {
+		return false
+	}
+	return atomic.LoadUint32(&ac.ranOnce) == 1
 }
 
 // GetAllConfigs queries all the providers and returns all the integration
