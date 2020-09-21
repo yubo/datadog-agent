@@ -83,7 +83,7 @@ func getJMXConfigs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	log.Infof("CELENE inside getJMXConfigs - made it to the end! %v", jsonPayload)
+	log.Infof("CELENE inside getJMXConfigs - made it to the end! %v", j)
 	w.Write(jsonPayload) //nolint:errcheck
 }
 
