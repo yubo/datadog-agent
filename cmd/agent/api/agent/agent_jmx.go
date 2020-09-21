@@ -28,6 +28,7 @@ import (
 )
 
 func getJMXConfigs(w http.ResponseWriter, r *http.Request) {
+	log.Info("CELENE inside getJMXConfigs")
 	var ts int
 	queries := r.URL.Query()
 	if timestamps, ok := queries["timestamp"]; ok {
@@ -35,6 +36,7 @@ func getJMXConfigs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if int64(ts) > jmx.GetScheduledConfigsModificationTimestamp() {
+		log.Infof("CELENE inside getJMXConfigs - returning nothing because of timestamp %s is greater than %s", int64(ts), jmx.GetScheduledConfigsModificationTimestamp())
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -81,6 +83,7 @@ func getJMXConfigs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
+	log.Infof("CELENE inside getJMXConfigs - made it to the end! %v", jsonPayload)
 	w.Write(jsonPayload) //nolint:errcheck
 }
 
