@@ -105,7 +105,8 @@ func (ac *AutoConfig) serviceListening() {
 		case svc := <-ac.newService:
 			ac.processNewService(svc)
 		case svc := <-ac.delService:
-			ac.processDelService(svc)
+			log.Infof("CELENE calling processDelService from channel listener; svc %s", svc.GetEntity())
+			ac.processDelService(svc) // CELENE THIS IS WHAT IS CALLED TO UNSCHEDULE A CHECK PREMATURELY
 		case <-tagFreshnessTicker.C:
 			ac.checkTagFreshness()
 		}

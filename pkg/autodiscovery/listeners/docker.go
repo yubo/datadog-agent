@@ -308,6 +308,7 @@ func (l *DockerListener) createService(cID string) {
 // removeService takes a container ID, removes the related service from its cache
 // and tells the AutoConfig that this service stopped.
 func (l *DockerListener) removeService(cID string) {
+	log.Info("CELENE inside docker listener removeService")
 	l.m.RLock()
 	svc, ok := l.services[cID]
 	l.m.RUnlock()
@@ -318,6 +319,7 @@ func (l *DockerListener) removeService(cID string) {
 			l.m.Lock()
 			delete(l.services, cID)
 			l.m.Unlock()
+			log.Info("CELENE inside docker listener removeService - removing %s", cID[:12])
 			l.delService <- svc
 		})
 	} else {

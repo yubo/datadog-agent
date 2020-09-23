@@ -340,6 +340,7 @@ func getCheckNamesFromAnnotations(annotations map[string]string, containerName s
 }
 
 func (l *KubeletListener) removeService(entity string) {
+	log.Info("CELENE inside kubelet listener removeService")
 	l.m.RLock()
 	svc, ok := l.services[entity]
 	l.m.RUnlock()
@@ -349,6 +350,7 @@ func (l *KubeletListener) removeService(entity string) {
 		delete(l.services, entity)
 		l.m.Unlock()
 
+		log.Infof("CELENE inside kubelet listener removeService - removing %s", entity)
 		l.delService <- svc
 	} else {
 		log.Debugf("Entity %s not found, not removing", entity)
