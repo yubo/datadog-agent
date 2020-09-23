@@ -395,8 +395,6 @@ tests_ebpf:
 
 # scan the dependencies for security vulnerabilities with snyk
 security_scan_test:
-  rules:
-    - <<: *if_master_branch
   stage: source_test
   needs: ["linux_x64_go_deps"]
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/snyk:latest
@@ -412,10 +410,11 @@ security_scan_test:
   script:
     - set +x     # don't print the api key to the logs
     # send the list of the dependencies to snyk
+    - snyk -v
     - SNYK_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.datadog-agent.snyk_token --with-decryption --query "Parameter.Value" --out text)
-      snyk monitor --command=python3 --project-name=datadog-agent-requirements.txt --file=requirements.txt --package-manager=pip
+      snyk monitor -d --prune-repeated-subdependencies --project-name=datadog-agent-go.sum --file=go.mod
     - SNYK_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.datadog-agent.snyk_token --with-decryption --query "Parameter.Value" --out text)
-      snyk monitor --project-name=datadog-agent-go.sum --file=go.mod
+      snyk monitor -d --prune-repeated-subdependencies --command=python3 --project-name=datadog-agent-requirements.txt --file=requirements.txt --package-manager=pip
 
 # check consistency of go.mod file with project imports
 go_mod_tidy_check:
