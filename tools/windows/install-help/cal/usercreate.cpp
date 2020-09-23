@@ -260,7 +260,7 @@ DWORD DeleteUser(const wchar_t* host, const wchar_t* name){
 
 
 
-bool isDomainController()
+DWORD getServerType(DWORD &sv101type)
 {
     bool ret = false;
     DWORD status = 0;
@@ -268,10 +268,10 @@ bool isDomainController()
     DWORD le = 0;
     status = NetServerGetInfo(NULL, 101, (LPBYTE *)&si);
     if (NERR_Success != status) {
-        le = GetLastError();
         WcaLog(LOGMSG_STANDARD, "Failed to get server info");
-        return false;
+        return status;
     }
+    sv101type = si->sv101_type;
     if (SV_TYPE_WORKSTATION & si->sv101_type) {
         WcaLog(LOGMSG_STANDARD, "machine is type SV_TYPE_WORKSTATION");
     }
@@ -280,16 +280,14 @@ bool isDomainController()
     }
     if (SV_TYPE_DOMAIN_CTRL & si->sv101_type) {
         WcaLog(LOGMSG_STANDARD, "machine is type SV_TYPE_DOMAIN_CTRL\n");
-        ret = true;
     }
     if (SV_TYPE_DOMAIN_BAKCTRL & si->sv101_type) {
         WcaLog(LOGMSG_STANDARD, "machine is type SV_TYPE_DOMAIN_BAKCTRL\n");
-        ret = true;
     }
     if (si) {
         NetApiBufferFree((LPVOID)si);
     }
-    return ret;
+    return ERROR_SUCCESS;
 }
 
 int doesUserExist(const CustomActionData& data, bool isDC)

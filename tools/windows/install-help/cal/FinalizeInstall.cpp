@@ -22,7 +22,7 @@ UINT doFinalizeInstall(CustomActionData &data)
 
     int ddUserExists = 0;
     int ddServiceExists = 0;
-    bool isDC = false;
+    DWORD serverType = 0;
     int passbuflen = 0;
     wchar_t *passbuf = NULL;
     const wchar_t * passToUse = NULL;
@@ -44,11 +44,15 @@ UINT doFinalizeInstall(CustomActionData &data)
 
     // check to see if we're a domain controller.
     WcaLog(LOGMSG_STANDARD, "checking if this is a domain controller");
-    isDC = isDomainController();
+    nErr = getServerType(serverType);
+    if (nErr != ERROR_SUCCESS)
+    {
+        goto LExit;
+    }
 
     // check to see if the supplied dd-agent-user exists
     WcaLog(LOGMSG_STANDARD, "checking to see if the user is already present");
-    if ((ddUserExists = doesUserExist(data, isDC)) == -1) {
+    if ((ddUserExists = doesUserExist(data, IS_DOMAIN_CONTROLLER(serverType))) == -1) {
         er = ERROR_INSTALL_FAILURE;
         goto LExit;
     }
@@ -63,7 +67,7 @@ UINT doFinalizeInstall(CustomActionData &data)
     // new installation or an upgrade, and what steps need to be taken
 
 
-    if (!canInstall(isDC, ddUserExists, ddServiceExists, data, bResetPassword)) {
+    if (!canInstall(IS_DOMAIN_CONTROLLER(serverType), ddUserExists, ddServiceExists, data, bResetPassword)) {
         er = ERROR_INSTALL_FAILURE;
         goto LExit;
     }
@@ -148,9 +152,12 @@ UINT doFinalizeInstall(CustomActionData &data)
     }
     hr = 0;
 
-    if (!AddUserToRequiredGroups(sid))
+    if (!IS_BACKUP_DOMAIN_CONTROLLER(serverType))
     {
-        goto LExit;
+        if (!AddUserToRequiredGroups(sid))
+        {
+            goto LExit;
+        }
     }
 
     if (!ddServiceExists) {
