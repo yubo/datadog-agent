@@ -98,6 +98,10 @@ func (pd *configPoller) poll(ac *AutoConfig) {
 			}
 			// Process removed configs first to handle the case where a
 			// container churn would result in the same configuration hash.
+			log.Info("CELENE inside poll, removing configurations")
+			for _, rc := range removedConfigs {
+				log.Infof("CELENE inside poll, removing %s", rc.Name)
+			}
 			ac.processRemovedConfigs(removedConfigs)
 			// We can also remove any cached template
 			ac.removeConfigTemplates(removedConfigs)

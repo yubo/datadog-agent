@@ -453,13 +453,16 @@ func decryptConfig(conf integration.Config) (integration.Config, error) {
 }
 
 func (ac *AutoConfig) processRemovedConfigs(configs []integration.Config) {
+	log.Info("CELENE inside processRemovedConfigs")
 	ac.unschedule(configs)
 	for _, c := range configs {
+		log.Info("CELENE inside processRemovedConfigs - removing %s", c.Name)
 		ac.store.removeLoadedConfig(c)
 	}
 }
 
 func (ac *AutoConfig) removeConfigTemplates(configs []integration.Config) {
+	log.Info("CELENE inside removeConfigTemplates")
 	for _, c := range configs {
 		if c.IsTemplate() {
 			// Remove the resolved configurations
@@ -578,6 +581,7 @@ func GetResolveWarnings() map[string][]string {
 // processNewService takes a service, tries to match it against templates and
 // triggers scheduling events if it finds a valid config for it.
 func (ac *AutoConfig) processNewService(svc listeners.Service) {
+	log.Infof("CELENE inside processNewService")
 	// in any case, register the service and store its tag hash
 	ac.store.setServiceForEntity(svc, svc.GetEntity())
 	ac.store.setTagsHashForService(
@@ -637,6 +641,7 @@ func (ac *AutoConfig) processNewService(svc listeners.Service) {
 
 // processDelService takes a service, stops its associated checks, and updates the cache
 func (ac *AutoConfig) processDelService(svc listeners.Service) {
+	log.Infof("CELENE inside processDelService")
 	ac.store.removeServiceForEntity(svc.GetEntity())
 	configs := ac.store.getConfigsForService(svc.GetEntity())
 	ac.store.removeConfigsForService(svc.GetEntity())

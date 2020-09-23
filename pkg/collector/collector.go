@@ -238,6 +238,7 @@ func (c *Collector) GetAllInstanceIDs(checkName string) []check.ID {
 
 // ReloadAllCheckInstances completely restarts a check with a new configuration
 func (c *Collector) ReloadAllCheckInstances(name string, newInstances []check.Check) ([]check.ID, error) {
+	log.Info("CELENE inside ReloadAllCheckInstances")
 	if !c.started() {
 		return nil, fmt.Errorf("The collector is not running")
 	}

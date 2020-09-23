@@ -59,6 +59,7 @@ func InitCheckScheduler(collector *Collector) *CheckScheduler {
 
 // Schedule schedules configs to checks
 func (s *CheckScheduler) Schedule(configs []integration.Config) {
+	log.Info("CELENE inside Schedule")
 	checks := s.GetChecksFromConfigs(configs, true)
 	for _, c := range checks {
 		_, err := s.collector.RunCheck(c)
@@ -67,6 +68,7 @@ func (s *CheckScheduler) Schedule(configs []integration.Config) {
 			errorStats.setRunError(c.ID(), err.Error())
 			continue
 		}
+		log.Infof("CELENE check scheduled: %s", c.ID())
 	}
 }
 
