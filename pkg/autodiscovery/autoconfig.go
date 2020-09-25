@@ -108,12 +108,14 @@ func (ac *AutoConfig) serviceListening() {
 			log.Infof("CELENE calling processDelService from channel listener; svc %s", svc.GetEntity())
 			ac.processDelService(svc) // CELENE THIS IS WHAT IS CALLED TO UNSCHEDULE A CHECK PREMATURELY
 		case <-tagFreshnessTicker.C:
+			log.Info("CELENE calling checkTagFreshness from channel listener")
 			ac.checkTagFreshness()
 		}
 	}
 }
 
 func (ac *AutoConfig) checkTagFreshness() {
+	log.Info("CELENE inside checkTagFreshness()")
 	// check if services tags are up to date
 	var servicesToRefresh []listeners.Service
 	for _, service := range ac.store.getServices() {
@@ -128,7 +130,7 @@ func (ac *AutoConfig) checkTagFreshness() {
 		}
 	}
 	for _, service := range servicesToRefresh {
-		log.Debugf("Tags changed for service %s, rescheduling associated checks if any", service.GetTaggerEntity())
+		log.Debugf("CELENE Tags changed for service %s, rescheduling associated checks if any", service.GetTaggerEntity())
 		ac.processDelService(service)
 		ac.processNewService(service)
 	}
