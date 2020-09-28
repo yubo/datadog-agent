@@ -62,6 +62,7 @@ func (s *CheckScheduler) Schedule(configs []integration.Config) {
 	log.Info("CELENE inside Schedule")
 	checks := s.GetChecksFromConfigs(configs, true)
 	for _, c := range checks {
+		log.Infof("CELENE inside Schedule - trying to schedule check %s", c.ID())
 		_, err := s.collector.RunCheck(c)
 		if err != nil {
 			log.Errorf("Unable to run Check %s: %v", c, err)
@@ -87,7 +88,7 @@ func (s *CheckScheduler) Unschedule(configs []integration.Config) {
 		for _, id := range ids {
 			// `StopCheck` might time out so we don't risk to block
 			// the polling loop forever
-			log.Info("CELENE inside Unschedule - unscheduling check %v", id)
+			log.Infof("CELENE inside Unschedule - unscheduling check %v", id)
 			err := s.collector.StopCheck(id)
 			if err != nil {
 				log.Errorf("Error stopping check %s: %s", id, err)
@@ -100,6 +101,7 @@ func (s *CheckScheduler) Unschedule(configs []integration.Config) {
 		// remove the entry from `configToChecks`
 		if len(stopped) == len(s.configToChecks[digest]) {
 			// we managed to stop all the checks for this config
+			log.Info("CELENE inside Unschedule - deleting digest")
 			delete(s.configToChecks, digest)
 		} else {
 			// keep the checks we failed to stop in `configToChecks`
@@ -186,12 +188,16 @@ func GetChecksByNameForConfigs(checkName string, configs []integration.Config) [
 // GetChecksFromConfigs gets all the check instances for given configurations
 // optionally can populate the configToChecks cache
 func (s *CheckScheduler) GetChecksFromConfigs(configs []integration.Config, populateCache bool) []check.Check {
+	log.Info("CELENE inside GetChecksFromConfigs")
 	s.m.Lock()
 	defer s.m.Unlock()
 
 	var allChecks []check.Check
 	for _, config := range configs {
+		log.Infof("CELENE inside GetChecksFromConfigs for %s", config.Name)
 		if !config.IsCheckConfig() {
+			log.Infof("CELENE inside GetChecksFromConfigs for %s, skipping because it is not considered a check config. instances: %v", config.Name, config.Instances)
+
 			// skip non check configs.
 			continue
 		}
@@ -205,10 +211,12 @@ func (s *CheckScheduler) GetChecksFromConfigs(configs []integration.Config, popu
 			log.Errorf("Unable to load the check: %v", err)
 			continue
 		}
+		log.Info("CELENE inside GetChecksFromConfigs - should have checks at this point")
 		for _, c := range checks {
 			allChecks = append(allChecks, c)
 			if populateCache {
 				// store the checks we schedule for this config locally
+				log.Infof("CELENE inside GetChecksFromConfigs - adding %s to configToChecks", c.ID())
 				s.configToChecks[configDigest] = append(s.configToChecks[configDigest], c.ID())
 			}
 		}
