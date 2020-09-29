@@ -106,7 +106,7 @@ func (ac *AutoConfig) serviceListening() {
 			ac.processNewService(svc)
 		case svc := <-ac.delService:
 			log.Infof("CELENE calling processDelService from channel listener; svc %s", svc.GetEntity())
-			ac.processDelService(svc) // CELENE THIS IS WHAT IS CALLED TO UNSCHEDULE A CHECK PREMATURELY
+			ac.processDelService(svc)
 		case <-tagFreshnessTicker.C:
 			log.Info("CELENE calling checkTagFreshness from channel listener")
 			ac.checkTagFreshness()
@@ -585,6 +585,10 @@ func GetResolveWarnings() map[string][]string {
 // triggers scheduling events if it finds a valid config for it.
 func (ac *AutoConfig) processNewService(svc listeners.Service) {
 	log.Infof("CELENE inside processNewService")
+	if !svc.IsReady() {
+		log.Infof("CELENE inside processNewService - service %s is not ready, not adding to store or scheduling yet", svc.GetEntity())
+		return
+	}
 	// in any case, register the service and store its tag hash
 	ac.store.setServiceForEntity(svc, svc.GetEntity())
 	ac.store.setTagsHashForService(
