@@ -610,6 +610,8 @@ func (ac *AutoConfig) processNewService(svc listeners.Service) {
 		tpls, err := ac.store.templateCache.Get(adID)
 		if err != nil {
 			log.Debugf("Unable to fetch templates from the cache: %v", err)
+		} else {
+			log.Infof("CELENE successfully fetched templates from cache for %s", svc.GetEntity())
 		}
 		templates = append(templates, tpls...)
 	}
@@ -630,6 +632,7 @@ func (ac *AutoConfig) processNewService(svc listeners.Service) {
 		}
 
 		// ask the Collector to schedule the checks
+		log.Infof("CELENE scheduling check for %s with resolvedConfig %v", svc.GetEntity(), resolvedConfig.String())
 		ac.schedule([]integration.Config{resolvedConfig})
 	}
 
