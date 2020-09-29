@@ -271,6 +271,7 @@ func (ac *AutoConfig) unschedule(configs []integration.Config) {
 
 // processNewConfig store (in template cache) and resolves a given config into a slice of resolved configs
 func (ac *AutoConfig) processNewConfig(config integration.Config) []integration.Config {
+	log.Infof("CELENE inside processNewConfig, trying to process check %s", config.Name)
 	var configs []integration.Config
 
 	// add default metrics to collect to JMX checks
@@ -286,7 +287,7 @@ func (ac *AutoConfig) processNewConfig(config integration.Config) []integration.
 	if config.IsTemplate() {
 		// store the template in the cache in any case
 		if err := ac.store.templateCache.Set(config); err != nil {
-			log.Errorf("Unable to store Check configuration in the cache: %s", err)
+			log.Errorf("CELENE Unable to store Check configuration in the cache for %s: %s", config.Name, err)
 		}
 
 		// try to resolve the template
@@ -633,6 +634,7 @@ func (ac *AutoConfig) processNewService(svc listeners.Service) {
 	}
 
 	// FIXME: schedule new services as well
+	// CELENE there is no Name added here. nor Instances.
 	ac.schedule([]integration.Config{
 		{
 			LogsConfig:      integration.Data{},
