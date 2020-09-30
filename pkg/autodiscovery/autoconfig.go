@@ -286,8 +286,19 @@ func (ac *AutoConfig) processNewConfig(config integration.Config) []integration.
 
 	if config.IsTemplate() {
 		// store the template in the cache in any case
+		log.Infof("CELENE inside processNewConfig - about to set the template cache with config %s", config.String())
 		if err := ac.store.templateCache.Set(config); err != nil {
 			log.Errorf("CELENE Unable to store Check configuration in the cache for %s: %s", config.Name, err)
+		} else {
+			log.Info("CELENE for fun, going to try to get from the cache that was just set.")
+			for _, id := range config.ADIdentifiers {
+				tests, err := ac.store.templateCache.Get(id)
+				if err != nil {
+					log.Infof("CELENE retrieved configs are %v for AD identifier %s", tests, id)
+				} else {
+					log.Infof("CELENE could not retrieve config from cache for AD identifier %s: %s", id, err)
+				}
+			}
 		}
 
 		// try to resolve the template
