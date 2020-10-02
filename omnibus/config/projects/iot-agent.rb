@@ -63,8 +63,9 @@ package :rpm do
   license 'Apache License Version 2.0'
   category 'System Environment/Daemons'
   priority 'extra'
-  if ENV.has_key?('RPM_SIGNING_PASSPHRASE') and not ENV['RPM_SIGNING_PASSPHRASE'].empty?
-    signing_passphrase "#{ENV['RPM_SIGNING_PASSPHRASE']}"
+  if ENV.has_key?('RPM_GPG_KEY_PASSPHRASE') and not ENV['RPM_GPG_KEY_PASSPHRASE'].empty?
+    gpg_key_name "Datadog, Inc. RPM key (2020-09-08) <package+rpmkey@datadoghq.com>"
+    signing_passphrase "#{ENV['RPM_GPG_KEY_PASSPHRASE']}"
   end
 end
 
