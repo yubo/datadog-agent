@@ -635,10 +635,12 @@ func (ac *AutoConfig) processNewService(svc listeners.Service) {
 		resolvedConfig, err := ac.resolveTemplateForService(template, svc)
 		if err != nil && strings.Contains(err.Error(), "service not ready") {
 			// CELENE if err contains "service not ready" sleep and try again
+			log.Infof("CELENE service is not ready, error is %s", err)
 			time.Sleep(2 * time.Second)
 			resolvedConfig, err = ac.resolveTemplateForService(template, svc)
 		}
 		if err != nil {
+			log.Infof("CELENE service IS ready, but error is %s", err)
 			continue
 		}
 
@@ -649,6 +651,7 @@ func (ac *AutoConfig) processNewService(svc listeners.Service) {
 
 	// FIXME: schedule new services as well
 	// CELENE there is no Name added here. nor Instances.
+	log.Infof("CELENE scheduling check for %s without any resolvedConfig", svc.GetEntity())
 	ac.schedule([]integration.Config{
 		{
 			LogsConfig:      integration.Data{},
