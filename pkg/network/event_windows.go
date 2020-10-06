@@ -5,28 +5,6 @@ package network
 /*
 #include <winsock2.h>
 #include "ddnpmapi.h"
-
-uint32_t getTcp_sRTT(PER_FLOW_DATA *pfd)
-{
-	if(pfd->protocol != IPPROTO_TCP) {
-		return 0;
-	}
-	return (uint32_t)pfd->protocol_u.tcp.sRTT;
-}
-uint32_t getTcp_rttVariance(PER_FLOW_DATA *pfd)
-{
-	if(pfd->protocol != IPPROTO_TCP) {
-		return 0;
-	}
-	return (uint32_t)pfd->protocol_u.tcp.rttVariance;
-}
-uint32_t getTcp_retransmitCount(PER_FLOW_DATA *pfd)
-{
-	if(pfd->protocol != IPPROTO_TCP) {
-		return 0;
-	}
-	return (uint32_t)pfd->protocol_u.tcp.retransmitCount;
-}
 */
 import "C"
 import (
@@ -136,9 +114,11 @@ func FlowToConnStat(flow *C.struct__perFlowData, enableMonotonicCounts bool) Con
 	}
 
 	if connectionType == TCP {
-		cs.MonotonicRetransmits = uint32(C.getTcp_retransmitCount(flow))
-		cs.RTT = uint32(C.getTcp_sRTT(flow))
-		cs.RTTVar = uint32(C.getTcp_rttVariance(flow))
+		// unions are represented in Go as byte arrays, so cast pointer to desired struct
+		tcpFlowData := (*C.struct__tcpFlowData)(unsafe.Pointer(&flow.protocol_u[0]))
+		cs.MonotonicRetransmits = uint32(tcpFlowData.retransmitCount)
+		cs.RTT = uint32(tcpFlowData.sRTT)
+		cs.RTTVar = uint32(tcpFlowData.rttVariance)
 	}
 	return cs
 }
