@@ -1,6 +1,6 @@
 {
     "nightly": {
-        "INTEGRATIONS_CORE_VERSION": "dev/dbm-beta",
+        "INTEGRATIONS_CORE_VERSION": "dev/dbm-beta-instacart",
         "OMNIBUS_SOFTWARE_VERSION": "7.22.x",
         "OMNIBUS_RUBY_VERSION": "7.22.x",
         "JMXFETCH_VERSION": "0.38.2",
@@ -10,7 +10,7 @@
         "WINDOWS_DDNPM_SHASUM": "6b5a1b1fb5aad64a23c119501cddfc16a98a6d1ad5b3f8cc91a603284627af19"
     },
     "nightly-a7": {
-        "INTEGRATIONS_CORE_VERSION": "dev/dbm-beta",
+        "INTEGRATIONS_CORE_VERSION": "dev/dbm-beta-instacart",
         "OMNIBUS_SOFTWARE_VERSION": "7.22.x",
         "OMNIBUS_RUBY_VERSION": "7.22.x",
         "JMXFETCH_VERSION": "0.38.2",
@@ -21,14 +21,14 @@
         "SECURITY_AGENT_POLICIES_VERSION": "master"
     },
     "dbm-beta-a7": {
-        "INTEGRATIONS_CORE_VERSION": "dev/dbm-beta",
+        "INTEGRATIONS_CORE_VERSION": "dev/dbm-beta-instacart",
         "OMNIBUS_SOFTWARE_VERSION": "7.22.x",
         "OMNIBUS_RUBY_VERSION": "7.22.x",
         "JMXFETCH_VERSION": "0.38.2",
         "JMXFETCH_HASH": "9a344b7cc76c9e9ab1171073e3e46656a8c1097273f72aee30f3564ed815b681"
     },
     "dbm-beta": {
-        "INTEGRATIONS_CORE_VERSION": "dev/dbm-beta",
+        "INTEGRATIONS_CORE_VERSION": "dev/dbm-beta-instacart",
         "OMNIBUS_SOFTWARE_VERSION": "7.22.x",
         "OMNIBUS_RUBY_VERSION": "7.22.x",
         "JMXFETCH_VERSION": "0.38.2",
