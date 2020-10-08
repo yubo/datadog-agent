@@ -52,14 +52,13 @@ func InitCheckScheduler(collector *Collector) *CheckScheduler {
 	// add the check loaders
 	for _, loader := range loaders.LoaderCatalog() {
 		checkScheduler.AddLoader(loader)
-		log.Debugf("Added %s to Check Scheduler", loader)
+		log.Debugf("Added %s to Check Scheduler", loader) // CELENE this line may be key? check for this when things get unscheduled
 	}
 	return checkScheduler
 }
 
 // Schedule schedules configs to checks
 func (s *CheckScheduler) Schedule(configs []integration.Config) {
-	log.Info("CELENE inside Schedule")
 	checks := s.GetChecksFromConfigs(configs, true)
 	for _, c := range checks {
 		log.Infof("CELENE inside Schedule - trying to schedule check %s", c.ID())
@@ -75,7 +74,6 @@ func (s *CheckScheduler) Schedule(configs []integration.Config) {
 
 // Unschedule unschedules checks matching configs
 func (s *CheckScheduler) Unschedule(configs []integration.Config) {
-	log.Info("CELENE inside Unschedule")
 	for _, config := range configs {
 		if !config.IsCheckConfig() || config.HasFilter(containers.MetricsFilter) {
 			// skip non check and excluded configs.
@@ -137,6 +135,7 @@ func (s *CheckScheduler) AddLoader(loader check.Loader) {
 // getChecks takes a check configuration and returns a slice of Check instances
 // along with any error it might happen during the process
 func (s *CheckScheduler) getChecks(config integration.Config) ([]check.Check, error) {
+	log.Infof("CELENE inside getChecks for check %s", config.Name)
 	checks := []check.Check{}
 	numLoaders := len(s.loaders)
 
@@ -188,15 +187,18 @@ func GetChecksByNameForConfigs(checkName string, configs []integration.Config) [
 // GetChecksFromConfigs gets all the check instances for given configurations
 // optionally can populate the configToChecks cache
 func (s *CheckScheduler) GetChecksFromConfigs(configs []integration.Config, populateCache bool) []check.Check {
-	log.Info("CELENE inside GetChecksFromConfigs")
 	s.m.Lock()
 	defer s.m.Unlock()
 
 	var allChecks []check.Check
 	for _, config := range configs {
-		log.Infof("CELENE inside GetChecksFromConfigs for %s", config.Name)
+		if config.Name != "" {
+			log.Infof("CELENE inside GetChecksFromConfigs for %s", config.Name)
+		}
 		if !config.IsCheckConfig() {
-			log.Infof("CELENE inside GetChecksFromConfigs for %s, skipping because it is not considered a check config. instances: %v", config.Name, config.Instances)
+			if config.Name != "" {
+				log.Infof("CELENE inside GetChecksFromConfigs for %s, skipping because it is not considered a check config. instances: %v", config.Name, config.Instances)
+			}
 
 			// skip non check configs.
 			continue
@@ -223,10 +225,10 @@ func (s *CheckScheduler) GetChecksFromConfigs(configs []integration.Config, popu
 	}
 
 	// CELENE add a log line here to know what checks are in allChecks
-	log.Infof("CELENE logging all checks from configs")
-	for _, c := range allChecks {
-		log.Infof("CELENE check name is %s, source is %s", c.String(), c.ConfigSource())
-	}
+	// log.Infof("CELENE logging all checks from configs")
+	// for _, c := range allChecks {
+	// 	log.Infof("CELENE check name is %s, source is %s", c.String(), c.ConfigSource())
+	// }
 
 	return allChecks
 }

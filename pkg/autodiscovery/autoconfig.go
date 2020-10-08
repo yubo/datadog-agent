@@ -271,7 +271,9 @@ func (ac *AutoConfig) unschedule(configs []integration.Config) {
 
 // processNewConfig store (in template cache) and resolves a given config into a slice of resolved configs
 func (ac *AutoConfig) processNewConfig(config integration.Config) []integration.Config {
-	log.Infof("CELENE inside processNewConfig, trying to process check %s", config.Name)
+	if config.Name == "tomcat" {
+		log.Infof("CELENE inside processNewConfig, trying to process check %s", config.Name)
+	}
 	var configs []integration.Config
 
 	// add default metrics to collect to JMX checks
@@ -596,7 +598,6 @@ func GetResolveWarnings() map[string][]string {
 // processNewService takes a service, tries to match it against templates and
 // triggers scheduling events if it finds a valid config for it.
 func (ac *AutoConfig) processNewService(svc listeners.Service) {
-	log.Infof("CELENE inside processNewService")
 	if !svc.IsReady() {
 		log.Infof("CELENE inside processNewService - service %s is not ready, not adding to store or scheduling yet", svc.GetEntity())
 		return
@@ -610,11 +611,12 @@ func (ac *AutoConfig) processNewService(svc listeners.Service) {
 
 	// get all the templates matching service identifiers
 	var templates []integration.Config
-	ADIdentifiers, err := svc.GetADIdentifiers()
+	ADIdentifiers, err := svc.GetADIdentifiers() // the problem seems to be here. we need to make sure that all AD identifiers have been set by all listeners before doing the next loop.
 	if err != nil {
 		log.Errorf("Failed to get AD identifiers for service %s, it will not be monitored - %s", svc.GetEntity(), err)
 		return
 	}
+	log.Infof("CELENE all ADIdentifiers for service %s are %v", svc.GetEntity(), ADIdentifiers)
 	for _, adID := range ADIdentifiers {
 		// map the AD identifier to this service for reverse lookup
 		ac.store.setADIDForServices(adID, svc.GetEntity())
