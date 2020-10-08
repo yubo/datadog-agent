@@ -50,7 +50,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture chmod events
+	// List of probes required to capture chmod events
 	"chmod": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/security_inode_setattr"}},
@@ -67,7 +67,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture chown events
+	// List of probes required to capture chown events
 	"chown": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/security_inode_setattr"}},
@@ -100,7 +100,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture link events
+	// List of probes required to capture link events
 	"link": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/vfs_link"}},
@@ -114,7 +114,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture mkdir events
+	// List of probes required to capture mkdir events
 	"mkdir": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/vfs_mkdir"}},
@@ -128,7 +128,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture open events
+	// List of probes required to capture open events
 	"open": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/vfs_open"}},
@@ -151,7 +151,28 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture removexattr events
+	// List of probes required to capture ptrace events
+	"ptrace": {
+		&manager.AllOf{Selectors: ExpandSyscallProbesSelector(
+			manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "ptrace"}, EntryAndExit),
+		},
+	},
+
+	// List of probes required to cqpture mmap events
+	"mmap": {
+		&manager.AllOf{Selectors: ExpandSyscallProbesSelector(
+			manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "mmap"}, EntryAndExit),
+		},
+	},
+
+	// List of probes required to cqpture mprotect events
+	"mprotect": {
+		&manager.AllOf{Selectors: []manager.ProbesSelector{
+			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/security_file_mprotect"}},
+		}},
+	},
+
+	// List of probes required to capture removexattr events
 	"removexattr": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/vfs_removexattr"}},
@@ -172,7 +193,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture rename events
+	// List of probes required to capture rename events
 	"rename": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/vfs_rename"}},
@@ -189,7 +210,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture rmdir events
+	// List of probes required to capture rmdir events
 	"rmdir": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/security_inode_rmdir"}},
@@ -203,7 +224,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture setxattr events
+	// List of probes required to capture setxattr events
 	"setxattr": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/vfs_setxattr"}},
@@ -224,7 +245,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture unlink events
+	// List of probes required to capture unlink events
 	"unlink": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/vfs_unlink"}},
@@ -238,7 +259,7 @@ var SelectorsPerEventType = map[string][]manager.ProbesSelector{
 		},
 	},
 
-	// List of probes to activate to capture utimes events
+	// List of probes required to capture utimes events
 	"utimes": {
 		&manager.AllOf{Selectors: []manager.ProbesSelector{
 			&manager.ProbeSelector{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: SecurityAgentUID, Section: "kprobe/security_inode_setattr"}},

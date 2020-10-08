@@ -28,6 +28,9 @@
 #include "raw_syscalls.h"
 #include "getattr.h"
 #include "setxattr.h"
+#include "ptrace.h"
+#include "mmap.h"
+#include "mprotect.h"
 
 void __attribute__((always_inline)) remove_inode_discarders(struct file_t *file) {
     struct path_key_t path_key = {

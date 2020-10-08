@@ -90,6 +90,17 @@ struct syscall_cache_t {
             struct path_key_t path_key;
             const char *name;
         } setxattr;
+
+        struct {
+            u32 request;
+            u32 pid;
+        } ptrace;
+
+        struct {
+            u64 addr;
+            u32 len;
+            int protection;
+        } mmap;
     };
 };
 

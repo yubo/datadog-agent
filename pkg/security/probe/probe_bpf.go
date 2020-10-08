@@ -326,6 +326,21 @@ func (p *Probe) handleEvent(CPU int, data []byte, perfMap *manager.PerfMap, mana
 			log.Errorf("failed to decode removexattr event: %s (offset %d, len %d)", err, offset, len(data))
 			return
 		}
+	case PTraceEventType:
+		if _, err := event.PTrace.UnmarshalBinary(data[offset:]); err != nil {
+			log.Errorf("failed to decode ptrace event: %s (offset %d, len %d)", err, offset, len(data))
+			return
+		}
+	case MMapEventType:
+		if _, err := event.MMap.UnmarshalBinary(data[offset:]); err != nil {
+			log.Errorf("failed to decode mmap event: %s (offset %d, len %d)", err, offset, len(data))
+			return
+		}
+	case MProtectEventType:
+		if _, err := event.MProtect.UnmarshalBinary(data[offset:]); err != nil {
+			log.Errorf("failed to decode mprotect event: %s (offset %d, len %d)", err, offset, len(data))
+			return
+		}
 	default:
 		log.Errorf("unsupported event type %d", eventType)
 		return

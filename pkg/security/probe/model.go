@@ -813,6 +813,117 @@ func (p *ProcessEvent) UnmarshalBinary(data []byte) (int, error) {
 	return 104 + read, nil
 }
 
+// PTraceEvent represents a ptrace event
+type PTraceEvent struct {
+	BaseEvent
+	Request PTraceRequest `field:"request"`
+	PID     uint32        `field:"pid"`
+}
+
+func (e *PTraceEvent) marshalJSON(resolvers *Resolvers) ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteRune('{')
+	fmt.Fprintf(&buf, `"request":"%s",`, e.Request)
+	fmt.Fprintf(&buf, `"pid":%d`, e.PID)
+	buf.WriteRune('}')
+
+	return buf.Bytes(), nil
+}
+
+// UnmarshalBinary unmarshals a binary representation of itself
+func (e *PTraceEvent) UnmarshalBinary(data []byte) (int, error) {
+	n, err := unmarshalBinary(data, &e.BaseEvent)
+	if err != nil {
+		return n, err
+	}
+
+	data = data[n:]
+	if len(data) < 8 {
+		return n, ErrNotEnoughData
+	}
+
+	e.Request = PTraceRequest(ebpf.ByteOrder.Uint32(data[0:4]))
+	e.PID = ebpf.ByteOrder.Uint32(data[4:8])
+	return n + 8, nil
+}
+
+// MMapEvent represents an mmap event
+type MMapEvent struct {
+	BaseEvent
+	Addr       uint64       `field:"addr"`
+	Len        uint32       `field:"len"`
+	Protection VMProtection `field:"protection"`
+}
+
+func (e *MMapEvent) marshalJSON(resolvers *Resolvers) ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteRune('{')
+	fmt.Fprintf(&buf, `"addr":"0x%x",`, e.Addr)
+	fmt.Fprintf(&buf, `"len":%d,`, e.Len)
+	fmt.Fprintf(&buf, `"protection":"%s"`, e.Protection)
+	buf.WriteRune('}')
+
+	return buf.Bytes(), nil
+}
+
+// UnmarshalBinary unmarshals a binary representation of itself
+func (e *MMapEvent) UnmarshalBinary(data []byte) (int, error) {
+	n, err := unmarshalBinary(data, &e.BaseEvent)
+	if err != nil {
+		return n, err
+	}
+
+	data = data[n:]
+	if len(data) < 16 {
+		return n, ErrNotEnoughData
+	}
+
+	e.Addr = ebpf.ByteOrder.Uint64(data[0:8])
+	e.Len = ebpf.ByteOrder.Uint32(data[8:12])
+	e.Protection = VMProtection(int(ebpf.ByteOrder.Uint32(data[12:16])))
+	return n + 16, nil
+}
+
+// MProtectEvent represents an mprotect event
+type MProtectEvent struct {
+	BaseEvent
+	VMStart       uint64       `field:"vm_start"`
+	VMEnd         uint64       `field:"vm_end"`
+	VMProtection  VMProtection `field:"vm_protection"`
+	ReqProtection VMProtection `field:"req_protection"`
+}
+
+func (e *MProtectEvent) marshalJSON(resolvers *Resolvers) ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteRune('{')
+	fmt.Fprintf(&buf, `"vm_start":"0x%x",`, e.VMStart)
+	fmt.Fprintf(&buf, `"vm_end":"0x%x",`, e.VMEnd)
+	fmt.Fprintf(&buf, `"vm_protection":"%s",`, e.VMProtection)
+	fmt.Fprintf(&buf, `"req_protection":"%s"`, e.ReqProtection)
+	buf.WriteRune('}')
+
+	return buf.Bytes(), nil
+}
+
+// UnmarshalBinary unmarshals a binary representation of itself
+func (e *MProtectEvent) UnmarshalBinary(data []byte) (int, error) {
+	n, err := unmarshalBinary(data, &e.BaseEvent)
+	if err != nil {
+		return n, err
+	}
+
+	data = data[n:]
+	if len(data) < 32 {
+		return n, ErrNotEnoughData
+	}
+
+	e.VMStart = ebpf.ByteOrder.Uint64(data[0:8])
+	e.VMEnd = ebpf.ByteOrder.Uint64(data[8:16])
+	e.VMProtection = VMProtection(ebpf.ByteOrder.Uint32(data[16:24]))
+	e.ReqProtection = VMProtection(ebpf.ByteOrder.Uint32(data[24:32]))
+	return n + 32, nil
+}
+
 // Event represents an event sent from the kernel
 // genaccessors
 type Event struct {
@@ -834,6 +945,10 @@ type Event struct {
 	RemoveXAttr SetXAttrEvent  `yaml:"removexattr" field:"removexattr" event:"removexattr"`
 	Mount       MountEvent     `yaml:"mount" field:"-"`
 	Umount      UmountEvent    `yaml:"umount" field:"-"`
+
+	PTrace   PTraceEvent   `yaml:"ptrace" field:"ptrace" event:"ptrace"`
+	MMap     MMapEvent     `yaml:"mmap" field:"mmap" event:"mmap"`
+	MProtect MProtectEvent `yaml:"mprotect" field:"mprotect" event:"mprotect"`
 
 	resolvers *Resolvers `field:"-"`
 }
@@ -1020,6 +1135,39 @@ func (e *Event) MarshalJSON() ([]byte, error) {
 				field:      "file",
 				marshalFnc: e.RemoveXAttr.marshalJSON,
 			})
+	case PTraceEventType:
+		entries = append(entries,
+			eventMarshaler{
+				field:      "syscall",
+				marshalFnc: eventMarshalJSON(&e.PTrace.BaseEvent),
+			},
+			eventMarshaler{
+				field:      "ptrace",
+				marshalFnc: e.PTrace.marshalJSON,
+			},
+		)
+	case MMapEventType:
+		entries = append(entries,
+			eventMarshaler{
+				field:      "syscall",
+				marshalFnc: eventMarshalJSON(&e.MMap.BaseEvent),
+			},
+			eventMarshaler{
+				field:      "mmap",
+				marshalFnc: e.MMap.marshalJSON,
+			},
+		)
+	case MProtectEventType:
+		entries = append(entries,
+			eventMarshaler{
+				field:      "syscall",
+				marshalFnc: eventMarshalJSON(&e.MProtect.BaseEvent),
+			},
+			eventMarshaler{
+				field:      "mprotect",
+				marshalFnc: e.MProtect.marshalJSON,
+			},
+		)
 	}
 
 	var prev bool

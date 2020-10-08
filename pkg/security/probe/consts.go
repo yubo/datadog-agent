@@ -54,6 +54,12 @@ const (
 	FileSetXAttrEventType
 	// FileRemoveXAttrEventType - Removexattr event
 	FileRemoveXAttrEventType
+	// PTRaceEventType - PTrace event
+	PTraceEventType
+	// MMapEventType - MMap event
+	MMapEventType
+	// MProtectEventType - MProtect event
+	MProtectEventType
 	// internalEventType - used internally to get the maximum number of event. Has to be the last one
 	maxEventType
 )
@@ -86,6 +92,12 @@ func (t EventType) String() string {
 		return "setxattr"
 	case FileRemoveXAttrEventType:
 		return "removexattr"
+	case PTraceEventType:
+		return "ptrace"
+	case MMapEventType:
+		return "mmap"
+	case MProtectEventType:
+		return "mprotect"
 	}
 	return "unknown"
 }
@@ -285,6 +297,31 @@ var (
 		"AT_REMOVEDIR": unix.AT_REMOVEDIR,
 	}
 
+	ptraceConstants = map[string]int{
+		"PTRACE_TRACEME":    0,
+		"PTRACE_PEEKTEXT":   1,
+		"PTRACE_PEEKDATA":   2,
+		"PTRACE_PEEKUSR":    3,
+		"PTRACE_POKETEXT":   4,
+		"PTRACE_POKEDATA":   5,
+		"PTRACE_POKEUSR":    6,
+		"PTRACE_CONT":       7,
+		"PTRACE_KILL":       8,
+		"PTRACE_SINGLESTEP": 9,
+		"PTRACE_GETREGS":    12,
+		"PTRACE_SETREGS":    13,
+		"PTRACE_ATTACH":     16,
+		"PTRACE_DETACH":     17,
+		"PTRACE_SYSCALL":    24,
+	}
+
+	vmConstants = map[string]int{
+		"VM_READ":   1,
+		"VM_WRITE":  2,
+		"VM_EXEC":   4,
+		"VM_SHARED": 8,
+	}
+
 	// SECLConstants are constants available in runtime security agent rules
 	SECLConstants = map[string]interface{}{
 		// boolean
@@ -297,6 +334,8 @@ var (
 	openFlagsStrings   = map[int]string{}
 	chmodModeStrings   = map[int]string{}
 	unlinkFlagsStrings = map[int]string{}
+	ptraceFlagsStrings = map[int]string{}
+	vmFlagsStrings     = map[int]string{}
 )
 
 func initOpenConstants() {
@@ -329,6 +368,26 @@ func initUnlinkConstanst() {
 	}
 }
 
+func initPtraceConstants() {
+	for k, v := range ptraceConstants {
+		SECLConstants[k] = &eval.IntEvaluator{Value: v}
+	}
+
+	for k, v := range ptraceConstants {
+		ptraceFlagsStrings[v] = k
+	}
+}
+
+func initVMConstants() {
+	for k, v := range vmConstants {
+		SECLConstants[k] = &eval.IntEvaluator{Value: v}
+	}
+
+	for k, v := range vmConstants {
+		vmFlagsStrings[v] = k
+	}
+}
+
 func initErrorConstants() {
 	for k, v := range errorConstants {
 		SECLConstants[k] = &eval.IntEvaluator{Value: v}
@@ -340,6 +399,8 @@ func initConstants() {
 	initOpenConstants()
 	initChmodConstants()
 	initUnlinkConstanst()
+	initPtraceConstants()
+	initVMConstants()
 }
 
 func bitmaskToString(bitmask int, intToStrMap map[int]string) string {
@@ -403,4 +464,23 @@ func (f RetValError) String() string {
 
 func init() {
 	initConstants()
+}
+
+// PTraceRequest represents an ptrace flags bitmask value
+type PTraceRequest int
+
+func (f PTraceRequest) String() string {
+	for val, str := range ptraceFlagsStrings {
+		if val == int(f) {
+			return str
+		}
+	}
+	return fmt.Sprintf("%d", f)
+}
+
+// VMProtection represents an virtual memory protection flags bitmask value
+type VMProtection int
+
+func (vmp VMProtection) String() string {
+	return bitmaskToString(int(vmp), vmFlagsStrings)
 }

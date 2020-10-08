@@ -193,6 +193,9 @@ enum event_type
     EVENT_UMOUNT,
     EVENT_SETXATTR,
     EVENT_REMOVEXATTR,
+    EVENT_PTRACE,
+    EVENT_MMAP,
+    EVENT_MPROTECT,
     EVENT_EXEC,
 };
 

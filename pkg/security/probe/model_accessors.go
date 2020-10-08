@@ -317,6 +317,62 @@ func (m *Model) GetEvaluator(field eval.Field) (eval.Evaluator, error) {
 			Field: field,
 		}, nil
 
+	case "mmap.addr":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).MMap.Addr) },
+
+			Field: field,
+		}, nil
+
+	case "mmap.len":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).MMap.Len) },
+
+			Field: field,
+		}, nil
+
+	case "mmap.protection":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).MMap.Protection) },
+
+			Field: field,
+		}, nil
+
+	case "mprotect.vm_start":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).MProtect.VMStart) },
+
+			Field: field,
+		}, nil
+
+	case "mprotect.vm_end":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).MProtect.VMEnd) },
+
+			Field: field,
+		}, nil
+
+	case "mprotect.vm_protection":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).MProtect.VMProtection) },
+
+			Field: field,
+		}, nil
+
+	case "mprotect.req_protection":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).MProtect.ReqProtection) },
+
+			Field: field,
+		}, nil
+
 	case "open.basename":
 
 		return &eval.StringEvaluator{
@@ -509,6 +565,22 @@ func (m *Model) GetEvaluator(field eval.Field) (eval.Evaluator, error) {
 			EvalFnc: func(ctx *eval.Context) string {
 				return (*Event)(ctx.Object).Process.ResolveUser((*Event)(ctx.Object).resolvers)
 			},
+
+			Field: field,
+		}, nil
+
+	case "ptrace.pid":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).PTrace.PID) },
+
+			Field: field,
+		}, nil
+
+	case "ptrace.request":
+
+		return &eval.IntEvaluator{
+			EvalFnc: func(ctx *eval.Context) int { return int((*Event)(ctx.Object).PTrace.Request) },
 
 			Field: field,
 		}, nil
@@ -1075,6 +1147,34 @@ func (e *Event) GetFieldValue(field eval.Field) (interface{}, error) {
 
 		return int(e.Mkdir.Retval), nil
 
+	case "mmap.addr":
+
+		return int(e.MMap.Addr), nil
+
+	case "mmap.len":
+
+		return int(e.MMap.Len), nil
+
+	case "mmap.protection":
+
+		return int(e.MMap.Protection), nil
+
+	case "mprotect.vm_start":
+
+		return int(e.MProtect.VMStart), nil
+
+	case "mprotect.vm_end":
+
+		return int(e.MProtect.VMEnd), nil
+
+	case "mprotect.vm_protection":
+
+		return int(e.MProtect.VMProtection), nil
+
+	case "mprotect.req_protection":
+
+		return int(e.MProtect.ReqProtection), nil
+
 	case "open.basename":
 
 		return e.Open.ResolveBasename(e.resolvers), nil
@@ -1162,6 +1262,14 @@ func (e *Event) GetFieldValue(field eval.Field) (interface{}, error) {
 	case "process.user":
 
 		return e.Process.ResolveUser(e.resolvers), nil
+
+	case "ptrace.pid":
+
+		return int(e.PTrace.PID), nil
+
+	case "ptrace.request":
+
+		return int(e.PTrace.Request), nil
 
 	case "removexattr.basename":
 
@@ -1457,6 +1565,27 @@ func (e *Event) GetFieldEventType(field eval.Field) (eval.EventType, error) {
 	case "mkdir.retval":
 		return "mkdir", nil
 
+	case "mmap.addr":
+		return "mmap", nil
+
+	case "mmap.len":
+		return "mmap", nil
+
+	case "mmap.protection":
+		return "mmap", nil
+
+	case "mprotect.vm_start":
+		return "mprotect", nil
+
+	case "mprotect.vm_end":
+		return "mprotect", nil
+
+	case "mprotect.vm_protection":
+		return "mprotect", nil
+
+	case "mprotect.req_protection":
+		return "mprotect", nil
+
 	case "open.basename":
 		return "open", nil
 
@@ -1522,6 +1651,12 @@ func (e *Event) GetFieldEventType(field eval.Field) (eval.EventType, error) {
 
 	case "process.user":
 		return "*", nil
+
+	case "ptrace.pid":
+		return "ptrace", nil
+
+	case "ptrace.request":
+		return "ptrace", nil
 
 	case "removexattr.basename":
 		return "removexattr", nil
@@ -1805,6 +1940,34 @@ func (e *Event) GetFieldType(field eval.Field) (reflect.Kind, error) {
 
 		return reflect.Int, nil
 
+	case "mmap.addr":
+
+		return reflect.Int, nil
+
+	case "mmap.len":
+
+		return reflect.Int, nil
+
+	case "mmap.protection":
+
+		return reflect.Int, nil
+
+	case "mprotect.vm_start":
+
+		return reflect.Int, nil
+
+	case "mprotect.vm_end":
+
+		return reflect.Int, nil
+
+	case "mprotect.vm_protection":
+
+		return reflect.Int, nil
+
+	case "mprotect.req_protection":
+
+		return reflect.Int, nil
+
 	case "open.basename":
 
 		return reflect.String, nil
@@ -1892,6 +2055,14 @@ func (e *Event) GetFieldType(field eval.Field) (reflect.Kind, error) {
 	case "process.user":
 
 		return reflect.String, nil
+
+	case "ptrace.pid":
+
+		return reflect.Int, nil
+
+	case "ptrace.request":
+
+		return reflect.Int, nil
 
 	case "removexattr.basename":
 
@@ -2360,6 +2531,69 @@ func (e *Event) SetFieldValue(field eval.Field, value interface{}) error {
 		e.Mkdir.Retval = int64(v)
 		return nil
 
+	case "mmap.addr":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "MMap.Addr"}
+		}
+		e.MMap.Addr = uint64(v)
+		return nil
+
+	case "mmap.len":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "MMap.Len"}
+		}
+		e.MMap.Len = uint32(v)
+		return nil
+
+	case "mmap.protection":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "MMap.Protection"}
+		}
+		e.MMap.Protection = VMProtection(v)
+		return nil
+
+	case "mprotect.req_protection":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "MProtect.ReqProtection"}
+		}
+		e.MProtect.ReqProtection = VMProtection(v)
+		return nil
+
+	case "mprotect.vm_start":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "MProtect.VMStart"}
+		}
+		e.MProtect.VMStart = uint64(v)
+		return nil
+
+	case "mprotect.vm_end":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "MProtect.VMEnd"}
+		}
+		e.MProtect.VMEnd = uint64(v)
+		return nil
+
+	case "mprotect.vm_protection":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "MProtect.VMProtection"}
+		}
+		e.MProtect.VMProtection = VMProtection(v)
+		return nil
+
 	case "open.basename":
 
 		if e.Open.BasenameStr, ok = value.(string); !ok {
@@ -2536,6 +2770,24 @@ func (e *Event) SetFieldValue(field eval.Field, value interface{}) error {
 		if e.Process.User, ok = value.(string); !ok {
 			return &eval.ErrValueTypeMismatch{Field: "Process.User"}
 		}
+		return nil
+
+	case "ptrace.pid":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "PTrace.PID"}
+		}
+		e.PTrace.PID = uint32(v)
+		return nil
+
+	case "ptrace.request":
+
+		v, ok := value.(int)
+		if !ok {
+			return &eval.ErrValueTypeMismatch{Field: "PTrace.Request"}
+		}
+		e.PTrace.Request = PTraceRequest(v)
 		return nil
 
 	case "removexattr.basename":

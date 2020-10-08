@@ -37,6 +37,11 @@ var execProbes = []*manager.Probe{
 		UID: SecurityAgentUID,
 		Section: "kprobe/cgroup1_tasks_write",
 	},
+
+	{
+		UID: SecurityAgentUID,
+		Section: "kprobe/security_file_mprotect",
+	},
 }
 
 func getExecProbes() []*manager.Probe {
@@ -48,6 +53,15 @@ func getExecProbes() []*manager.Probe {
 		UID: SecurityAgentUID,
 		SyscallFuncName: "execveat",
 	}, Entry)...)
+
+	execProbes = append(execProbes, ExpandSyscallProbes(&manager.Probe{
+		UID: SecurityAgentUID,
+		SyscallFuncName: "ptrace",
+	}, EntryAndExit)...)
+	execProbes = append(execProbes, ExpandSyscallProbes(&manager.Probe{
+		UID: SecurityAgentUID,
+		SyscallFuncName: "mmap",
+	}, EntryAndExit)...)
 
 	return execProbes
 }
