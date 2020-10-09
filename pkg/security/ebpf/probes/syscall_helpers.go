@@ -88,9 +88,12 @@ func expandSyscallSections(syscallName string, flag int, compat ...bool) []strin
 }
 
 const (
+	// Entry indicates that the entry kprobe should be expanded
 	Entry = 1 << 0
+	// Exit indicates that the exit kretprobe should be expanded
 	Exit  = 1 << 1
 
+	// EntryAndExit indicates that both the entry kprobe and exit kretprobe should be expanded
 	EntryAndExit = Entry | Exit
 )
 

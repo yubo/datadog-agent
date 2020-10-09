@@ -124,7 +124,7 @@ func (rsa *RuleSetApplier) GetPolicyReport(rs *rules.RuleSet, applier Applier) (
 	return rsa.reporter.GetReport(), nil
 }
 
-// Apply applies the loaded set of rules and returns a report
+// SelectProbes applies the loaded set of rules and returns a report
 // of the applied approvers for it.
 func (rsa *RuleSetApplier) SelectProbes(rs *rules.RuleSet, applier Applier) error {
 	var selectedIDs []manager.ProbeIdentificationPair
