@@ -7,13 +7,12 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/DataDog/gopsutil/cpu"
-	"github.com/DataDog/gopsutil/process"
+	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 
 	model "github.com/DataDog/agent-payload/process"
 )
 
-func formatUser(fp *process.FilledProcess) *model.ProcessUser {
+func formatUser(fp *procutil.Process) *model.ProcessUser {
 	var username string
 	var uid, gid int32
 	if len(fp.Uids) > 0 {
@@ -34,19 +33,21 @@ func formatUser(fp *process.FilledProcess) *model.ProcessUser {
 	}
 }
 
-func formatCPU(fp *process.FilledProcess, t2, t1, syst2, syst1 cpu.TimesStat) *model.CPUStat {
+func formatCPU(t2, t1 *procutil.Stats, syst2, syst1 *procutil.CPUTimesStat) *model.CPUStat {
 	numCPU := float64(runtime.NumCPU())
 	deltaSys := syst2.Total() - syst1.Total()
+	t1CPU := t1.CPUTime
+	t2CPU := t2.CPUTime
 	return &model.CPUStat{
-		LastCpu:    t2.CPU,
-		TotalPct:   calculatePct((t2.User-t1.User)+(t2.System-t1.System), deltaSys, numCPU),
-		UserPct:    calculatePct(t2.User-t1.User, deltaSys, numCPU),
-		SystemPct:  calculatePct(t2.System-t1.System, deltaSys, numCPU),
-		NumThreads: fp.NumThreads,
+		LastCpu:    t2CPU.CPU,
+		TotalPct:   calculatePct((t2CPU.User-t1CPU.User)+(t2CPU.System-t1CPU.System), deltaSys, numCPU),
+		UserPct:    calculatePct(t2CPU.User-t1CPU.User, deltaSys, numCPU),
+		SystemPct:  calculatePct(t2CPU.System-t1CPU.System, deltaSys, numCPU),
+		NumThreads: t2.NumThreads,
 		Cpus:       []*model.SingleCPUStat{},
-		Nice:       fp.Nice,
-		UserTime:   int64(t2.User),
-		SystemTime: int64(t2.System),
+		Nice:       t2.Nice,
+		UserTime:   int64(t2CPU.User),
+		SystemTime: int64(t2CPU.System),
 	}
 }
 

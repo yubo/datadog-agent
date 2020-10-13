@@ -5,16 +5,15 @@ import (
 	"sync"
 	"time"
 
+	model "github.com/DataDog/agent-payload/process"
+	"github.com/DataDog/datadog-agent/pkg/process/config"
+	"github.com/DataDog/datadog-agent/pkg/process/procutil"
+	"github.com/DataDog/datadog-agent/pkg/process/statsd"
+	"github.com/DataDog/datadog-agent/pkg/process/util"
 	agentutil "github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/gopsutil/cpu"
-	"github.com/DataDog/gopsutil/process"
-
-	model "github.com/DataDog/agent-payload/process"
-	"github.com/DataDog/datadog-agent/pkg/process/config"
-	"github.com/DataDog/datadog-agent/pkg/process/statsd"
-	"github.com/DataDog/datadog-agent/pkg/process/util"
 )
 
 const emptyCtrID = ""
@@ -29,10 +28,10 @@ var errEmptyCPUTime = errors.New("empty CPU time information returned")
 // checks that will be used for rates, cpu calculations, etc.
 type ProcessCheck struct {
 	sync.RWMutex
-
+	probe           *procutil.ProcessProbe
 	sysInfo         *model.SystemInfo
-	lastCPUTime     cpu.TimesStat
-	lastProcs       map[int32]*process.FilledProcess
+	lastCPUTime     *procutil.CPUTimesStat
+	lastProcs       map[int32]*procutil.Process
 	lastCtrRates    map[string]util.ContainerRateMetrics
 	lastCtrIDForPID map[int32]string
 	lastRun         time.Time
@@ -48,6 +47,7 @@ func (p *ProcessCheck) Init(_ *config.AgentConfig, info *model.SystemInfo) {
 		log.Infof("no network ID detected: %s", err)
 	}
 	p.networkID = networkID
+	p.probe = procutil.NewProcessProbe()
 }
 
 // Name returns the name of the ProcessCheck.
@@ -68,6 +68,7 @@ func (p *ProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Mess
 	defer p.Unlock()
 
 	start := time.Now()
+	// TODO: move this out of gopsutil
 	cpuTimes, err := cpu.Times(false)
 	if err != nil {
 		return nil, err
@@ -75,7 +76,9 @@ func (p *ProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Mess
 	if len(cpuTimes) == 0 {
 		return nil, errEmptyCPUTime
 	}
-	procs, err := getAllProcesses(cfg)
+	cpuTime := procutil.AssignCPUStat(cpuTimes[0])
+
+	procs, err := p.probe.ProcessesByPID()
 	if err != nil {
 		return nil, err
 	}
@@ -88,14 +91,14 @@ func (p *ProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Mess
 	// End check early if this is our first run.
 	if p.lastProcs == nil {
 		p.lastProcs = procs
-		p.lastCPUTime = cpuTimes[0]
+		p.lastCPUTime = cpuTime
 		p.lastCtrRates = util.ExtractContainerRateMetric(ctrList)
 		p.lastCtrIDForPID = ctrByProc
 		p.lastRun = time.Now()
 		return nil, nil
 	}
 
-	procsByCtr := fmtProcesses(cfg, procs, p.lastProcs, ctrByProc, cpuTimes[0], p.lastCPUTime, p.lastRun)
+	procsByCtr := fmtProcesses(cfg, procs, p.lastProcs, ctrByProc, cpuTime, p.lastCPUTime, p.lastRun)
 	ctrs := fmtContainers(ctrList, p.lastCtrRates, p.lastRun)
 
 	messages, totalProcs, totalContainers := createProcCtrMessages(procsByCtr, ctrs, cfg, p.sysInfo, groupID, p.networkID)
@@ -104,7 +107,7 @@ func (p *ProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Mess
 	// Note: not storing the filtered in case there are new processes that haven't had a chance to show up twice.
 	p.lastProcs = procs
 	p.lastCtrRates = util.ExtractContainerRateMetric(ctrList)
-	p.lastCPUTime = cpuTimes[0]
+	p.lastCPUTime = procutil.AssignCPUStat(cpuTimes[0])
 	p.lastRun = time.Now()
 	p.lastCtrIDForPID = ctrByProc
 
@@ -205,9 +208,9 @@ func ctrIDForPID(ctrList []*containers.Container) map[int32]string {
 // non-container processes would be in a single group with key as empty string ""
 func fmtProcesses(
 	cfg *config.AgentConfig,
-	procs, lastProcs map[int32]*process.FilledProcess,
+	procs, lastProcs map[int32]*procutil.Process,
 	ctrByProc map[int32]string,
-	syst2, syst1 cpu.TimesStat,
+	syst2, syst1 *procutil.CPUTimesStat,
 	lastRun time.Time,
 ) map[string][]*model.Process {
 	procsByCtr := make(map[string][]*model.Process)
@@ -226,13 +229,13 @@ func fmtProcesses(
 			Command:                formatCommand(fp),
 			User:                   formatUser(fp),
 			Memory:                 formatMemory(fp),
-			Cpu:                    formatCPU(fp, fp.CpuTime, lastProcs[fp.Pid].CpuTime, syst2, syst1),
-			CreateTime:             fp.CreateTime,
-			OpenFdCount:            fp.OpenFdCount,
+			Cpu:                    formatCPU(fp.Stats, lastProcs[fp.Pid].Stats, syst2, syst1),
+			CreateTime:             fp.Stats.CreateTime,
+			OpenFdCount:            fp.Stats.OpenFdCount,
 			State:                  model.ProcessState(model.ProcessState_value[fp.Status]),
-			IoStat:                 formatIO(fp, lastProcs[fp.Pid].IOStat, lastRun),
-			VoluntaryCtxSwitches:   uint64(fp.CtxSwitches.Voluntary),
-			InvoluntaryCtxSwitches: uint64(fp.CtxSwitches.Involuntary),
+			IoStat:                 formatIO(fp.Stats.IOStat, lastProcs[fp.Pid].Stats.IOStat, lastRun),
+			VoluntaryCtxSwitches:   uint64(fp.Stats.CtxSwitches.Voluntary),
+			InvoluntaryCtxSwitches: uint64(fp.Stats.CtxSwitches.Involuntary),
 			ContainerId:            ctrByProc[fp.Pid],
 		}
 		_, ok := procsByCtr[proc.ContainerId]
@@ -247,7 +250,7 @@ func fmtProcesses(
 	return procsByCtr
 }
 
-func formatCommand(fp *process.FilledProcess) *model.Command {
+func formatCommand(fp *procutil.Process) *model.Command {
 	return &model.Command{
 		Args:   fp.Cmdline,
 		Cwd:    fp.Cwd,
@@ -258,9 +261,9 @@ func formatCommand(fp *process.FilledProcess) *model.Command {
 	}
 }
 
-func formatIO(fp *process.FilledProcess, lastIO *process.IOCountersStat, before time.Time) *model.IOStat {
-	// This will be nill for Mac
-	if fp.IOStat == nil {
+func formatIO(currentIO, lastIO *procutil.IOCountersStat, before time.Time) *model.IOStat {
+	// NOTE: This will be nil for Mac
+	if currentIO == nil {
 		return &model.IOStat{}
 	}
 
@@ -271,23 +274,23 @@ func formatIO(fp *process.FilledProcess, lastIO *process.IOCountersStat, before 
 	// Reading 0 as a counter means the file could not be opened due to permissions. We distinguish this from a real 0 in rates.
 	var readRate float32
 	readRate = -1
-	if fp.IOStat.ReadCount != 0 {
-		readRate = calculateRate(fp.IOStat.ReadCount, lastIO.ReadCount, before)
+	if currentIO.ReadCount != 0 {
+		readRate = calculateRate(currentIO.ReadCount, lastIO.ReadCount, before)
 	}
 	var writeRate float32
 	writeRate = -1
-	if fp.IOStat.WriteCount != 0 {
-		writeRate = calculateRate(fp.IOStat.WriteCount, lastIO.WriteCount, before)
+	if currentIO.WriteCount != 0 {
+		writeRate = calculateRate(currentIO.WriteCount, lastIO.WriteCount, before)
 	}
 	var readBytesRate float32
 	readBytesRate = -1
-	if fp.IOStat.ReadBytes != 0 {
-		readBytesRate = calculateRate(fp.IOStat.ReadBytes, lastIO.ReadBytes, before)
+	if currentIO.ReadBytes != 0 {
+		readBytesRate = calculateRate(currentIO.ReadBytes, lastIO.ReadBytes, before)
 	}
 	var writeBytesRate float32
 	writeBytesRate = -1
-	if fp.IOStat.WriteBytes != 0 {
-		writeBytesRate = calculateRate(fp.IOStat.WriteBytes, lastIO.WriteBytes, before)
+	if currentIO.WriteBytes != 0 {
+		writeBytesRate = calculateRate(currentIO.WriteBytes, lastIO.WriteBytes, before)
 	}
 	return &model.IOStat{
 		ReadRate:       readRate,
@@ -297,19 +300,20 @@ func formatIO(fp *process.FilledProcess, lastIO *process.IOCountersStat, before 
 	}
 }
 
-func formatMemory(fp *process.FilledProcess) *model.MemoryStat {
+func formatMemory(fp *procutil.Process) *model.MemoryStat {
+	memInfo := fp.Stats.MemInfo
 	ms := &model.MemoryStat{
-		Rss:  fp.MemInfo.RSS,
-		Vms:  fp.MemInfo.VMS,
-		Swap: fp.MemInfo.Swap,
+		Rss:  memInfo.RSS,
+		Vms:  memInfo.VMS,
+		Swap: memInfo.Swap,
 	}
 
-	if fp.MemInfoEx != nil {
-		ms.Shared = fp.MemInfoEx.Shared
-		ms.Text = fp.MemInfoEx.Text
-		ms.Lib = fp.MemInfoEx.Lib
-		ms.Data = fp.MemInfoEx.Data
-		ms.Dirty = fp.MemInfoEx.Dirty
+	if memInfoEx := fp.Stats.MemInfoEx; memInfoEx != nil {
+		ms.Shared = memInfoEx.Shared
+		ms.Text = memInfoEx.Text
+		ms.Lib = memInfoEx.Lib
+		ms.Data = memInfoEx.Data
+		ms.Dirty = memInfoEx.Dirty
 	}
 	return ms
 }
@@ -318,8 +322,8 @@ func formatMemory(fp *process.FilledProcess) *model.MemoryStat {
 // for multiple collections.
 func skipProcess(
 	cfg *config.AgentConfig,
-	fp *process.FilledProcess,
-	lastProcs map[int32]*process.FilledProcess,
+	fp *procutil.Process,
+	lastProcs map[int32]*procutil.Process,
 ) bool {
 	if len(fp.Cmdline) == 0 {
 		return true
@@ -342,7 +346,7 @@ func (p *ProcessCheck) createTimesforPIDs(pids []int32) map[int32]int64 {
 	createTimeForPID := make(map[int32]int64)
 	for _, pid := range pids {
 		if p, ok := p.lastProcs[pid]; ok {
-			createTimeForPID[pid] = p.CreateTime
+			createTimeForPID[pid] = p.Stats.CreateTime
 		}
 	}
 	return createTimeForPID
