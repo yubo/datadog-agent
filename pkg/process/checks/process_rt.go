@@ -3,13 +3,12 @@ package checks
 import (
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/util/containers"
-	"github.com/DataDog/gopsutil/cpu"
-	"github.com/DataDog/gopsutil/process"
-
 	model "github.com/DataDog/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/config"
+	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
+	"github.com/DataDog/datadog-agent/pkg/util/containers"
+	"github.com/DataDog/gopsutil/cpu"
 )
 
 // RTProcess is a singleton RTProcessCheck.
@@ -18,9 +17,11 @@ var RTProcess = &RTProcessCheck{}
 // RTProcessCheck collects numeric statistics about the live processes.
 // The instance stores state between checks for calculation of rates and CPU.
 type RTProcessCheck struct {
-	sysInfo      *model.SystemInfo
-	lastCPUTime  cpu.TimesStat
-	lastProcs    map[int32]*process.FilledProcess
+	probe       *procutil.ProcessProbe
+	sysInfo     *model.SystemInfo
+	lastCPUTime *procutil.CPUTimesStat
+	// TODO: store Stats instead
+	lastProcs    map[int32]*procutil.Process
 	lastCtrRates map[string]util.ContainerRateMetrics
 	lastRun      time.Time
 }
@@ -28,6 +29,7 @@ type RTProcessCheck struct {
 // Init initializes a new RTProcessCheck instance.
 func (r *RTProcessCheck) Init(_ *config.AgentConfig, info *model.SystemInfo) {
 	r.sysInfo = info
+	r.probe = procutil.NewProcessProbe()
 }
 
 // Name returns the name of the RTProcessCheck.
@@ -43,6 +45,7 @@ func (r *RTProcessCheck) RealTime() bool { return true }
 // limit the message size on intake.
 // See agent.proto for the schema of the message and models used.
 func (r *RTProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.MessageBody, error) {
+	// TODO: move this out of gopsutil
 	cpuTimes, err := cpu.Times(false)
 	if err != nil {
 		return nil, err
@@ -50,7 +53,9 @@ func (r *RTProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Me
 	if len(cpuTimes) == 0 {
 		return nil, errEmptyCPUTime
 	}
-	procs, err := getAllProcesses(cfg)
+	cpuTime := procutil.AssignCPUStat(cpuTimes[0])
+
+	procs, err := r.probe.ProcessesByPID()
 	if err != nil {
 		return nil, err
 	}
@@ -60,13 +65,12 @@ func (r *RTProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Me
 	if r.lastProcs == nil {
 		r.lastCtrRates = util.ExtractContainerRateMetric(ctrList)
 		r.lastProcs = procs
-		r.lastCPUTime = cpuTimes[0]
+		r.lastCPUTime = cpuTime
 		r.lastRun = time.Now()
 		return nil, nil
 	}
 
-	chunkedStats := fmtProcessStats(cfg, procs, r.lastProcs,
-		ctrList, cpuTimes[0], r.lastCPUTime, r.lastRun)
+	chunkedStats := fmtProcessStats(cfg, procs, r.lastProcs, ctrList, cpuTime, r.lastCPUTime, r.lastRun)
 	groupSize := len(chunkedStats)
 	chunkedCtrStats := fmtContainerStats(ctrList, r.lastCtrRates, r.lastRun, groupSize)
 	messages := make([]model.MessageBody, 0, groupSize)
@@ -88,7 +92,7 @@ func (r *RTProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Me
 	r.lastRun = time.Now()
 	r.lastProcs = procs
 	r.lastCtrRates = util.ExtractContainerRateMetric(ctrList)
-	r.lastCPUTime = cpuTimes[0]
+	r.lastCPUTime = cpuTime
 
 	return messages, nil
 }
@@ -96,9 +100,9 @@ func (r *RTProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Me
 // fmtProcessStats formats and chunks a slice of ProcessStat into chunks.
 func fmtProcessStats(
 	cfg *config.AgentConfig,
-	procs, lastProcs map[int32]*process.FilledProcess,
+	procs, lastProcs map[int32]*procutil.Process,
 	ctrList []*containers.Container,
-	syst2, syst1 cpu.TimesStat,
+	syst2, syst1 *procutil.CPUTimesStat,
 	lastRun time.Time,
 ) [][]*model.ProcessStat {
 	cidByPid := make(map[int32]string, len(ctrList))
@@ -117,16 +121,16 @@ func fmtProcessStats(
 
 		chunk = append(chunk, &model.ProcessStat{
 			Pid:                    fp.Pid,
-			CreateTime:             fp.CreateTime,
+			CreateTime:             fp.Stats.CreateTime,
 			Memory:                 formatMemory(fp),
-			Cpu:                    formatCPU(fp, fp.CpuTime, lastProcs[fp.Pid].CpuTime, syst2, syst1),
-			Nice:                   fp.Nice,
-			Threads:                fp.NumThreads,
-			OpenFdCount:            fp.OpenFdCount,
+			Cpu:                    formatCPU(fp.Stats, lastProcs[fp.Pid].Stats, syst2, syst1),
+			Nice:                   fp.Stats.Nice,
+			Threads:                fp.Stats.NumThreads,
+			OpenFdCount:            fp.Stats.OpenFdCount,
 			ProcessState:           model.ProcessState(model.ProcessState_value[fp.Status]),
-			IoStat:                 formatIO(fp, lastProcs[fp.Pid].IOStat, lastRun),
-			VoluntaryCtxSwitches:   uint64(fp.CtxSwitches.Voluntary),
-			InvoluntaryCtxSwitches: uint64(fp.CtxSwitches.Involuntary),
+			IoStat:                 formatIO(fp.Stats.IOStat, lastProcs[fp.Pid].Stats.IOStat, lastRun),
+			VoluntaryCtxSwitches:   uint64(fp.Stats.CtxSwitches.Voluntary),
+			InvoluntaryCtxSwitches: uint64(fp.Stats.CtxSwitches.Involuntary),
 			ContainerId:            cidByPid[fp.Pid],
 		})
 		if len(chunk) == cfg.MaxPerMessage {
