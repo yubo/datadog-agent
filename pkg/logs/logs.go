@@ -20,6 +20,7 @@ import (
 	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
 
+	"github.com/DataDog/datadog-agent/pkg/metadata/host"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -258,7 +259,7 @@ func metadataReady(endpoints *config.Endpoints, timeout int) error {
 		return errors.New(message)
 	}
 
-	tags := coreConfig.Datadog.GetStringSlice("tags")
+	tags := host.GetHostTags(true).System
 
 	for {
 		select {
