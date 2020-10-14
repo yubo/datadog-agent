@@ -13,10 +13,9 @@ import (
 
 	model "github.com/DataDog/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/config"
+	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/containers/metrics"
-	"github.com/DataDog/gopsutil/cpu"
-	"github.com/DataDog/gopsutil/process"
 )
 
 //nolint:unused
@@ -32,8 +31,8 @@ func makeContainer(id string) *containers.Container {
 }
 
 //nolint:deadcode,unused
-func procCtrGenerator(pCount int, cCount int, containeredProcs int) ([]*process.FilledProcess, []*containers.Container) {
-	procs := make([]*process.FilledProcess, 0, pCount)
+func procCtrGenerator(pCount int, cCount int, containeredProcs int) ([]*procutil.Process, []*containers.Container) {
+	procs := make([]*procutil.Process, 0, pCount)
 	for i := 0; i < pCount; i++ {
 		procs = append(procs, makeProcess(int32(i), strconv.Itoa(i)))
 	}
@@ -69,26 +68,35 @@ func containersByPid(ctrs []*containers.Container) map[int32]string {
 }
 
 //nolint:deadcode,unused
-func procsToHash(procs []*process.FilledProcess) (procsByPid map[int32]*process.FilledProcess) {
-	procsByPid = make(map[int32]*process.FilledProcess)
+func procsToHash(procs []*procutil.Process) (procsByPid map[int32]*procutil.Process) {
+	procsByPid = make(map[int32]*procutil.Process)
 	for _, p := range procs {
 		procsByPid[p.Pid] = p
 	}
 	return
 }
 
-func makeProcess(pid int32, cmdline string) *process.FilledProcess {
-	return &process.FilledProcess{
-		Pid:         pid,
-		Cmdline:     strings.Split(cmdline, " "),
-		MemInfo:     &process.MemoryInfoStat{},
-		CtxSwitches: &process.NumCtxSwitchesStat{},
+func makeProcess(pid int32, cmdline string) *procutil.Process {
+	return &procutil.Process{
+		Pid:     pid,
+		Cmdline: strings.Split(cmdline, " "),
+		Stats: &procutil.Stats{
+			CreateTime:  0,
+			Nice:        0,
+			OpenFdCount: 0,
+			NumThreads:  0,
+			CPUTime:     &procutil.CPUTimesStat{},
+			MemInfo:     &procutil.MemoryInfoStat{},
+			MemInfoEx:   &procutil.MemoryInfoExStat{},
+			IOStat:      &procutil.IOCountersStat{},
+			CtxSwitches: &procutil.NumCtxSwitchesStat{},
+		},
 	}
 }
 
 //nolint:deadcode,unused
 // procMsgsVerification takes raw containers and processes and make sure the chunked messages have all data, and each chunk has the correct grouping
-func procMsgsVerification(t *testing.T, msgs []model.MessageBody, rawContainers []*containers.Container, rawProcesses []*process.FilledProcess, maxSize int, cfg *config.AgentConfig) {
+func procMsgsVerification(t *testing.T, msgs []model.MessageBody, rawContainers []*containers.Container, rawProcesses []*procutil.Process, maxSize int, cfg *config.AgentConfig) {
 	actualProcs := 0
 	for _, msg := range msgs {
 		payload := msg.(*model.CollectorProc)
@@ -123,7 +131,7 @@ func procMsgsVerification(t *testing.T, msgs []model.MessageBody, rawContainers 
 }
 
 func TestProcessChunking(t *testing.T) {
-	p := []*process.FilledProcess{
+	p := []*procutil.Process{
 		makeProcess(1, "git clone google.com"),
 		makeProcess(2, "mine-bitcoins -all -x"),
 		makeProcess(3, "datadog-process-agent -ddconfig datadog.conf"),
@@ -131,43 +139,43 @@ func TestProcessChunking(t *testing.T) {
 	}
 	containers := []*containers.Container{}
 	lastRun := time.Now().Add(-5 * time.Second)
-	syst1, syst2 := cpu.TimesStat{}, cpu.TimesStat{}
+	syst1, syst2 := &procutil.CPUTimesStat{}, &procutil.CPUTimesStat{}
 	cfg := config.NewDefaultAgentConfig(false)
 
 	for i, tc := range []struct {
-		cur, last      []*process.FilledProcess
+		cur, last      []*procutil.Process
 		maxSize        int
 		blacklist      []string
 		expectedTotal  int
 		expectedChunks int
 	}{
 		{
-			cur:            []*process.FilledProcess{p[0], p[1], p[2]},
-			last:           []*process.FilledProcess{p[0], p[1], p[2]},
+			cur:            []*procutil.Process{p[0], p[1], p[2]},
+			last:           []*procutil.Process{p[0], p[1], p[2]},
 			maxSize:        1,
 			blacklist:      []string{},
 			expectedTotal:  3,
 			expectedChunks: 3,
 		},
 		{
-			cur:            []*process.FilledProcess{p[0], p[1], p[2]},
-			last:           []*process.FilledProcess{p[0], p[2]},
+			cur:            []*procutil.Process{p[0], p[1], p[2]},
+			last:           []*procutil.Process{p[0], p[2]},
 			maxSize:        1,
 			blacklist:      []string{},
 			expectedTotal:  2,
 			expectedChunks: 2,
 		},
 		{
-			cur:            []*process.FilledProcess{p[0], p[1], p[2], p[3]},
-			last:           []*process.FilledProcess{p[0], p[1], p[2], p[3]},
+			cur:            []*procutil.Process{p[0], p[1], p[2], p[3]},
+			last:           []*procutil.Process{p[0], p[1], p[2], p[3]},
 			maxSize:        10,
 			blacklist:      []string{"git", "datadog"},
 			expectedTotal:  2,
 			expectedChunks: 1,
 		},
 		{
-			cur:            []*process.FilledProcess{p[0], p[1], p[2], p[3]},
-			last:           []*process.FilledProcess{p[0], p[1], p[2], p[3]},
+			cur:            []*procutil.Process{p[0], p[1], p[2], p[3]},
+			last:           []*procutil.Process{p[0], p[1], p[2], p[3]},
 			maxSize:        10,
 			blacklist:      []string{"git", "datadog", "foo", "mine"},
 			expectedTotal:  0,
@@ -181,11 +189,11 @@ func TestProcessChunking(t *testing.T) {
 		cfg.Blacklist = bl
 		cfg.MaxPerMessage = tc.maxSize
 
-		cur := make(map[int32]*process.FilledProcess)
+		cur := make(map[int32]*procutil.Process)
 		for _, c := range tc.cur {
 			cur[c.Pid] = c
 		}
-		last := make(map[int32]*process.FilledProcess)
+		last := make(map[int32]*procutil.Process)
 		for _, c := range tc.last {
 			last[c.Pid] = c
 		}
@@ -239,16 +247,18 @@ func TestRateCalculation(t *testing.T) {
 }
 
 func TestFormatIO(t *testing.T) {
-	fp := &process.FilledProcess{
-		IOStat: &process.IOCountersStat{
-			ReadCount:  6,
-			WriteCount: 8,
-			ReadBytes:  10,
-			WriteBytes: 12,
+	fp := &procutil.Process{
+		Stats: &procutil.Stats{
+			IOStat: &procutil.IOCountersStat{
+				ReadCount:  6,
+				WriteCount: 8,
+				ReadBytes:  10,
+				WriteBytes: 12,
+			},
 		},
 	}
 
-	last := &process.IOCountersStat{
+	last := &procutil.IOCountersStat{
 		ReadCount:  1,
 		WriteCount: 2,
 		ReadBytes:  3,
@@ -256,12 +266,12 @@ func TestFormatIO(t *testing.T) {
 	}
 
 	// fp.IoStat is nil
-	assert.NotNil(t, formatIO(&process.FilledProcess{}, last, time.Now().Add(-2*time.Second)))
+	assert.NotNil(t, formatIO(&procutil.IOCountersStat{}, last, time.Now().Add(-2*time.Second)))
 
 	// Elapsed time < 1s
-	assert.NotNil(t, formatIO(fp, last, time.Now()))
+	assert.NotNil(t, formatIO(fp.Stats.IOStat, last, time.Now()))
 
-	result := formatIO(fp, last, time.Now().Add(-1*time.Second))
+	result := formatIO(fp.Stats.IOStat, last, time.Now().Add(-1*time.Second))
 	require.NotNil(t, result)
 
 	assert.Equal(t, float32(5), result.ReadRate)

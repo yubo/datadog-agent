@@ -11,10 +11,9 @@ import (
 
 	model "github.com/DataDog/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/config"
+	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
-	"github.com/DataDog/gopsutil/cpu"
-	"github.com/DataDog/gopsutil/process"
 )
 
 // TestRandomizeMessage generates some processes and containers, then do a deep dive on return messages and make sure the chunk logic holds
@@ -82,7 +81,7 @@ func TestRandomizeMessages(t *testing.T) {
 			procsByPid := procsToHash(procs)
 
 			lastRun := time.Now().Add(-5 * time.Second)
-			syst1, syst2 := cpu.TimesStat{}, cpu.TimesStat{}
+			syst1, syst2 := &procutil.CPUTimesStat{}, &procutil.CPUTimesStat{}
 			cfg := config.NewDefaultAgentConfig(false)
 			sysInfo := &model.SystemInfo{}
 			lastCtrRates := util.ExtractContainerRateMetric(ctrs)
@@ -102,7 +101,7 @@ func TestRandomizeMessages(t *testing.T) {
 
 // TestBasicProcessMessages tests basic cases for creating payloads by hard-coded scenarios
 func TestBasicProcessMessages(t *testing.T) {
-	p := []*process.FilledProcess{
+	p := []*procutil.Process{
 		makeProcess(1, "git clone google.com"),
 		makeProcess(2, "mine-bitcoins -all -x"),
 		makeProcess(3, "foo --version"),
@@ -117,14 +116,14 @@ func TestBasicProcessMessages(t *testing.T) {
 	c[0].Pids = []int32{1, 2}
 	c[1].Pids = []int32{3}
 	lastRun := time.Now().Add(-5 * time.Second)
-	syst1, syst2 := cpu.TimesStat{}, cpu.TimesStat{}
+	syst1, syst2 := &procutil.CPUTimesStat{}, &procutil.CPUTimesStat{}
 	cfg := config.NewDefaultAgentConfig(false)
 	sysInfo := &model.SystemInfo{}
 	lastCtrRates := util.ExtractContainerRateMetric(c)
 
 	for i, tc := range []struct {
 		testName        string
-		cur, last       map[int32]*process.FilledProcess
+		cur, last       map[int32]*procutil.Process
 		containers      []*containers.Container
 		maxSize         int
 		blacklist       []string
@@ -134,8 +133,8 @@ func TestBasicProcessMessages(t *testing.T) {
 	}{
 		{
 			testName:        "no containers",
-			cur:             map[int32]*process.FilledProcess{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
-			last:            map[int32]*process.FilledProcess{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
+			cur:             map[int32]*procutil.Process{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
+			last:            map[int32]*procutil.Process{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
 			maxSize:         2,
 			containers:      []*containers.Container{},
 			blacklist:       []string{},
@@ -145,8 +144,8 @@ func TestBasicProcessMessages(t *testing.T) {
 		},
 		{
 			testName:        "container processes",
-			cur:             map[int32]*process.FilledProcess{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
-			last:            map[int32]*process.FilledProcess{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
+			cur:             map[int32]*procutil.Process{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
+			last:            map[int32]*procutil.Process{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
 			maxSize:         1,
 			containers:      []*containers.Container{c[0]},
 			blacklist:       []string{},
@@ -156,8 +155,8 @@ func TestBasicProcessMessages(t *testing.T) {
 		},
 		{
 			testName:        "non-container processes chunked",
-			cur:             map[int32]*process.FilledProcess{p[2].Pid: p[2], p[3].Pid: p[3], p[4].Pid: p[4]},
-			last:            map[int32]*process.FilledProcess{p[2].Pid: p[2], p[3].Pid: p[3], p[4].Pid: p[4]},
+			cur:             map[int32]*procutil.Process{p[2].Pid: p[2], p[3].Pid: p[3], p[4].Pid: p[4]},
+			last:            map[int32]*procutil.Process{p[2].Pid: p[2], p[3].Pid: p[3], p[4].Pid: p[4]},
 			maxSize:         1,
 			containers:      []*containers.Container{c[1]},
 			blacklist:       []string{},
@@ -167,8 +166,8 @@ func TestBasicProcessMessages(t *testing.T) {
 		},
 		{
 			testName:        "non-container processes not chunked",
-			cur:             map[int32]*process.FilledProcess{p[2].Pid: p[2], p[3].Pid: p[3], p[4].Pid: p[4]},
-			last:            map[int32]*process.FilledProcess{p[2].Pid: p[2], p[3].Pid: p[3], p[4].Pid: p[4]},
+			cur:             map[int32]*procutil.Process{p[2].Pid: p[2], p[3].Pid: p[3], p[4].Pid: p[4]},
+			last:            map[int32]*procutil.Process{p[2].Pid: p[2], p[3].Pid: p[3], p[4].Pid: p[4]},
 			maxSize:         3,
 			containers:      []*containers.Container{c[1]},
 			blacklist:       []string{},
@@ -178,8 +177,8 @@ func TestBasicProcessMessages(t *testing.T) {
 		},
 		{
 			testName:        "no non-container processes",
-			cur:             map[int32]*process.FilledProcess{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
-			last:            map[int32]*process.FilledProcess{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
+			cur:             map[int32]*procutil.Process{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
+			last:            map[int32]*procutil.Process{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
 			maxSize:         1,
 			containers:      []*containers.Container{c[0], c[1]},
 			blacklist:       []string{},
@@ -189,8 +188,8 @@ func TestBasicProcessMessages(t *testing.T) {
 		},
 		{
 			testName:        "all container processes skipped",
-			cur:             map[int32]*process.FilledProcess{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
-			last:            map[int32]*process.FilledProcess{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
+			cur:             map[int32]*procutil.Process{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
+			last:            map[int32]*procutil.Process{p[0].Pid: p[0], p[1].Pid: p[1], p[2].Pid: p[2]},
 			maxSize:         2,
 			containers:      []*containers.Container{c[1]},
 			blacklist:       []string{"foo"},
