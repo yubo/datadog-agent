@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -181,7 +182,7 @@ func Stop() {
 	log.Info("logs-agent stopped")
 }
 
-func pollMeta(endpoint string, tags []string) (bool, error) {
+func pollMeta(endpoint string, exactTags []string, tagKeys []string) (bool, error) {
 	hostname, err := util.GetHostname()
 	if err != nil {
 		return false, err
@@ -234,15 +235,26 @@ func pollMeta(endpoint string, tags []string) (bool, error) {
 			tagSet[tag.(string)] = struct{}{}
 		}
 
-		ready := true
-		for _, tag := range tags {
+		for _, tag := range exactTags {
 			_, ok := tagSet[tag]
 			if !ok {
-				ready = false
+				return false, nil
 			}
 		}
 
-		return ready, nil
+		for _, key := range tagKeys {
+			match := false
+			for tag, _ := range tagSet {
+				if strings.HasPrefix(tag, fmt.Sprintf("%s:", key)) {
+					match = true
+				}
+			}
+			if !match {
+				return false, nil
+			}
+		}
+
+		return true, nil
 
 	} else if resp.StatusCode == 403 {
 		return false, nil
@@ -266,10 +278,7 @@ func metadataReady(ctx context.Context, endpoints *config.Endpoints, timeout int
 	}
 
 	tags := host.GetHostTags(true).System
-	expected := coreConfig.Datadog.GetStringSlice("expected_external_tags")
-	if len(expected) > 0 {
-		tags = expected
-	}
+	expectedTagKeys := coreConfig.Datadog.GetStringSlice("expected_external_tags")
 
 	backoff := 0
 	for {
@@ -283,7 +292,7 @@ func metadataReady(ctx context.Context, endpoints *config.Endpoints, timeout int
 				backoff -= 1
 				continue
 			}
-			found, err := pollMeta(api, tags)
+			found, err := pollMeta(api, tags, expectedTagKeys)
 			if err != nil {
 				log.Infof("There was an issue grabbing the host tags, backing off: %v", err)
 				backoff = backoff * 2
