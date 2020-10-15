@@ -72,6 +72,9 @@ var (
 var (
 	// flags variables
 	pidfilePath string
+
+	// logs cancellation
+	logsCancel context.CancelFunc
 )
 
 func init() {
@@ -304,7 +307,7 @@ func StartAgent() error {
 		}
 
 		// async start
-		go logs.Start(func() *autodiscovery.AutoConfig { return common.AC })
+		go logs.Start(common.MainCtx, func() *autodiscovery.AutoConfig { return common.AC })
 	} else {
 		log.Info("logs-agent disabled")
 	}

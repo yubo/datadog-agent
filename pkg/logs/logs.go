@@ -6,6 +6,7 @@
 package logs
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -51,13 +52,15 @@ var (
 	isRunning int32
 	// logs-agent
 	agent *Agent
+	// Logs context canceled
+	MainCtxCanceled = errors.New("Main context was canceled")
 )
 
 // Start starts logs-agent
 // getAC is a func returning the prepared AutoConfig. It is nil until
 // the AutoConfig is ready, please consider using BlockUntilAutoConfigRanOnce
 // instead of directly using it.
-func Start(getAC func() *autodiscovery.AutoConfig) error {
+func Start(ctx context.Context, getAC func() *autodiscovery.AutoConfig) error {
 	if IsAgentRunning() {
 		return nil
 	}
@@ -109,9 +112,12 @@ func Start(getAC func() *autodiscovery.AutoConfig) error {
 	if metadataTO > 0 {
 		if coreConfig.Datadog.GetString("app_key") != "" {
 			// poll for a certain amount of time
-			err := metadataReady(endpoints, metadataTO)
+			err := metadataReady(ctx, endpoints, metadataTO)
 			if err != nil {
 				log.Infof("There was an issue waiting for the metadata: %v", err)
+				if errors.Is(err, MainCtxCanceled) {
+					return err
+				}
 			}
 		} else {
 			log.Info("Application key required to wait for host tags on backend, skipping wait.")
@@ -246,7 +252,7 @@ func pollMeta(endpoint string, tags []string) (bool, error) {
 }
 
 //TODO: stop this if the agents shuts down
-func metadataReady(endpoints *config.Endpoints, timeout int) error {
+func metadataReady(ctx context.Context, endpoints *config.Endpoints, timeout int) error {
 	timer := time.NewTimer(time.Duration(timeout) * time.Second)
 	ticker := time.NewTicker(MetaPollInterval)
 
@@ -260,19 +266,31 @@ func metadataReady(endpoints *config.Endpoints, timeout int) error {
 	}
 
 	tags := host.GetHostTags(true).System
+	expected := coreConfig.Datadog.GetStringSlice("expected_external_tags")
+	if len(expected) > 0 {
+		tags = expected
+	}
 
+	backoff := 0
 	for {
 		select {
+		case <-ctx.Done():
+			return errors.New("Metadata tag availability wait canceled")
 		case <-timer.C:
-			log.Info("Timeout waiting for host metadata, some log entries may be missing host tags")
 			return errors.New("unable to resolve metadata in time")
 		case <-ticker.C:
+			if backoff > 0 {
+				backoff -= 1
+				continue
+			}
 			found, err := pollMeta(api, tags)
 			if err != nil {
-				log.Infof("There was an issue grabbing the host tags: %v", err)
+				log.Infof("There was an issue grabbing the host tags, backing off: %v", err)
+				backoff = backoff * 2
 			} else if found {
 				return nil
 			}
+			backoff = 0
 		}
 	}
 }
