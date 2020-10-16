@@ -91,7 +91,7 @@ variables:
   S3_DSD6_URI: s3://dsd6-staging
   RELEASE_VERSION_6: nightly
   RELEASE_VERSION_7: nightly-a7
-  DATADOG_AGENT_BUILDIMAGES: v2894686-d80c3ce
+  DATADOG_AGENT_BUILDIMAGES: v3210512-d62e064
   DATADOG_AGENT_BUILDERS: v2894668-736db00
   DATADOG_AGENT_WINBUILDIMAGES: v3078400-b2b4314
   DATADOG_AGENT_ARMBUILDIMAGES: v2894686-d80c3ce
@@ -217,7 +217,7 @@ variables:
 
 build_libbcc_x64:
   extends: .build_libbcc_common
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_x64:$DATADOG_AGENT_BUILDIMAGES
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_x64:v2894686-d80c3ce
   tags: [ "runner:main", "size:large" ]
   variables:
     ARCH: amd64
