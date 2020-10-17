@@ -7,29 +7,19 @@ package logs
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	stdHttp "net/http"
-	"net/url"
-	"path"
-	"regexp"
-	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery"
 	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
-	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
-
-	"github.com/DataDog/datadog-agent/pkg/metadata/host"
-	"github.com/DataDog/datadog-agent/pkg/util"
-	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
+	"github.com/DataDog/datadog-agent/pkg/metadata"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"github.com/DataDog/datadog-agent/pkg/version"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/client/http"
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
+	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
 	"github.com/DataDog/datadog-agent/pkg/logs/scheduler"
 	"github.com/DataDog/datadog-agent/pkg/logs/service"
 	"github.com/DataDog/datadog-agent/pkg/logs/status"
@@ -41,20 +31,13 @@ const (
 	invalidEndpoints       = "invalid_endpoints"
 )
 
-const (
-	// Metadata Polling interval in Seconds
-	MetaPollInterval time.Duration = 2 * time.Second
-	// Metadata API endpoint
-	MetaEndpoint string = "api/v1/tags/hosts/"
-)
-
 var (
 	// isRunning indicates whether logs-agent is running or not
 	isRunning int32
 	// logs-agent
 	agent *Agent
-	// Logs context canceled
-	MainCtxCanceled = errors.New("Main context was canceled")
+	// ErrMainCtxCanceled Logs context canceled
+	ErrMainCtxCanceled = errors.New("Main context was canceled")
 )
 
 // Start starts logs-agent
@@ -113,10 +96,10 @@ func Start(ctx context.Context, getAC func() *autodiscovery.AutoConfig) error {
 	if metadataTO > 0 {
 		if coreConfig.Datadog.GetString("app_key") != "" {
 			// poll for a certain amount of time
-			err := metadataReady(ctx, endpoints, metadataTO)
+			err := metadata.Ready(ctx, endpoints, metadataTO)
 			if err != nil {
 				log.Infof("There was an issue waiting for the metadata: %v", err)
-				if errors.Is(err, MainCtxCanceled) {
+				if errors.Is(err, ErrMainCtxCanceled) {
 					return err
 				}
 			}
@@ -180,128 +163,6 @@ func Stop() {
 		atomic.StoreInt32(&isRunning, 0)
 	}
 	log.Info("logs-agent stopped")
-}
-
-func pollMeta(endpoint string, exactTags []string, tagKeys []string) (bool, error) {
-	hostname, err := util.GetHostname()
-	if err != nil {
-		return false, err
-	}
-
-	uri, err := url.Parse(endpoint)
-	if err != nil {
-		return false, err
-	}
-	uri.Scheme = "https"
-
-	uri.Path = path.Join(uri.Path, hostname)
-	transport := httputils.CreateHTTPTransport()
-
-	// TODO: set a timeout on the client
-	client := &stdHttp.Client{
-		Transport: transport,
-	}
-
-	log.Debugf("Polling for metadata: %v", uri)
-	req, err := stdHttp.NewRequest("GET", uri.String(), nil)
-	if err != nil {
-		return false, err
-	}
-
-	req.Header.Set("User-Agent", fmt.Sprintf("datadog-agent/%s", version.AgentVersion))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("DD-API-KEY", coreConfig.Datadog.GetString("api_key"))
-	req.Header.Set("DD-APPLICATION-KEY", coreConfig.Datadog.GetString("app_key"))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	// Server will respond 200 if the key is valid or 403 if invalid
-	if resp.StatusCode == 200 {
-		var jsonResponse map[string]interface{}
-
-		json.NewDecoder(resp.Body).Decode(&jsonResponse)
-		log.Debugf("metadata response received: %v", jsonResponse)
-		_, found := jsonResponse["tags"]
-		if !found {
-			return false, nil
-		}
-
-		tagSet := make(map[string]struct{})
-		for _, tag := range jsonResponse["tags"].([]interface{}) {
-			tagSet[tag.(string)] = struct{}{}
-		}
-
-		for _, tag := range exactTags {
-			_, ok := tagSet[tag]
-			if !ok {
-				return false, nil
-			}
-		}
-
-		for _, key := range tagKeys {
-			match := false
-			for tag, _ := range tagSet {
-				if strings.HasPrefix(tag, fmt.Sprintf("%s:", key)) {
-					match = true
-				}
-			}
-			if !match {
-				return false, nil
-			}
-		}
-
-		return true, nil
-
-	} else if resp.StatusCode == 403 {
-		return false, nil
-	}
-
-	return false, nil
-}
-
-//TODO: stop this if the agents shuts down
-func metadataReady(ctx context.Context, endpoints *config.Endpoints, timeout int) error {
-	timer := time.NewTimer(time.Duration(timeout) * time.Second)
-	ticker := time.NewTicker(MetaPollInterval)
-
-	var api string
-	re := regexp.MustCompile(`datadoghq.(com|eu){1}$`)
-	if re.MatchString(endpoints.Main.Host) {
-		api = path.Join(fmt.Sprintf("api.%s", re.FindString(endpoints.Main.Host)), MetaEndpoint)
-	} else {
-		message := fmt.Sprintf("unsupported target domain: %s", endpoints.Main.Host)
-		return errors.New(message)
-	}
-
-	tags := host.GetHostTags(true).System
-	expectedTagKeys := coreConfig.Datadog.GetStringSlice("expected_external_tags")
-
-	backoff := 0
-	for {
-		select {
-		case <-ctx.Done():
-			return errors.New("Metadata tag availability wait canceled")
-		case <-timer.C:
-			return errors.New("unable to resolve metadata in time")
-		case <-ticker.C:
-			if backoff > 0 {
-				backoff -= 1
-				continue
-			}
-			found, err := pollMeta(api, tags, expectedTagKeys)
-			if err != nil {
-				log.Infof("There was an issue grabbing the host tags, backing off: %v", err)
-				backoff = backoff * 2
-			} else if found {
-				return nil
-			}
-			backoff = 0
-		}
-	}
 }
 
 // IsAgentRunning returns true if the logs-agent is running.
