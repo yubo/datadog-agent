@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/metadata/host"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
@@ -54,8 +55,13 @@ func (p *provider) GetTags() []string {
 		return []string{}
 	}
 
-	if IsMetaReady() {
-		tags = append(tags, host.GetHostTags(true).System...)
+	setTags := coreConfig.Datadog.GetBool("logs_config.early_host_tags")
+	if setTags {
+		if IsMetaReady() {
+			tags = append(tags, host.GetHostTags(true).System...)
+		}
+		return util.Dedupe(tags)
 	}
-	return util.Dedupe(tags)
+
+	return tags
 }
