@@ -1,5 +1,6 @@
 package util
 
+//Dedupe deduplicates elements in a string slice
 func Dedupe(s []string) []string {
 	m := make(map[string]struct{})
 	d := []string{}

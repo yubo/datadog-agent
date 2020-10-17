@@ -30,8 +30,8 @@ const (
 	MetaEndpoint string = "api/v1/tags/hosts/"
 )
 
-//MetadataReady waits for metadata to be available
-func MetadataReady(ctx context.Context, endpoints *config.Endpoints, timeout int) error {
+//Ready waits for metadata to be available
+func Ready(ctx context.Context, endpoints *config.Endpoints, timeout int) error {
 	timer := time.NewTimer(time.Duration(timeout) * time.Second)
 	ticker := time.NewTicker(MetaPollInterval)
 

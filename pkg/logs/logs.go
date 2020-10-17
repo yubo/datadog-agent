@@ -38,8 +38,6 @@ var (
 	isRunning int32
 	// logs-agent
 	agent *Agent
-	// Logs context canceled
-	MainCtxCanceled = errors.New("Main context was canceled")
 )
 
 // Start starts logs-agent
@@ -99,7 +97,7 @@ func Start(ctx context.Context, getAC func() *autodiscovery.AutoConfig) error {
 		if coreConfig.Datadog.GetString("app_key") != "" {
 			// poll for a certain amount of time
 			go func() {
-				err := metadata.MetadataReady(ctx, endpoints, metadataTO)
+				err := metadata.Ready(ctx, endpoints, metadataTO)
 				if err != nil {
 					log.Infof("There was an issue waiting for the metadata: %v", err)
 					return
