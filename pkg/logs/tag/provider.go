@@ -13,6 +13,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/metadata/host"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
+	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -56,5 +57,5 @@ func (p *provider) GetTags() []string {
 	if IsMetaReady() {
 		tags = append(tags, host.GetHostTags(true).System...)
 	}
-	return tags
+	return util.Dedupe(tags)
 }
