@@ -46,12 +46,12 @@ func appendAndSplitTags(target []string, tags []string, splits map[string]string
 }
 
 // GetHostTags get the host tags, optionally looking in the cache
-func GetHostTags(cached bool) *tags {
+func GetHostTags(cached bool) *Tags {
 
 	key := buildKey("hostTags")
 	if cached {
 		if x, found := cache.Cache.Get(key); found {
-			tags := x.(*tags)
+			tags := x.(*Tags)
 			return tags
 		}
 	}
@@ -114,7 +114,7 @@ func GetHostTags(cached bool) *tags {
 		}
 	}
 
-	t := &tags{
+	t := &Tags{
 		System:              hostTags,
 		GoogleCloudPlatform: gceTags,
 	}
