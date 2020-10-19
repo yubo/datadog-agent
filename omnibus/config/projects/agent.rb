@@ -178,9 +178,9 @@ dependency 'datadog-agent-prepare'
 dependency 'datadog-agent'
 
 # System-probe
-if linux?
-  dependency 'system-probe'
-end
+# if linux?
+#   dependency 'system-probe'
+# end
 
 # Additional software
 if windows?
