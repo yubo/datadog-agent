@@ -207,17 +207,17 @@ func (c *AgentConfig) applyDatadogConfig() error {
 	if config.Datadog.IsSet("apm_config.max_traces_per_second") {
 		c.MaxTPS = config.Datadog.GetFloat64("apm_config.max_traces_per_second")
 	}
-	if k := "apm_config.ignore_resources"; config.Datadog.IsSet(k) {
-		c.Ignore["resource"] = config.Datadog.GetStringSlice(k)
+	if config.Datadog.IsSet("apm_config.ignore_resources") {
+		c.Ignore["resource"] = config.Datadog.GetStringSlice("apm_config.ignore_resources")
 	}
 	if k := "apm_config.max_payload_size"; config.Datadog.IsSet(k) {
 		c.MaxRequestBytes = config.Datadog.GetInt64(k)
 	}
-	if k := "apm_config.replace_tags"; config.Datadog.IsSet(k) {
+
+	if config.Datadog.IsSet("apm_config.replace_tags") {
 		rt := make([]*ReplaceRule, 0)
-		if err := config.Datadog.UnmarshalKey(k, &rt); err != nil {
-			log.Errorf("Bad format for %q it should be of the form '[{\"name\": \"tag_name\",\"pattern\":\"pattern\",\"repl\":\"replace_str\"}]', error: %v", "apm_config.replace_tags", err)
-		} else {
+		err := config.Datadog.UnmarshalKey("apm_config.replace_tags", &rt)
+		if err == nil {
 			err := compileReplaceRules(rt)
 			if err != nil {
 				osutil.Exitf("replace_tags: %s", err)
@@ -281,19 +281,22 @@ func (c *AgentConfig) applyDatadogConfig() error {
 		}
 	}
 	// undocumeted
-	if k := "apm_config.analyzed_spans"; config.Datadog.IsSet(k) {
-		for key, rate := range config.Datadog.GetStringMap("apm_config.analyzed_spans") {
+	if config.Datadog.IsSet("apm_config.analyzed_spans") {
+		rateBySpan := make(map[string]float64)
+		if err := config.Datadog.UnmarshalKey("apm_config.analyzed_spans", &rateBySpan); err != nil {
+			return err
+		}
+		for key, rate := range rateBySpan {
 			serviceName, operationName, err := parseServiceAndOp(key)
 			if err != nil {
 				log.Errorf("Error parsing names: %v", err)
 				continue
 			}
-			if floatrate, ok := rate.(float64); ok {
-				if _, ok := c.AnalyzedSpansByService[serviceName]; !ok {
-					c.AnalyzedSpansByService[serviceName] = make(map[string]float64)
-				}
-				c.AnalyzedSpansByService[serviceName][operationName] = floatrate
+
+			if _, ok := c.AnalyzedSpansByService[serviceName]; !ok {
+				c.AnalyzedSpansByService[serviceName] = make(map[string]float64)
 			}
+			c.AnalyzedSpansByService[serviceName][operationName] = rate
 		}
 	}
 

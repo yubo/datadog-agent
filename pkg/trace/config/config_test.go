@@ -19,7 +19,6 @@ import (
 func cleanConfig() func() {
 	oldConfig := config.Datadog
 	config.Datadog = config.NewConfig("datadog", "DD", strings.NewReplacer(".", "_"))
-	config.InitConfig(config.Datadog)
 	return func() { config.Datadog = oldConfig }
 }
 
