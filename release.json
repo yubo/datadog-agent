@@ -2,7 +2,7 @@
     "nightly": {
         "INTEGRATIONS_CORE_VERSION": "master",
         "OMNIBUS_SOFTWARE_VERSION": "master",
-        "OMNIBUS_RUBY_VERSION": "kserrania/update-ruby",
+        "OMNIBUS_RUBY_VERSION": "kserrania/merge-upstream",
         "JMXFETCH_VERSION": "0.39.2",
         "JMXFETCH_HASH": "c59021fa9a02102ffb8a28e9083007aed5e11f6eef2b199f5446533d3a89ede4",
         "MACOS_BUILD_VERSION": "master",
@@ -13,7 +13,7 @@
     "nightly-a7": {
         "INTEGRATIONS_CORE_VERSION": "master",
         "OMNIBUS_SOFTWARE_VERSION": "master",
-        "OMNIBUS_RUBY_VERSION": "kserrania/update-ruby",
+        "OMNIBUS_RUBY_VERSION": "kserrania/merge-upstream",
         "JMXFETCH_VERSION": "0.39.2",
         "JMXFETCH_HASH": "c59021fa9a02102ffb8a28e9083007aed5e11f6eef2b199f5446533d3a89ede4",
         "MACOS_BUILD_VERSION": "master",
