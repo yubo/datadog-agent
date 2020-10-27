@@ -74,7 +74,7 @@ func (c *CoresnmpCheck) Configure(rawInstance integration.Data, rawInitConfig in
 		return err
 	}
 
-	return nilx
+	return nil
 }
 
 func coresnmpFactory() check.Check {
