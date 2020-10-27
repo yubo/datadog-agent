@@ -29,9 +29,6 @@ func processDeploymentList(deploymentList []*v1.Deployment, groupID int32, cfg *
 
 	for d := 0; d < len(deploymentList); d++ {
 		depl := deploymentList[d]
-		if orchestrator.SkipKubernetesResource(depl.UID, depl.ResourceVersion, orchestrator.K8sDeployment) {
-			continue
-		}
 
 		// extract deployment info
 		deployModel := extractDeployment(depl)
@@ -101,9 +98,6 @@ func processReplicaSetList(rsList []*v1.ReplicaSet, groupID int32, cfg *config.A
 
 	for rs := 0; rs < len(rsList); rs++ {
 		r := rsList[rs]
-		if orchestrator.SkipKubernetesResource(r.UID, r.ResourceVersion, orchestrator.K8sReplicaSet) {
-			continue
-		}
 
 		// extract replica set info
 		rsModel := extractReplicaSet(r)
