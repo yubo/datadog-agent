@@ -52,11 +52,6 @@ func ProcessPodlist(podList []*v1.Pod, groupID int32, cfg *config.AgentConfig, h
 			podModel.Metadata.Uid = newUID
 		}
 
-		pd := podList[p]
-		if SkipKubernetesResource(pd.UID, pd.ResourceVersion, K8sPod) {
-			continue
-		}
-
 		// insert tagger tags
 		tags, err := tagger.Tag(kubelet.PodUIDToTaggerEntityName(string(podList[p].UID)), collectors.HighCardinality)
 		if err != nil {
