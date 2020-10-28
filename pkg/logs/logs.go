@@ -97,7 +97,7 @@ func Start(ctx context.Context, getAC func() *autodiscovery.AutoConfig) error {
 		if coreConfig.Datadog.GetString("app_key") != "" {
 			// poll for a certain amount of time
 			go func() {
-				err := metadata.Ready(ctx, endpoints, metadataTO)
+				err := metadata.Ready(ctx, endpoints.Main.Host, metadataTO)
 				if err != nil {
 					log.Infof("There was an issue waiting for the metadata: %v", err)
 					return

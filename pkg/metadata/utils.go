@@ -19,8 +19,6 @@ import (
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/version"
-
-	"github.com/DataDog/datadog-agent/pkg/logs/config"
 )
 
 const (
@@ -31,16 +29,16 @@ const (
 )
 
 //Ready waits for metadata to be available
-func Ready(ctx context.Context, endpoints *config.Endpoints, timeout int) error {
+func Ready(ctx context.Context, endpoint string, timeout int) error {
 	timer := time.NewTimer(time.Duration(timeout) * time.Second)
 	ticker := time.NewTicker(MetaPollInterval)
 
 	var api string
 	re := regexp.MustCompile(`datadoghq.(com|eu){1}$`)
-	if re.MatchString(endpoints.Main.Host) {
-		api = path.Join(fmt.Sprintf("api.%s", re.FindString(endpoints.Main.Host)), MetaEndpoint)
+	if re.MatchString(endpoint) {
+		api = path.Join(fmt.Sprintf("api.%s", re.FindString(endpoint)), MetaEndpoint)
 	} else {
-		message := fmt.Sprintf("unsupported target domain: %s", endpoints.Main.Host)
+		message := fmt.Sprintf("unsupported target domain: %s", endpoint)
 		return errors.New(message)
 	}
 
