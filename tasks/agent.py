@@ -58,6 +58,7 @@ AGENT_CORECHECKS = [
 IOT_AGENT_CORECHECKS = [
     "cpu",
     "disk",
+    "docker",
     "io",
     "load",
     "memory",
