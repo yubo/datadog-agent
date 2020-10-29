@@ -297,13 +297,12 @@ build do
       patch :source => "create-regex-at-runtime.patch", :target => "#{install_dir}/embedded/lib/python2.7/site-packages/yaml/reader.py"
     end
 
-  end
-
-  # Run pip check to make sure the agent's python environment is clean, all the dependencies are compatible
-  if windows?
-    command "#{python} -m pip check"
-  else
-    command "#{pip} check"
+    # Run pip check to make sure the agent's python environment is clean, all the dependencies are compatible
+    if windows?
+      command "#{python} -m pip check"
+    else
+      command "#{pip} check"
+    end
   end
 
   # Ship `requirements-agent-release.txt` file containing the versions of every check shipped with the agent
