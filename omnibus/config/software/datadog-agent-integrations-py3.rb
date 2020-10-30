@@ -70,6 +70,9 @@ blacklist_packages = Array.new
 # We build these manually
 blacklist_packages.push(/^aerospike==/)
 
+# WIP to make build pass
+blacklist_packages.push(/^snowflake-connector-python==/)
+
 if suse?
   blacklist_folders.push('aerospike')  # Temporarily blacklist Aerospike until builder supports new dependency
 end
