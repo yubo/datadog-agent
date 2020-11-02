@@ -114,11 +114,7 @@ func newController(ctx ControllerContext) (*Controller, error) {
 		log.Errorf("Error loading the process config: %s", err)
 	}
 
-	keysPerDomain := make(map[string][]string)
-	for _, ep := range cfg.OrchestratorEndpoints {
-		keysPerDomain[ep.Endpoint.String()] = []string{ep.APIKey}
-	}
-
+	keysPerDomain := api.KeysPerDomains(cfg.OrchestratorEndpoints)
 	podForwarderOpts := forwarder.NewOptions(keysPerDomain)
 	podForwarderOpts.DisableAPIKeyChecking = true
 
