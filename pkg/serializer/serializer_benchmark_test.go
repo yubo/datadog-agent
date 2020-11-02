@@ -9,6 +9,7 @@ package serializer
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -57,20 +58,72 @@ func benchmarkSplit(b *testing.B, numberOfSeries int) {
 	}
 }
 
-func BenchmarkJSONStream1(b *testing.B)        { benchmarkJSONStream(b, 1) }
-func BenchmarkJSONStream10(b *testing.B)       { benchmarkJSONStream(b, 10) }
-func BenchmarkJSONStream100(b *testing.B)      { benchmarkJSONStream(b, 100) }
-func BenchmarkJSONStream1000(b *testing.B)     { benchmarkJSONStream(b, 1000) }
-func BenchmarkJSONStream10000(b *testing.B)    { benchmarkJSONStream(b, 10000) }
-func BenchmarkJSONStream100000(b *testing.B)   { benchmarkJSONStream(b, 100000) }
-func BenchmarkJSONStream1000000(b *testing.B)  { benchmarkJSONStream(b, 1000000) }
-func BenchmarkJSONStream10000000(b *testing.B) { benchmarkJSONStream(b, 10000000) }
+func BenchmarkJSONStream1(b *testing.B)       { benchmarkJSONStream(b, 1) }
+func BenchmarkJSONStream10(b *testing.B)      { benchmarkJSONStream(b, 10) }
+func BenchmarkJSONStream100(b *testing.B)     { benchmarkJSONStream(b, 100) }
+func BenchmarkJSONStream1000(b *testing.B)    { benchmarkJSONStream(b, 1000) }
+func BenchmarkJSONStream10000(b *testing.B)   { benchmarkJSONStream(b, 10000) }
+func BenchmarkJSONStream100000(b *testing.B)  { benchmarkJSONStream(b, 100000) }
+func BenchmarkJSONStream1000000(b *testing.B) { benchmarkJSONStream(b, 1000000) }
 
-func BenchmarkSplit1(b *testing.B)        { benchmarkSplit(b, 1) }
-func BenchmarkSplit10(b *testing.B)       { benchmarkSplit(b, 10) }
-func BenchmarkSplit100(b *testing.B)      { benchmarkSplit(b, 100) }
-func BenchmarkSplit1000(b *testing.B)     { benchmarkSplit(b, 1000) }
-func BenchmarkSplit10000(b *testing.B)    { benchmarkSplit(b, 10000) }
-func BenchmarkSplit100000(b *testing.B)   { benchmarkSplit(b, 100000) }
-func BenchmarkSplit1000000(b *testing.B)  { benchmarkSplit(b, 1000000) }
-func BenchmarkSplit10000000(b *testing.B) { benchmarkSplit(b, 10000000) }
+// func BenchmarkJSONStream10000000(b *testing.B) { benchmarkJSONStream(b, 10000000) }
+
+func BenchmarkSerJSONStream(b *testing.B) {
+
+	runs := 200
+
+	seriesCollection := []metrics.Series{}
+
+	for i := 0; i < runs; i++ {
+		seriesCollection = append(seriesCollection, buildSeries(i*i))
+	}
+
+	payloadBuilder := jsonstream.NewPayloadBuilder()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+
+		for i := 0; i < runs; i++ {
+			results, _ = payloadBuilder.Build(seriesCollection[i])
+		}
+
+	}
+}
+
+func BenchmarkParJSONStream(b *testing.B) {
+
+	runs := 200
+
+	seriesCollection := []metrics.Series{}
+
+	for i := 0; i < runs; i++ {
+		seriesCollection = append(seriesCollection, buildSeries(i*i))
+	}
+
+	var wg sync.WaitGroup
+
+	payloadBuilder := jsonstream.NewPayloadBuilder()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		for i := 0; i < runs; i++ {
+			wg.Add(1)
+			go func(i int) {
+				results, _ = payloadBuilder.Build(seriesCollection[i])
+				wg.Done()
+			}(i)
+
+		}
+		wg.Wait()
+	}
+}
+
+func BenchmarkSplit1(b *testing.B)       { benchmarkSplit(b, 1) }
+func BenchmarkSplit10(b *testing.B)      { benchmarkSplit(b, 10) }
+func BenchmarkSplit100(b *testing.B)     { benchmarkSplit(b, 100) }
+func BenchmarkSplit1000(b *testing.B)    { benchmarkSplit(b, 1000) }
+func BenchmarkSplit10000(b *testing.B)   { benchmarkSplit(b, 10000) }
+func BenchmarkSplit100000(b *testing.B)  { benchmarkSplit(b, 100000) }
+func BenchmarkSplit1000000(b *testing.B) { benchmarkSplit(b, 1000000) }
+
+// func BenchmarkSplit10000000(b *testing.B) { benchmarkSplit(b, 10000000) }
