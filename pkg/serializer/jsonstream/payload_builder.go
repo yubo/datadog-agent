@@ -63,6 +63,9 @@ func (b *PayloadBuilder) BuildWithOnErrItemTooBigPolicy(
 	defer b.mu.Unlock()
 	b.mu.Lock()
 
+	b.input.Reset()
+	b.output.Reset()
+
 	var payloads forwarder.Payloads
 	var i int
 	itemCount := m.Len()
