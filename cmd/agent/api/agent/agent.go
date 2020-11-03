@@ -59,6 +59,7 @@ func SetupHandlers(r *mux.Router) *mux.Router {
 	r.HandleFunc("/config/{setting}", setRuntimeConfig).Methods("POST")
 	r.HandleFunc("/tagger-list", getTaggerList).Methods("GET")
 	r.HandleFunc("/secrets", secretInfo).Methods("GET")
+	r.HandleFunc("/snmp/devices", getAllSnmpDevices).Methods("GET")
 
 	return r
 }
@@ -409,6 +410,11 @@ func secretInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(jsonInfo)
+}
+
+func getAllSnmpDevices(w http.ResponseWriter, r *http.Request) {
+	body, _ := json.Marshal("It works!")
+	w.Write(body)
 }
 
 // max returns the maximum value between a and b.

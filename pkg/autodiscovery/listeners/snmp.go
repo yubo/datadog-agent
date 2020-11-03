@@ -53,6 +53,12 @@ type SNMPService struct {
 // Make sure SNMPService implements the Service interface
 var _ Service = &SNMPService{}
 
+type snmpDevice struct {
+	Sysoid   string
+	Sysdescr string
+	IP       string
+}
+
 type snmpSubnet struct {
 	adIdentifier   string
 	config         snmp.Config
@@ -60,7 +66,7 @@ type snmpSubnet struct {
 	startingIP     net.IP
 	network        net.IPNet
 	cacheKey       string
-	devices        map[string]string
+	devices        map[string]snmpDevice
 	deviceFailures map[string]int
 }
 
@@ -100,20 +106,20 @@ func (l *SNMPListener) loadCache(subnet *snmpSubnet) {
 	if cacheValue == "" {
 		return
 	}
-	var devices []net.IP
+	var devices []snmpDevice
 	if err = json.Unmarshal([]byte(cacheValue), &devices); err != nil {
 		log.Errorf("Couldn't unmarshal cache for %s: %s", subnet.cacheKey, err)
 		return
 	}
-	for _, deviceIP := range devices {
-		entityID := subnet.config.Digest(deviceIP.String())
-		l.createService(entityID, subnet, deviceIP.String(), false)
+	for _, device := range devices {
+		entityID := subnet.config.Digest(device.IP)
+		l.createService(entityID, subnet, device, false)
 	}
 }
 
 func (l *SNMPListener) writeCache(subnet *snmpSubnet) {
 	// We don't lock the subnet for now, because the listener ought to be already locked
-	devices := make([]string, 0, len(subnet.devices))
+	devices := make([]snmpDevice, 0, len(subnet.devices))
 	for _, v := range subnet.devices {
 		devices = append(devices, v)
 	}
@@ -154,17 +160,24 @@ func (l *SNMPListener) checkDevice(job snmpJob) {
 	} else {
 		defer params.Conn.Close()
 
-		oids := []string{"1.3.6.1.2.1.1.2.0"}
+		oids := []string{"1.3.6.1.2.1.1.2.0", "1.3.6.1.2.1.1.1.0"}
 		value, err := params.Get(oids)
 		if err != nil {
 			log.Debugf("SNMP get to %s error: %v", deviceIP, err)
 			l.deleteService(entityID, job.subnet)
-		} else if len(value.Variables) < 1 || value.Variables[0].Value == nil {
+		} else if len(value.Variables) < 2 || value.Variables[0].Value == nil {
 			log.Debugf("SNMP get to %s no data", deviceIP)
 			l.deleteService(entityID, job.subnet)
 		} else {
+			sysoid := value.Variables[0].Value.(string)
+			sysdescr := string(value.Variables[1].Value.([]byte))
+			device := snmpDevice{
+				IP:       deviceIP,
+				Sysoid:   sysoid,
+				Sysdescr: sysdescr,
+			}
 			log.Debugf("SNMP get to %s success: %v", deviceIP, value.Variables[0].Value)
-			l.createService(entityID, job.subnet, deviceIP, true)
+			l.createService(entityID, job.subnet, device, true)
 		}
 	}
 }
@@ -200,7 +213,7 @@ func (l *SNMPListener) checkDevices() {
 			startingIP:     startingIP,
 			network:        *ipNet,
 			cacheKey:       cacheKey,
-			devices:        map[string]string{},
+			devices:        map[string]snmpDevice{},
 			deviceFailures: map[string]int{},
 		}
 		subnets = append(subnets, subnet)
@@ -261,7 +274,7 @@ func (l *SNMPListener) checkDevices() {
 	}
 }
 
-func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, deviceIP string, writeCache bool) {
+func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, device snmpDevice, writeCache bool) {
 	l.Lock()
 	defer l.Unlock()
 	if _, present := l.services[entityID]; present {
@@ -270,12 +283,12 @@ func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, device
 	svc := &SNMPService{
 		adIdentifier: subnet.adIdentifier,
 		entityID:     entityID,
-		deviceIP:     deviceIP,
+		deviceIP:     device.IP,
 		creationTime: integration.Before,
 		config:       subnet.config,
 	}
 	l.services[entityID] = svc
-	subnet.devices[entityID] = deviceIP
+	subnet.devices[entityID] = device
 	subnet.deviceFailures[entityID] = 0
 	if writeCache {
 		l.writeCache(subnet)
@@ -284,6 +297,7 @@ func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, device
 }
 
 func (l *SNMPListener) deleteService(entityID string, subnet *snmpSubnet) {
+	start := time.Now()
 	l.Lock()
 	defer l.Unlock()
 	if svc, present := l.services[entityID]; present {
@@ -303,6 +317,8 @@ func (l *SNMPListener) deleteService(entityID string, subnet *snmpSubnet) {
 			l.writeCache(subnet)
 		}
 	}
+	duration := time.Since(start)
+	fmt.Println(">>> deleteService took", duration)
 }
 
 func incrementIP(ip net.IP) {
