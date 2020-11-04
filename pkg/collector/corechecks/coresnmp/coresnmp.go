@@ -53,6 +53,8 @@ func (c *CoresnmpCheck) Run() error {
 		return err
 	}
 
+	sender.Gauge("coresnmp.test.metric", float64(10), "", nil)
+
 	session := gosnmp.GoSNMP{
 		Target: "localhost",
 		Port:               uint16(1161),
