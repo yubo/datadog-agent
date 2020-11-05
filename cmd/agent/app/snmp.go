@@ -14,13 +14,29 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	snmpCmd = &cobra.Command{
+		Use:   "snmp",
+		Short: "",
+		Long:  ``,
+	}
+
+	snmpListCmd = &cobra.Command{
+		Use:   "list",
+		Short: "List all devices discovered so far by SNMP autodiscovery.",
+		Long:  ``,
+		RunE:  doGetSnmpDevices,
+	}
+)
+
 func init() {
 	err := common.SetupConfig(confFilePath)
 	if err != nil {
 		fmt.Printf("unable to set up global agent configuration: %s", err)
 		return
 	}
-	AgentCmd.AddCommand(getSnmpDevicesCommand)
+	AgentCmd.AddCommand(snmpCmd)
+	snmpCmd.AddCommand(snmpListCmd)
 }
 
 var getSnmpDevicesCommand = &cobra.Command{
@@ -47,6 +63,6 @@ func doGetSnmpDevices(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Error getting SNMP devices: %s\n", e)
 		return e
 	}
-	fmt.Printf("SNMP Devices: %s\n", body)
+	fmt.Printf("%s\n", body)
 	return nil
 }

@@ -53,12 +53,6 @@ type SNMPService struct {
 // Make sure SNMPService implements the Service interface
 var _ Service = &SNMPService{}
 
-type snmpDevice struct {
-	Sysoid   string
-	Sysdescr string
-	IP       string
-}
-
 type snmpSubnet struct {
 	adIdentifier   string
 	config         snmp.Config
@@ -66,7 +60,7 @@ type snmpSubnet struct {
 	startingIP     net.IP
 	network        net.IPNet
 	cacheKey       string
-	devices        map[string]snmpDevice
+	devices        map[string]snmp.Device
 	deviceFailures map[string]int
 }
 
@@ -106,7 +100,7 @@ func (l *SNMPListener) loadCache(subnet *snmpSubnet) {
 	if cacheValue == "" {
 		return
 	}
-	var devices []snmpDevice
+	var devices []snmp.Device
 	if err = json.Unmarshal([]byte(cacheValue), &devices); err != nil {
 		log.Errorf("Couldn't unmarshal cache for %s: %s", subnet.cacheKey, err)
 		return
@@ -119,7 +113,7 @@ func (l *SNMPListener) loadCache(subnet *snmpSubnet) {
 
 func (l *SNMPListener) writeCache(subnet *snmpSubnet) {
 	// We don't lock the subnet for now, because the listener ought to be already locked
-	devices := make([]snmpDevice, 0, len(subnet.devices))
+	var devices []snmp.Device
 	for _, v := range subnet.devices {
 		devices = append(devices, v)
 	}
@@ -171,10 +165,12 @@ func (l *SNMPListener) checkDevice(job snmpJob) {
 		} else {
 			sysoid := value.Variables[0].Value.(string)
 			sysdescr := string(value.Variables[1].Value.([]byte))
-			device := snmpDevice{
-				IP:       deviceIP,
-				Sysoid:   sysoid,
-				Sysdescr: sysdescr,
+			device := snmp.Device{
+				IP:               deviceIP,
+				Sysoid:           sysoid,
+				Sysdescr:         sysdescr,
+				Network:          job.subnet.network.String(),
+				LastReportedTime: time.Now(),
 			}
 			log.Debugf("SNMP get to %s success: %v", deviceIP, value.Variables[0].Value)
 			l.createService(entityID, job.subnet, device, true)
@@ -213,7 +209,7 @@ func (l *SNMPListener) checkDevices() {
 			startingIP:     startingIP,
 			network:        *ipNet,
 			cacheKey:       cacheKey,
-			devices:        map[string]snmpDevice{},
+			devices:        map[string]snmp.Device{},
 			deviceFailures: map[string]int{},
 		}
 		subnets = append(subnets, subnet)
@@ -274,7 +270,7 @@ func (l *SNMPListener) checkDevices() {
 	}
 }
 
-func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, device snmpDevice, writeCache bool) {
+func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, device snmp.Device, writeCache bool) {
 	l.Lock()
 	defer l.Unlock()
 	if _, present := l.services[entityID]; present {
@@ -314,6 +310,7 @@ func (l *SNMPListener) deleteService(entityID string, subnet *snmpSubnet) {
 			l.delService <- svc
 			delete(l.services, entityID)
 			delete(subnet.devices, entityID)
+			delete(subnet.deviceFailures, entityID)
 			l.writeCache(subnet)
 		}
 	}

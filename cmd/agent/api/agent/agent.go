@@ -29,7 +29,9 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/flare"
+	"github.com/DataDog/datadog-agent/pkg/persistentcache"
 	"github.com/DataDog/datadog-agent/pkg/secrets"
+	"github.com/DataDog/datadog-agent/pkg/snmp"
 	"github.com/DataDog/datadog-agent/pkg/status"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
@@ -413,7 +415,30 @@ func secretInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllSnmpDevices(w http.ResponseWriter, r *http.Request) {
-	body, _ := json.Marshal("It works!")
+	keys, err := persistentcache.GetAllKeysForPrefix("snmp")
+
+	if err != nil {
+		body, _ := json.Marshal("")
+		w.Write(body)
+		return
+	}
+	// Load all cached networks:
+	var devices []snmp.Device
+	for _, key := range keys {
+		data, err := persistentcache.Read(key)
+		if err != nil {
+			log.Errorf("Unable to read data for network %s: %s", key, err)
+		} else {
+			var newDevices []snmp.Device
+			err := json.Unmarshal([]byte(data), &newDevices)
+			if err != nil {
+				log.Errorf("Could not unmarshall device %s", key, err)
+			} else {
+				devices = append(devices, newDevices...)
+			}
+		}
+	}
+	body, _ := json.Marshal(devices)
 	w.Write(body)
 }
 

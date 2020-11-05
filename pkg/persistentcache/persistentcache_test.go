@@ -7,11 +7,12 @@ package persistentcache
 
 import (
 	"fmt"
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/DataDog/datadog-agent/pkg/config"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -93,4 +94,27 @@ func TestWritePersistentCacheInvalidChar(t *testing.T) {
 	expectPathFile = filepath.Join(testDir, "key_foo-bar")
 	_, err = os.Stat(expectPathFile)
 	require.Nil(t, err)
+}
+
+func TestGetAllKeysForPrefix(t *testing.T) {
+	testDir, err := ioutil.TempDir("", "fake-datadog-run-")
+	require.Nil(t, err, fmt.Sprintf("%v", err))
+	defer os.RemoveAll(testDir)
+	mockConfig := config.Mock()
+	mockConfig.Set("run_path", testDir)
+	// Create some mock files:
+	err = Write("myprefix:key0", "")
+	assert.Nil(t, err)
+	err = Write("myprefix:key1", "")
+	assert.Nil(t, err)
+	err = Write("myprefix:key2", "")
+	assert.Nil(t, err)
+
+	keys, err := GetAllKeysForPrefix("myprefix")
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(keys))
+	assert.Equal(t, "myprefix:key0", keys[0])
+	assert.Equal(t, "myprefix:key1", keys[1])
+	assert.Equal(t, "myprefix:key2", keys[2])
+
 }

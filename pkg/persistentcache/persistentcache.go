@@ -6,6 +6,7 @@
 package persistentcache
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -62,4 +63,20 @@ func Read(key string) (string, error) {
 		return "", err
 	}
 	return string(content), nil
+}
+
+// GetAllKeysForPrefix Get all keys for a given prefix.
+// The prefix is actually the directory containing all cache files.
+func GetAllKeysForPrefix(prefix string) ([]string, error) {
+	parent := config.Datadog.GetString("run_path")
+	files, err := ioutil.ReadDir(filepath.Join(parent, prefix))
+	if err != nil {
+		return nil, err
+	}
+	var keys []string
+	for _, file := range files {
+		key := fmt.Sprintf("%s:%s", prefix, file.Name())
+		keys = append(keys, key)
+	}
+	return keys, nil
 }

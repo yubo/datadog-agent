@@ -208,3 +208,12 @@ func (c *Config) IsIPIgnored(ip net.IP) bool {
 	_, present := c.IgnoredIPAddresses[ipString]
 	return present
 }
+
+// Device a structure for discovered SNMP devices.
+type Device struct {
+	Sysoid           string    `json:"sysoid"`
+	Sysdescr         string    `json:"sysdesc"`
+	IP               string    `json:"ip"`
+	LastReportedTime time.Time `json:"last_reported_time"`
+	Network          string    `json:"network"`
+}
