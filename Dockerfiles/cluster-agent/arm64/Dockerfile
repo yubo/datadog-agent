@@ -2,7 +2,7 @@
 # Preparation stage: layout and chmods #
 ########################################
 
-FROM debian:bullseye-slim as builder
+FROM registry.ddbuild.io/images/mirror/arm64v8/debian:bullseye-slim as builder
 
 WORKDIR /output
 
@@ -24,7 +24,7 @@ RUN chmod 755 entrypoint.sh \
 # Actual docker image construction #
 ####################################
 
-FROM debian:bullseye-slim
+FROM registry.ddbuild.io/images/mirror/arm64v8/debian:bullseye-slim
 
 LABEL maintainer "Datadog <package@datadoghq.com>"
 

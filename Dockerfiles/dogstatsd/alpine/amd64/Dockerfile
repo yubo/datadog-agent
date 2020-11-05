@@ -1,4 +1,4 @@
-FROM alpine:3.10
+FROM registry.ddbuild.io/images/mirror/alpine:3.10
 
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
