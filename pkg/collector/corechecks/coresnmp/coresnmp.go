@@ -17,7 +17,7 @@ const (
 
 )
 
-// metricConfigItem map a metric to a systemd unit property.
+// metricConfigItem map a metric to a coresnmp unit property.
 type metricConfigItem struct {
 	metricName         string
 	propertyName       string
@@ -28,7 +28,7 @@ type metricConfigItem struct {
 // CoresnmpCheck aggregates metrics from one CoresnmpCheck instance
 type CoresnmpCheck struct {
 	core.CheckBase
-	config systemdConfig
+	config coresnmpConfig
 }
 type unitSubstateMapping = map[string]string
 
@@ -40,7 +40,7 @@ type systemdInstanceConfig struct {
 
 type systemdInitConfig struct{}
 
-type systemdConfig struct {
+type coresnmpConfig struct {
 	instance systemdInstanceConfig
 	initConf systemdInitConfig
 }
@@ -96,7 +96,7 @@ func (c *CoresnmpCheck) Run() error {
 	return nil
 }
 
-// Configure configures the systemd checks
+// Configure configures the coresnmp checks
 func (c *CoresnmpCheck) Configure(rawInstance integration.Data, rawInitConfig integration.Data, source string) error {
 	err := c.CommonConfigure(rawInstance, source)
 	if err != nil {
