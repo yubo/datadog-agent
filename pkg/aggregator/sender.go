@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
@@ -232,11 +233,13 @@ func (s *checkSender) sendMetricSample(metric string, value float64, hostname st
 
 	log.Trace(mType.String(), " sample: ", metric, ": ", value, " for hostname: ", hostname, " tags: ", tags)
 
+	tagsSlice := util.GlobalStringSlicePool.GetWithValues(tags)
+
 	metricSample := &metrics.MetricSample{
 		Name:       metric,
 		Value:      value,
 		Mtype:      mType,
-		Tags:       tags,
+		Tags:       tagsSlice,
 		Host:       hostname,
 		SampleRate: 1,
 		Timestamp:  timeNowNano(),
@@ -287,6 +290,7 @@ func (s *checkSender) Histogram(metric string, value float64, hostname string, t
 }
 
 // HistogramBucket should be called to directly send raw buckets to be submitted as distribution metrics
+// TODO(remy): this tags parameter is suspicious
 func (s *checkSender) HistogramBucket(metric string, value int64, lowerBound, upperBound float64, monotonic bool, hostname string, tags []string) {
 	tags = append(tags, s.checkTags...)
 
@@ -301,6 +305,11 @@ func (s *checkSender) HistogramBucket(metric string, value int64, lowerBound, up
 		tags,
 	)
 
+	// TODO(remy): is this really something we have to do? if the answer is yes,
+	// TODO(remy): when is this StringSlice released?
+	tagsSlice := util.GlobalStringSlicePool.Get()
+	tagsSlice.AppendMany(tags)
+
 	histogramBucket := &metrics.HistogramBucket{
 		Name:       metric,
 		Value:      value,
@@ -308,7 +317,7 @@ func (s *checkSender) HistogramBucket(metric string, value int64, lowerBound, up
 		UpperBound: upperBound,
 		Monotonic:  monotonic,
 		Host:       hostname,
-		Tags:       tags,
+		Tags:       tagsSlice,
 		Timestamp:  timeNowNano(),
 	}
 

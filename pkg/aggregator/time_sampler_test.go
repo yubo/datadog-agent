@@ -14,8 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator/ckey"
+	"github.com/DataDog/datadog-agent/pkg/forwarder"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/quantile"
+	"github.com/DataDog/datadog-agent/pkg/serializer"
 )
 
 func generateSerieContextKey(serie *metrics.Serie) ckey.ContextKey {
@@ -477,6 +479,8 @@ func TestBucketSamplingWithSketchAndSeries(t *testing.T) {
 }
 
 func BenchmarkTimeSampler(b *testing.B) {
+	aggregatorInstance.serializer = serializer.NewSerializer(forwarder.NewDefaultForwarder(map[string][]string{"hello": {"world "}}))
+
 	sampler := NewTimeSampler(10)
 	sample := metrics.MetricSample{
 		Name:       "my.metric.name",

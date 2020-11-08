@@ -22,6 +22,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/config"
 	agentConfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/version"
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -291,16 +292,19 @@ func reportPy3Warnings(checkName string, checkFilePath string) {
 		}
 	}
 
+	// the recurrent series owns this StringSlice, we don't need to get it
+	// from the pool.
+	tagSlice := util.NewStringSlice(2)
+
 	// add a serie to the aggregator to be sent on every flush
-	tags := []string{
-		fmt.Sprintf("status:%s", status),
-		fmt.Sprintf("check_name:%s", checkName),
-	}
-	tags = append(tags, agentVersionTags...)
+	tagSlice.Append(fmt.Sprintf("status:%s", status))
+	tagSlice.Append(fmt.Sprintf("check_name:%s", checkName))
+	tagSlice.AppendMany(agentVersionTags)
+
 	aggregator.AddRecurrentSeries(&metrics.Serie{
 		Name:   "datadog.agent.check_ready",
 		Points: []metrics.Point{{Value: metricValue}},
-		Tags:   tags,
+		Tags:   tagSlice,
 		MType:  metrics.APIGaugeType,
 	})
 }

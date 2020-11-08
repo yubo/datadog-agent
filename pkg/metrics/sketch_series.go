@@ -9,17 +9,18 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/quantile"
 	"github.com/DataDog/datadog-agent/pkg/serializer/marshaler"
+	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/common"
 )
 
 // A SketchSeries is a timeseries of quantile sketches.
 type SketchSeries struct {
-	Name       string          `json:"metric"`
-	Tags       []string        `json:"tags"`
-	Host       string          `json:"host"`
-	Interval   int64           `json:"interval"`
-	Points     []SketchPoint   `json:"points"`
-	ContextKey ckey.ContextKey `json:"-"`
+	Name       string            `json:"metric"`
+	Tags       *util.StringSlice `json:"tags"`
+	Host       string            `json:"host"`
+	Interval   int64             `json:"interval"`
+	Points     []SketchPoint     `json:"points"`
+	ContextKey ckey.ContextKey   `json:"-"`
 }
 
 // A SketchPoint represents a quantile sketch at a specific time
@@ -103,9 +104,10 @@ func (sl SketchSeriesList) Marshal() ([]byte, error) {
 		}
 
 		pb.Sketches = append(pb.Sketches, gogen.SketchPayload_Sketch{
-			Metric:      ss.Name,
-			Host:        ss.Host,
-			Tags:        ss.Tags,
+			Metric: ss.Name,
+			Host:   ss.Host,
+			// TODO(remy): is it OK to not copy here because we're marshaling right after?
+			Tags:        ss.Tags.Slice(),
 			Dogsketches: dsl,
 		})
 	}

@@ -3,6 +3,8 @@ package dogstatsd
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/DataDog/datadog-agent/pkg/util"
 )
 
 type metricType int
@@ -34,7 +36,7 @@ type dogstatsdMetricSample struct {
 	setValue   string
 	metricType metricType
 	sampleRate float64
-	tags       []string
+	tags       *util.StringSlice
 }
 
 // sanity checks a given message against the metric sample format
@@ -116,7 +118,7 @@ func (p *parser) parseMetricSample(message []byte) (dogstatsdMetricSample, error
 	}
 
 	sampleRate := 1.0
-	var tags []string
+	var tags *util.StringSlice
 	var optionalField []byte
 	for message != nil {
 		optionalField, message = nextField(message)

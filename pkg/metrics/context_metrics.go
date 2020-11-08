@@ -21,7 +21,7 @@ func MakeContextMetrics() ContextMetrics {
 	return ContextMetrics(make(map[ckey.ContextKey]Metric))
 }
 
-// AddSample add a sample to the current ContextMetrics and initialize a new metrics if needed.
+// AddSample adds a sample to the current ContextMetrics and initialize a new metrics if needed.
 func (m ContextMetrics) AddSample(contextKey ckey.ContextKey, sample *MetricSample, timestamp float64, interval int64) error {
 	if math.IsInf(sample.Value, 0) || math.IsNaN(sample.Value) {
 		return fmt.Errorf("sample with value '%v'", sample.Value)

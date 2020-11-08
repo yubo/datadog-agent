@@ -6,43 +6,43 @@ const insertionSortThreshold = 20
 
 // SortUniqInPlace sorts and remove duplicates from elements in place
 // The returned slice is a subslice of elements
-func SortUniqInPlace(elements []string) []string {
-	if len(elements) < 2 {
-		return elements
+func SortUniqInPlace(elements *StringSlice) {
+	size := elements.Len()
+	if size < 2 {
+		return
 	}
-	size := len(elements)
 	if size <= insertionSortThreshold {
 		insertionSort(elements)
 	} else {
 		// this will trigger an alloc because sorts uses interface{} internaly
 		// which confuses the escape analysis
-		sort.Strings(elements)
+		sort.Strings(elements.Slice())
 	}
-	return uniqSorted(elements)
+	uniqSorted(elements)
 }
 
-func insertionSort(elements []string) {
-	for i := 1; i < len(elements); i++ {
-		temp := elements[i]
-		j := i
-		for j > 0 && temp <= elements[j-1] {
-			elements[j] = elements[j-1]
+func insertionSort(elements *StringSlice) {
+	for i := uint(1); i < elements.Len(); i++ {
+		temp := elements.Get(i)
+		j := uint(i)
+		for j > 0 && temp <= elements.Get(j-1) {
+			elements.Set(j, elements.Get(j-1))
 			j--
 		}
-		elements[j] = temp
+		elements.Set(j, temp)
 	}
 }
 
 // uniqSorted remove duplicate elements from the given slice
 // the given slice needs to be sorted
-func uniqSorted(elements []string) []string {
-	j := 0
-	for i := 1; i < len(elements); i++ {
-		if elements[j] == elements[i] {
+func uniqSorted(elements *StringSlice) {
+	j := uint(0)
+	for i := uint(1); i < elements.Len(); i++ {
+		if elements.Get(j) == elements.Get(i) {
 			continue
 		}
 		j++
-		elements[j] = elements[i]
+		elements.Set(j, elements.Get(i))
 	}
-	return elements[:j+1]
+	elements.Resize(j + 1)
 }

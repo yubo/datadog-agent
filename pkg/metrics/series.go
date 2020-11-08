@@ -20,6 +20,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator/ckey"
 	"github.com/DataDog/datadog-agent/pkg/serializer/marshaler"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
+	"github.com/DataDog/datadog-agent/pkg/util"
 )
 
 var (
@@ -44,16 +45,16 @@ func (p *Point) MarshalJSON() ([]byte, error) {
 
 // Serie holds a timeseries (w/ json serialization to DD API format)
 type Serie struct {
-	Name           string          `json:"metric"`
-	Points         []Point         `json:"points"`
-	Tags           []string        `json:"tags"`
-	Host           string          `json:"host"`
-	Device         string          `json:"device,omitempty"` // FIXME(olivier): remove as soon as the v1 API can handle `device` as a regular tag
-	MType          APIMetricType   `json:"type"`
-	Interval       int64           `json:"interval"`
-	SourceTypeName string          `json:"source_type_name,omitempty"`
-	ContextKey     ckey.ContextKey `json:"-"`
-	NameSuffix     string          `json:"-"`
+	Name           string            `json:"metric"`
+	Points         []Point           `json:"points"`
+	Tags           *util.StringSlice `json:"tags"`
+	Host           string            `json:"host"`
+	Device         string            `json:"device,omitempty"` // FIXME(olivier): remove as soon as the v1 API can handle `device` as a regular tag
+	MType          APIMetricType     `json:"type"`
+	Interval       int64             `json:"interval"`
+	SourceTypeName string            `json:"source_type_name,omitempty"`
+	ContextKey     ckey.ContextKey   `json:"-"`
+	NameSuffix     string            `json:"-"`
 }
 
 // Series represents a list of Serie ready to be serialize
@@ -85,7 +86,7 @@ func (series Series) Marshal() ([]byte, error) {
 				Type:           serie.MType.String(),
 				Host:           serie.Host,
 				Points:         marshalPoints(serie.Points),
-				Tags:           serie.Tags,
+				Tags:           serie.Tags.Slice(),
 				SourceTypeName: serie.SourceTypeName,
 			})
 	}
@@ -97,32 +98,11 @@ func (series Series) Marshal() ([]byte, error) {
 // populate the Serie.Device field
 //FIXME(olivier): remove this as soon as the v1 API can handle `device` as a regular tag
 func populateDeviceField(serie *Serie) {
-	if !hasDeviceTag(serie) {
-		return
-	}
-	// make a copy of the tags array. Otherwise the underlying array won't have
-	// the device tag for the Nth iteration (N>1), and the deice field will
-	// be lost
-	filteredTags := make([]string, 0, len(serie.Tags))
-
-	for _, tag := range serie.Tags {
+	for _, tag := range serie.Tags.Slice() {
 		if strings.HasPrefix(tag, "device:") {
 			serie.Device = tag[7:]
-		} else {
-			filteredTags = append(filteredTags, tag)
 		}
 	}
-	serie.Tags = filteredTags
-}
-
-// hasDeviceTag checks whether a series contains a device tag
-func hasDeviceTag(serie *Serie) bool {
-	for _, tag := range serie.Tags {
-		if strings.HasPrefix(tag, "device:") {
-			return true
-		}
-	}
-	return false
 }
 
 // MarshalJSON serializes timeseries to JSON so it can be sent to V1 endpoints
@@ -273,7 +253,13 @@ func encodeSerie(serie *Serie, stream *jsoniter.Stream) {
 	stream.WriteObjectField("tags")
 	stream.WriteArrayStart()
 	firstTag := true
-	for _, s := range serie.Tags {
+	for _, s := range serie.Tags.Slice() {
+		// Ignore device field which is written directly in the object
+		// instead of in its tags slice.
+		if strings.HasPrefix(s, "device:") {
+			continue
+		}
+
 		if !firstTag {
 			stream.WriteMore()
 		}

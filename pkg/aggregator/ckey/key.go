@@ -8,6 +8,7 @@ package ckey
 import (
 	"sort"
 
+	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/twmb/murmur3"
 )
 
@@ -41,22 +42,22 @@ func NewKeyGenerator() *KeyGenerator {
 
 // Generate returns the ContextKey hash for the given parameters.
 // The tags array is sorted in place to avoid heap allocations.
-func (g *KeyGenerator) Generate(name, hostname string, tags []string) ContextKey {
+func (g *KeyGenerator) Generate(name, hostname string, tags *util.StringSlice) ContextKey {
 	g.buf = g.buf[:0]
 
 	// Sort the tags in place. For typical tag slices, we use
 	// the in-place section sort to avoid heap allocations.
 	// We default to stdlib's sort package for longer slices.
-	if len(tags) < 20 {
-		selectionSort(tags)
+	if tags.Len() < 20 {
+		selectionSort(tags.Slice())
 	} else {
-		sort.Strings(tags)
+		sort.Strings(tags.Slice())
 	}
 
 	g.buf = append(g.buf, name...)
 	g.buf = append(g.buf, ',')
-	for i := 0; i < len(tags); i++ {
-		g.buf = append(g.buf, tags[i]...)
+	for i := uint(0); i < tags.Len(); i++ {
+		g.buf = append(g.buf, tags.Get(i)...)
 		g.buf = append(g.buf, ',')
 	}
 	g.buf = append(g.buf, hostname...)

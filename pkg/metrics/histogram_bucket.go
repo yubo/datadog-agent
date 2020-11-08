@@ -5,6 +5,8 @@
 
 package metrics
 
+import "github.com/DataDog/datadog-agent/pkg/util"
+
 // HistogramBucket represents a prometheus/openmetrics histogram bucket
 type HistogramBucket struct {
 	Name       string
@@ -12,7 +14,7 @@ type HistogramBucket struct {
 	LowerBound float64
 	UpperBound float64
 	Monotonic  bool
-	Tags       []string
+	Tags       *util.StringSlice
 	Host       string
 	Timestamp  float64
 }
@@ -30,6 +32,6 @@ func (m *HistogramBucket) GetHost() string {
 }
 
 // GetTags returns the bucket tags
-func (m *HistogramBucket) GetTags() []string {
+func (m *HistogramBucket) GetTags() *util.StringSlice {
 	return m.Tags
 }

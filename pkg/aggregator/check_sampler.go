@@ -43,10 +43,14 @@ func newCheckSampler() *CheckSampler {
 }
 
 func (cs *CheckSampler) addSample(metricSample *metrics.MetricSample) {
-	contextKey := cs.contextResolver.trackContext(metricSample, metricSample.Timestamp)
+	contextKey, context := cs.contextResolver.trackContext(metricSample, metricSample.Timestamp)
+
+	// Note that from here, the context contains and owns the StringSlice
+	// containing the tags.
+	// The metricSample StringSlice has been pushed back to the pool.
 
 	if err := cs.metrics.AddSample(contextKey, metricSample, metricSample.Timestamp, 1); err != nil {
-		log.Debug("Ignoring sample '%s' on host '%s' and tags '%s': %s", metricSample.Name, metricSample.Host, metricSample.Tags, err)
+		log.Debugf("Ignoring sample '%s' on host '%s' and tags '%s': %s", context.Name, context.Host, context.Tags, err)
 	}
 }
 
@@ -54,6 +58,7 @@ func (cs *CheckSampler) newSketchSeries(ck ckey.ContextKey, points []metrics.Ske
 	ctx := cs.contextResolver.contextsByKey[ck]
 	ss := metrics.SketchSeries{
 		Name: ctx.Name,
+		// TODO(remy): is it OK to not copy here? I think yes because the context is responsible of the tags
 		Tags: ctx.Tags,
 		Host: ctx.Host,
 		// Interval: TODO: investigate
@@ -83,7 +88,7 @@ func (cs *CheckSampler) addBucket(bucket *metrics.HistogramBucket) {
 		return
 	}
 
-	contextKey := cs.contextResolver.trackContext(bucket, bucket.Timestamp)
+	contextKey, _ := cs.contextResolver.trackContext(bucket, bucket.Timestamp)
 
 	// if the bucket is monotonic and we have already seen the bucket we only send the delta
 	if bucket.Monotonic {
@@ -127,7 +132,7 @@ func (cs *CheckSampler) commitSeries(timestamp float64) {
 			log.Errorf("Can't resolve context of error '%s': inconsistent context resolver state: context with key '%v' is not tracked", err, ckey)
 			continue
 		}
-		log.Infof("No value returned for check metric '%s' on host '%s' and tags '%s': %s", context.Name, context.Host, context.Tags, err)
+		log.Infof("No value returned for check metric '%s' on host '%s' and tags '%s': %s", context.Name, context.Host, context.Tags.Slice(), err)
 	}
 	for _, serie := range series {
 		// Resolve context and populate new []Serie
@@ -137,6 +142,7 @@ func (cs *CheckSampler) commitSeries(timestamp float64) {
 			continue
 		}
 		serie.Name = context.Name + serie.NameSuffix
+		// TODO(remy): is it OK to not copy here? I think so because the context is the owner of the StringSlice
 		serie.Tags = context.Tags
 		serie.Host = context.Host
 		serie.SourceTypeName = checksSourceTypeName // this source type is required for metrics coming from the checks

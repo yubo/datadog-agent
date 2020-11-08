@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/DataDog/datadog-agent/pkg/util"
 )
 
 type messageType int
@@ -61,12 +62,13 @@ func nextField(message []byte) ([]byte, []byte) {
 	return message[:sepIndex], message[sepIndex+1:]
 }
 
-func (p *parser) parseTags(rawTags []byte) []string {
+func (p *parser) parseTags(rawTags []byte) *util.StringSlice {
 	if len(rawTags) == 0 {
-		return nil
+		return util.EmptyStringSlice
 	}
+
 	tagsCount := bytes.Count(rawTags, commaSeparator)
-	tagsList := make([]string, tagsCount+1)
+	tagsList := util.GlobalStringSlicePool.Get()
 
 	i := 0
 	for i < tagsCount {
@@ -74,11 +76,11 @@ func (p *parser) parseTags(rawTags []byte) []string {
 		if tagPos < 0 {
 			break
 		}
-		tagsList[i] = p.interner.LoadOrStore(rawTags[:tagPos])
+		tagsList.Append(p.interner.LoadOrStore(rawTags[:tagPos]))
 		rawTags = rawTags[tagPos+len(commaSeparator):]
 		i++
 	}
-	tagsList[i] = p.interner.LoadOrStore(rawTags)
+	tagsList.Append(p.interner.LoadOrStore(rawTags))
 	return tagsList
 }
 

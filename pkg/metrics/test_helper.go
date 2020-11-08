@@ -16,6 +16,7 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator/ckey"
 	"github.com/DataDog/datadog-agent/pkg/quantile"
+	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,10 +30,17 @@ func AssertPointsEqual(t *testing.T, expected, actual []Point) {
 }
 
 // AssertTagsEqual evaluate if two list of tags are equal (the order doesn't matters).
-func AssertTagsEqual(t assert.TestingT, expected, actual []string) {
-	if assert.Equal(t, len(expected), len(actual), fmt.Sprintf("Unexpected number of tags: expected %s, actual: %s", expected, actual)) {
-		for _, tag := range expected {
-			assert.Contains(t, actual, tag)
+func AssertTagsEqual(t assert.TestingT, expected, actual *util.StringSlice) {
+	if assert.Equal(t, expected.Len(), actual.Len(), fmt.Sprintf("Unexpected number of tags: expected %s, actual: %s", expected, actual)) {
+		for _, tag := range expected.Slice() {
+			contains := false
+			for _, tt := range actual.Slice() {
+				if tt == tag {
+					contains = true
+					break
+				}
+			}
+			assert.True(t, contains)
 		}
 	}
 }
@@ -55,10 +63,7 @@ func AssertSeriesEqual(t *testing.T, expected Series, series Series) {
 // AssertSerieEqual evaluate if two are equal.
 func AssertSerieEqual(t *testing.T, expected, actual *Serie) {
 	assert.Equal(t, expected.Name, actual.Name)
-	if expected.Tags != nil {
-		assert.NotNil(t, actual.Tags)
-		AssertTagsEqual(t, expected.Tags, actual.Tags)
-	}
+	AssertTagsEqual(t, expected.Tags, actual.Tags)
 	assert.Equal(t, expected.Host, actual.Host)
 	assert.Equal(t, expected.MType, actual.MType)
 	assert.Equal(t, expected.Interval, actual.Interval)
@@ -94,9 +99,9 @@ func assertSketchSeriesEqualWithComparator(t assert.TestingT, exp, act SketchSer
 	assert.Equal(t, exp.Name, act.Name, "Name")
 
 	switch {
-	case len(exp.Tags) == 0:
+	case exp.Tags.Len() == 0:
 		assert.Len(t, act.Tags, 0, "(act) Tags: should be empty")
-	case len(act.Tags) == 0:
+	case act.Tags.Len() == 0:
 		assert.Len(t, exp.Tags, 0, "(act) Tags: shouldn't be empty")
 	default:
 		AssertTagsEqual(t, exp.Tags, act.Tags)

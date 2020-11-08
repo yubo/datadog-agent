@@ -87,7 +87,8 @@ func (p *parser) applyServiceCheckOptionalField(serviceCheck dogstatsdServiceChe
 	case bytes.HasPrefix(optionalField, serviceCheckHostnamePrefix):
 		newServiceCheck.hostname = string(optionalField[len(serviceCheckHostnamePrefix):])
 	case bytes.HasPrefix(optionalField, serviceCheckTagsPrefix):
-		newServiceCheck.tags = p.parseTags(optionalField[len(serviceCheckTagsPrefix):])
+		// TODO(remy): implement me
+		// newServiceCheck.tags = p.parseTags(optionalField[len(serviceCheckTagsPrefix):])
 	case bytes.HasPrefix(optionalField, serviceCheckMessagePrefix):
 		newServiceCheck.message = string(optionalField[len(serviceCheckMessagePrefix):])
 	}

@@ -5,6 +5,8 @@
 
 package metrics
 
+import "github.com/DataDog/datadog-agent/pkg/util"
+
 // MetricType is the representation of an aggregator metric type
 type MetricType int
 
@@ -57,7 +59,7 @@ func (m MetricType) String() string {
 type MetricSampleContext interface {
 	GetName() string
 	GetHost() string
-	GetTags() []string
+	GetTags() *util.StringSlice
 }
 
 // MetricSample represents a raw metric sample
@@ -66,7 +68,7 @@ type MetricSample struct {
 	Value      float64
 	RawValue   string
 	Mtype      MetricType
-	Tags       []string
+	Tags       *util.StringSlice
 	Host       string
 	SampleRate float64
 	Timestamp  float64
@@ -85,15 +87,16 @@ func (m *MetricSample) GetHost() string {
 }
 
 // GetTags returns the metric sample tags
-func (m *MetricSample) GetTags() []string {
+func (m *MetricSample) GetTags() *util.StringSlice {
 	return m.Tags
 }
 
 // Copy returns a deep copy of the m MetricSample
-func (m *MetricSample) Copy() *MetricSample {
-	dst := &MetricSample{}
-	*dst = *m
-	dst.Tags = make([]string, len(m.Tags))
-	copy(dst.Tags, m.Tags)
-	return dst
-}
+// TODO(remy): implement this.
+//func (m *MetricSample) Copy() *MetricSample {
+//	dst := &MetricSample{}
+//	*dst = *m
+//	dst.Tags = make([]string, len(m.Tags))
+//	copy(dst.Tags, m.Tags)
+//	return dst
+//}

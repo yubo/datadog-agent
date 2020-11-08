@@ -278,25 +278,26 @@ func (agg *BufferedAggregator) SetHostname(hostname string) {
 
 // AddAgentStartupTelemetry adds a startup event and count to be sent on the next flush
 func (agg *BufferedAggregator) AddAgentStartupTelemetry(agentVersion string) {
-	metric := &metrics.MetricSample{
-		Name:       fmt.Sprintf("datadog.%s.started", agg.agentName),
-		Value:      1,
-		Tags:       []string{fmt.Sprintf("version:%s", version.AgentVersion)},
-		Host:       agg.hostname,
-		Mtype:      metrics.CountType,
-		SampleRate: 1,
-		Timestamp:  0,
-	}
-	agg.metricIn <- metric
-	if agg.hostname != "" {
-		// Send startup event only when we have a valid hostname
-		agg.eventIn <- metrics.Event{
-			Text:           fmt.Sprintf("Version %s", agentVersion),
-			SourceTypeName: "System",
-			Host:           agg.hostname,
-			EventType:      "Agent Startup",
-		}
-	}
+	// TODO(remy): implement me
+	// metric := &metrics.MetricSample{
+	// 	Name:       fmt.Sprintf("datadog.%s.started", agg.agentName),
+	// 	Value:      1,
+	// 	Tags:       []string{fmt.Sprintf("version:%s", version.AgentVersion)},
+	// 	Host:       agg.hostname,
+	// 	Mtype:      metrics.CountType,
+	// 	SampleRate: 1,
+	// 	Timestamp:  0,
+	// }
+	// agg.metricIn <- metric
+	// if agg.hostname != "" {
+	// 	// Send startup event only when we have a valid hostname
+	// 	agg.eventIn <- metrics.Event{
+	// 		Text:           fmt.Sprintf("Version %s", agentVersion),
+	// 		SourceTypeName: "System",
+	// 		Host:           agg.hostname,
+	// 		EventType:      "Agent Startup",
+	// 	}
+	// }
 }
 
 func (agg *BufferedAggregator) registerSender(id check.ID) error {
@@ -323,7 +324,7 @@ func (agg *BufferedAggregator) handleSenderSample(ss senderMetricSample) {
 		if ss.commit {
 			checkSampler.commit(timeNowNano())
 		} else {
-			ss.metricSample.Tags = util.SortUniqInPlace(ss.metricSample.Tags)
+			util.SortUniqInPlace(ss.metricSample.Tags)
 			checkSampler.addSample(ss.metricSample)
 		}
 	} else {
@@ -336,7 +337,7 @@ func (agg *BufferedAggregator) handleSenderBucket(checkBucket senderHistogramBuc
 	defer agg.mu.Unlock()
 
 	if checkSampler, ok := agg.checkSamplers[checkBucket.id]; ok {
-		checkBucket.bucket.Tags = util.SortUniqInPlace(checkBucket.bucket.Tags)
+		util.SortUniqInPlace(checkBucket.bucket.Tags)
 		checkSampler.addBucket(checkBucket.bucket)
 	} else {
 		log.Debugf("CheckSampler with ID '%s' doesn't exist, can't handle histogram bucket", checkBucket.id)
@@ -348,7 +349,8 @@ func (agg *BufferedAggregator) addServiceCheck(sc metrics.ServiceCheck) {
 	if sc.Ts == 0 {
 		sc.Ts = time.Now().Unix()
 	}
-	sc.Tags = util.SortUniqInPlace(sc.Tags)
+	// TODO(remy): restore
+	// util.SortUniqInPlace(sc.Tags)
 
 	agg.serviceChecks = append(agg.serviceChecks, &sc)
 }
@@ -358,14 +360,15 @@ func (agg *BufferedAggregator) addEvent(e metrics.Event) {
 	if e.Ts == 0 {
 		e.Ts = time.Now().Unix()
 	}
-	e.Tags = util.SortUniqInPlace(e.Tags)
+	// TODO(remy): restore
+	// util.SortUniqInPlace(e.Tags)
 
 	agg.events = append(agg.events, &e)
 }
 
 // addSample adds the metric sample
 func (agg *BufferedAggregator) addSample(metricSample *metrics.MetricSample, timestamp float64) {
-	metricSample.Tags = util.SortUniqInPlace(metricSample.Tags)
+	util.SortUniqInPlace(metricSample.Tags)
 	agg.statsdSampler.addSample(metricSample, timestamp)
 }
 
@@ -395,6 +398,14 @@ func (agg *BufferedAggregator) pushSketches(start time.Time, sketches metrics.Sk
 	addFlushTime("MetricSketchFlushTime", int64(time.Since(start)))
 	aggregatorSketchesFlushed.Add(int64(len(sketches)))
 	tlmFlush.Add(float64(len(sketches)), "sketches", state)
+
+	// TODO(remy): is it correct to push it back here? + comment
+	// TODO(remy): because the context should be responsible of this, we should not do it here
+	// for _, sketch := range sketches {
+	// 	if sketch.Tags != nil {
+	// 		util.GlobalStringSlicePool.Put(sketch.Tags)
+	// 	}
+	// }
 }
 
 func (agg *BufferedAggregator) pushSeries(start time.Time, series metrics.Series) {
@@ -409,6 +420,15 @@ func (agg *BufferedAggregator) pushSeries(start time.Time, series metrics.Series
 	addFlushTime("ChecksMetricSampleFlushTime", int64(time.Since(start)))
 	aggregatorSeriesFlushed.Add(int64(len(series)))
 	tlmFlush.Add(float64(len(series)), "series", state)
+
+	// TODO(remy): is it correct to push it back here? + comment
+	// TODO(remy): because the context should be responsible of this, we should not do it here
+	// TODO(remy): but what about the ones from the recurrent series?
+	// for _, serie := range series {
+	// 	if serie.Tags != nil {
+	// 		util.GlobalStringSlicePool.Put(serie.Tags)
+	// 	}
+	// }
 }
 
 func (agg *BufferedAggregator) sendSeries(start time.Time, series metrics.Series, waitForSerializer bool) {
@@ -422,9 +442,15 @@ func (agg *BufferedAggregator) sendSeries(start time.Time, series metrics.Series
 			extra.SourceTypeName = "System"
 		}
 
+		// create a new StringSlice copying the recurrent series
+		// StringSlice, the new one will be put back when the series
+		// has been fully processed.
+		tagsSlice := util.GlobalStringSlicePool.Get()
+		tagsSlice.AppendMany(extra.Tags.Slice())
+
 		newSerie := &metrics.Serie{
 			Name:           extra.Name,
-			Tags:           extra.Tags,
+			Tags:           tagsSlice,
 			Host:           extra.Host,
 			MType:          extra.MType,
 			SourceTypeName: extra.SourceTypeName,
@@ -446,10 +472,13 @@ func (agg *BufferedAggregator) sendSeries(start time.Time, series metrics.Series
 
 	// Send along a metric that showcases that this Agent is running (internally, in backend,
 	// a `datadog.`-prefixed metric allows identifying this host as an Agent host, used for dogbone icon)
+	// This tagsSlice will be put back to the pool when the series has been processed.
+	tagsSlice := util.GlobalStringSlicePool.Get()
+	tagsSlice.Append(fmt.Sprintf("version:%s", version.AgentVersion))
 	series = append(series, &metrics.Serie{
 		Name:           fmt.Sprintf("datadog.%s.running", agg.agentName),
 		Points:         []metrics.Point{{Value: 1, Ts: float64(start.Unix())}},
-		Tags:           []string{fmt.Sprintf("version:%s", version.AgentVersion)},
+		Tags:           tagsSlice,
 		Host:           agg.hostname,
 		MType:          metrics.APIGaugeType,
 		SourceTypeName: "System",
@@ -521,6 +550,8 @@ func (agg *BufferedAggregator) sendServiceChecks(start time.Time, serviceChecks 
 	addFlushTime("ServiceCheckFlushTime", int64(time.Since(start)))
 	aggregatorServiceCheckFlushed.Add(int64(len(serviceChecks)))
 	tlmFlush.Add(float64(len(serviceChecks)), "service_checks", state)
+
+	// TODO(remy): put back the service checks tags StringSlice. OR NOT
 }
 
 func (agg *BufferedAggregator) flushServiceChecks(start time.Time, waitForSerializer bool) {
@@ -570,6 +601,8 @@ func (agg *BufferedAggregator) sendEvents(start time.Time, events metrics.Events
 	addFlushTime("EventFlushTime", int64(time.Since(start)))
 	aggregatorEventsFlushed.Add(int64(len(events)))
 	tlmFlush.Add(float64(len(events)), "events", state)
+
+	// TODO(remy): put back the events tags StringSlice. OR NOT
 }
 
 // flushEvents serializes and forwards events in a separate goroutine

@@ -9,6 +9,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator/ckey"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -57,7 +58,7 @@ func (s *TimeSampler) isBucketStillOpen(bucketStartTimestamp, timestamp int64) b
 // Add the metricSample to the correct bucket
 func (s *TimeSampler) addSample(metricSample *metrics.MetricSample, timestamp float64) {
 	// Keep track of the context
-	contextKey := s.contextResolver.trackContext(metricSample, timestamp)
+	contextKey, context := s.contextResolver.trackContext(metricSample, timestamp)
 	bucketStart := s.calculateBucketStart(timestamp)
 
 	switch metricSample.Mtype {
@@ -77,7 +78,7 @@ func (s *TimeSampler) addSample(metricSample *metrics.MetricSample, timestamp fl
 
 		// Add sample to bucket
 		if err := bucketMetrics.AddSample(contextKey, metricSample, timestamp, s.interval); err != nil {
-			log.Debug("Ignoring sample '%s' on host '%s' and tags '%s': %s", metricSample.Name, metricSample.Host, metricSample.Tags, err)
+			log.Debug("Ignoring sample '%s' on host '%s' and tags '%s': %s", context.Name, context.Host, context.Tags, err)
 		}
 	}
 }
@@ -214,7 +215,7 @@ func (s *TimeSampler) countersSampleZeroValue(timestamp int64, contextMetrics me
 				Value:      0.0,
 				RawValue:   "0.0",
 				Mtype:      metrics.CounterType,
-				Tags:       []string{},
+				Tags:       util.EmptyStringSlice,
 				Host:       "",
 				SampleRate: 1,
 				Timestamp:  float64(timestamp),

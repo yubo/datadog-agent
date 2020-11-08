@@ -20,6 +20,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/executable"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -212,20 +213,20 @@ func addExpvarPythonInitErrors(msg string) error {
 }
 
 func sendTelemetry(pythonVersion string) {
-	tags := []string{
-		fmt.Sprintf("python_version:%s", pythonVersion),
-	}
+	// the recurrent series owns this StringSlice, we don't need to get it
+	// from the pool.
+	tagSlice := util.NewStringSlice(1)
+	tagSlice.Append(fmt.Sprintf("python_version:%s", pythonVersion))
 	if agentVersion, err := version.Agent(); err == nil {
-		tags = append(tags,
-			fmt.Sprintf("agent_version_major:%d", agentVersion.Major),
-			fmt.Sprintf("agent_version_minor:%d", agentVersion.Minor),
-			fmt.Sprintf("agent_version_patch:%d", agentVersion.Patch),
-		)
+		tagSlice.Append(fmt.Sprintf("agent_version_major:%d", agentVersion.Major))
+		tagSlice.Append(fmt.Sprintf("agent_version_minor:%d", agentVersion.Minor))
+		tagSlice.Append(fmt.Sprintf("agent_version_patch:%d", agentVersion.Patch))
 	}
+
 	aggregator.AddRecurrentSeries(&metrics.Serie{
 		Name:   "datadog.agent.python.version",
 		Points: []metrics.Point{{Value: 1.0}},
-		Tags:   tags,
+		Tags:   tagSlice,
 		MType:  metrics.APIGaugeType,
 	})
 }

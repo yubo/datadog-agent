@@ -298,7 +298,10 @@ func nextMessage(packet *[]byte) (message []byte) {
 
 func (s *Server) parsePackets(batcher *batcher, parser *parser, packets []*listeners.Packet) {
 	for _, packet := range packets {
+		// TODO(remy): this is a source of allocation and could probably also
+		//			   use StringSlice internaly
 		originTagger := originTags{origin: packet.Origin}
+		// TODO(remy): this is a source of allocation as well, and could be avoided
 		log.Tracef("Dogstatsd receive: %q", packet.Contents)
 		for {
 			message := nextMessage(&packet.Contents)
@@ -354,10 +357,11 @@ func (s *Server) parsePackets(batcher *batcher, parser *parser, packets []*liste
 				}
 				batcher.appendSample(sample)
 				if s.histToDist && sample.Mtype == metrics.HistogramType {
-					distSample := sample.Copy()
-					distSample.Name = s.histToDistPrefix + distSample.Name
-					distSample.Mtype = metrics.DistributionType
-					batcher.appendSample(*distSample)
+					// TODO(remy): implement this.
+					// distSample := sample.Copy()
+					// distSample.Name = s.histToDistPrefix + distSample.Name
+					// distSample.Mtype = metrics.DistributionType
+					// batcher.appendSample(*distSample)
 				}
 			}
 		}
@@ -377,19 +381,21 @@ func (s *Server) errLog(format string, params ...interface{}) {
 func (s *Server) parseMetricMessage(parser *parser, message []byte, originTagsFunc func() []string) (metrics.MetricSample, error) {
 	sample, err := parser.parseMetricSample(message)
 	if err != nil {
+		util.GlobalStringSlicePool.Put(sample.tags)
 		dogstatsdMetricParseErrors.Add(1)
 		tlmProcessed.IncWithTags(tlmProcessedErrorTags)
 		return metrics.MetricSample{}, err
 	}
-	if s.mapper != nil && len(sample.tags) == 0 {
+	if s.mapper != nil && sample.tags.Len() == 0 {
 		mapResult := s.mapper.Map(sample.name)
 		if mapResult != nil {
 			sample.name = mapResult.Name
-			sample.tags = append(sample.tags, mapResult.Tags...)
+			// TODO(remy): maybe the mapper could benefit of using a StringSlice as well?
+			sample.tags.AppendMany(mapResult.Tags)
 		}
 	}
 	metricSample := enrichMetricSample(sample, s.metricPrefix, s.metricPrefixBlacklist, s.defaultHostname, originTagsFunc, s.entityIDPrecedenceEnabled)
-	metricSample.Tags = append(metricSample.Tags, s.extraTags...)
+	metricSample.Tags.AppendMany(s.extraTags)
 	dogstatsdMetricPackets.Add(1)
 	tlmProcessed.IncWithTags(tlmProcessedOkTags)
 	return metricSample, nil
