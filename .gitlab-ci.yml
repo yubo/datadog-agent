@@ -379,8 +379,10 @@ tests_ebpf:
     - python3 -m pip install -r requirements.txt
     # Retrieve libbcc from S3
     - $S3_CP_CMD $S3_ARTIFACTS_URI/libbcc-amd64.tar.xz /tmp/libbcc.tar.xz
-    - mkdir /opt/libbcc
-    - tar -xvf /tmp/libbcc.tar.xz -C /opt/libbcc
+    - $S3_CP_CMD $S3_ARTIFACTS_URI/clang-amd64-11.0.0.tar.xz /tmp/clang.tar.xz
+    - mkdir -p $DATADOG_AGENT_EMBEDDED_PATH
+    - tar -xvf /tmp/libbcc.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
+    - tar -xvf /tmp/clang.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
   after_script:
     - cd $SRC_PATH
     - cp ./pkg/ebpf/c/tracer-ebpf.o $CI_PROJECT_DIR/.tmp/binary-ebpf/tracer-ebpf.o
@@ -390,7 +392,7 @@ tests_ebpf:
   tags: [ "runner:main", "size:large" ]
   script:
     # For now only check bpf bytes since we don't have a way to run eBPF tests without mounting a debugfs
-    - CGO_CFLAGS='-I/opt/libbcc/include' CGO_LDFLAGS='-Wl,-rpath,/opt/libbcc/lib -L/opt/libbcc/lib' inv -e system-probe.test --only-check-bpf-bytes
+    - inv -e system-probe.test --only-check-bpf-bytes
     # Compile runtime security functional tests to be executed in kitchen tests
     - inv -e security-agent.functional-tests --output=$DD_AGENT_TESTING_DIR/site-cookbooks/dd-security-agent-check/files/testsuite
 
@@ -737,8 +739,10 @@ build_clang_arm64:
     - inv -e deps --verbose
     # Retrieve libbcc from S3
     - $S3_CP_CMD $S3_ARTIFACTS_URI/libbcc-$ARCH.tar.xz /tmp/libbcc.tar.xz
+    - $S3_CP_CMD $S3_ARTIFACTS_URI/clang-$ARCH-11.0.0.tar.xz /tmp/clang.tar.xz
     - mkdir -p $DATADOG_AGENT_EMBEDDED_PATH
     - tar -xvf /tmp/libbcc.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
+    - tar -xvf /tmp/clang.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
 
   script:
     - inv -e system-probe.build --go-version=$SYSTEM_PROBE_GO_VERSION --embedded-path=$DATADOG_AGENT_EMBEDDED_PATH
