@@ -677,6 +677,52 @@ dogstatsd_arm64_size_test:
   script:
     - inv -e dogstatsd.size-test --skip-build
 
+.build_clang_common:
+  rules:
+    - when: manual
+  stage: deps_build
+  timeout: 2h 00m
+  script:
+    - wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang-11.0.0.src.tar.xz -O clang.src.tar.xz
+    - wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/llvm-11.0.0.src.tar.xz -O llvm.src.tar.xz
+    - mkdir clang && tar -C clang --strip-components=1 -xf clang.src.tar.xz
+    - mkdir llvm && tar -C llvm --strip-components=1 -xf llvm.src.tar.xz
+    - mkdir build && cd build
+    - |
+      cmake -DLLVM_ENABLE_PROJECTS=clang \
+      -DLLVM_TARGETS_TO_BUILD="BPF" \
+      -DCMAKE_INSTALL_PREFIX=$DATADOG_AGENT_EMBEDDED_PATH \
+      -G "Ninja" \
+      -DCMAKE_BUILD_TYPE=MinSizeRel \
+      -DLLVM_BUILD_TOOLS=OFF \
+      -DLLVM_INCLUDE_EXAMPLES=OFF \
+      -DLLVM_INCLUDE_TESTS=OFF \
+      -DLLVM_INCLUDE_BENCHMARKS=OFF \
+      -DLLVM_STATIC_LINK_CXX_STDLIB=ON \
+      -DLLVM_ENABLE_BINDINGS=OFF \
+      -DLLVM_PARALLEL_COMPILE_JOBS=4 \
+      -DLLVM_PARALLEL_LINK_JOBS=4 \
+      ../llvm
+    - cmake --build . --target install
+    - cd $DATADOG_AGENT_EMBEDDED_PATH
+    - rm -rf bin share libexec lib/clang lib/cmake lib/*.so*
+    - tar cvaf /tmp/clang.tar.xz .
+    - $S3_CP_CMD /tmp/clang.tar.xz $S3_ARTIFACTS_URI/clang-$ARCH-11.0.0.tar.xz
+
+build_clang_x64:
+  extends: .build_clang_common
+  image: datadog-agent-buildimages:system-probe_x64
+  tags: [ "runner:main", "size:2xlarge" ]
+  variables:
+    ARCH: amd64
+
+build_clang_arm64:
+  extends: .build_clang_common
+  image: datadog-agent-buildimages:clang_arm64
+  tags: [ "runner:docker-arm", "platform:arm64" ]
+  variables:
+    ARCH: arm64
+
 .system-probe_build_common:
   before_script:
     # Hack to work around the cloning issue with arm runners
