@@ -687,8 +687,8 @@ dogstatsd_arm64_size_test:
   script:
     - wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang-11.0.0.src.tar.xz -O clang.src.tar.xz
     - wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/llvm-11.0.0.src.tar.xz -O llvm.src.tar.xz
-    - mkdir clang && tar -C clang --strip-components=1 -xf clang.src.tar.xz
-    - mkdir llvm && tar -C llvm --strip-components=1 -xf llvm.src.tar.xz
+    - mkdir clang && tar -C clang --strip-components=1 -xf --no-same-owner clang.src.tar.xz
+    - mkdir llvm && tar -C llvm --strip-components=1 -xf --no-same-owner llvm.src.tar.xz
     - mkdir build && cd build
     - |
       cmake -DLLVM_ENABLE_PROJECTS=clang \
