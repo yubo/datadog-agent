@@ -84,6 +84,7 @@ variables:
   S3_CP_OPTIONS: --only-show-errors --region us-east-1 --sse AES256
   S3_CP_CMD: aws s3 cp $S3_CP_OPTIONS
   S3_ARTIFACTS_URI: s3://dd-ci-artefacts-build-stable/$CI_PROJECT_NAME/$CI_PIPELINE_ID
+  S3_PERMANENT_ARTIFACTS_URI: s3://dd-ci-persistent-artefacts-build-stable/$CI_PROJECT_NAME
 ## comment out both lines below (S3_OMNIBUS_CACHE_BUCKET and USE_S3_CACHING) to allow
 ## build to succeed with S3 caching disabled.
   S3_OMNIBUS_CACHE_BUCKET: dd-ci-datadog-agent-omnibus-cache-build-stable
@@ -379,7 +380,7 @@ tests_ebpf:
     - python3 -m pip install -r requirements.txt
     # Retrieve libbcc from S3
     - $S3_CP_CMD $S3_ARTIFACTS_URI/libbcc-amd64.tar.xz /tmp/libbcc.tar.xz
-    - $S3_CP_CMD $S3_ARTIFACTS_URI/clang-amd64-11.0.0.tar.xz /tmp/clang.tar.xz
+    - $S3_CP_CMD $S3_PERMANENT_ARTIFACTS_URI/clang-amd64-11.0.0.tar.xz /tmp/clang.tar.xz
     - mkdir -p $DATADOG_AGENT_EMBEDDED_PATH
     - tar -xvf /tmp/libbcc.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
     - tar -xvf /tmp/clang.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
@@ -709,7 +710,7 @@ dogstatsd_arm64_size_test:
     - cd $DATADOG_AGENT_EMBEDDED_PATH
     - rm -rf bin share libexec lib/clang lib/cmake lib/*.so*
     - tar cvaf /tmp/clang.tar.xz .
-    - $S3_CP_CMD /tmp/clang.tar.xz $S3_ARTIFACTS_URI/clang-$ARCH-11.0.0.tar.xz
+    - $S3_CP_CMD /tmp/clang.tar.xz $S3_PERMANENT_ARTIFACTS_URI/clang-$ARCH-11.0.0.tar.xz
 
 build_clang_x64:
   extends: .build_clang_common
@@ -739,7 +740,7 @@ build_clang_arm64:
     - inv -e deps --verbose
     # Retrieve libbcc from S3
     - $S3_CP_CMD $S3_ARTIFACTS_URI/libbcc-$ARCH.tar.xz /tmp/libbcc.tar.xz
-    - $S3_CP_CMD $S3_ARTIFACTS_URI/clang-$ARCH-11.0.0.tar.xz /tmp/clang.tar.xz
+    - $S3_CP_CMD $S3_PERMANENT_ARTIFACTS_URI/clang-$ARCH-11.0.0.tar.xz /tmp/clang.tar.xz
     - mkdir -p $DATADOG_AGENT_EMBEDDED_PATH
     - tar -xvf /tmp/libbcc.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
     - tar -xvf /tmp/clang.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
