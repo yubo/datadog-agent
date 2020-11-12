@@ -9,7 +9,6 @@ import (
 
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/soniah/gosnmp"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -20,46 +19,6 @@ const (
 type Check struct {
 	core.CheckBase
 	config snmpConfig
-}
-
-type metricsConfig struct {
-	OID  string `yaml:"OID"`
-	Name string `yaml:"name"`
-}
-
-type snmpInitConfig struct {
-	OidBatchSize             int `yaml:"oid_batch_size"`
-	RefreshOidsCacheInterval int `yaml:"refresh_oids_cache_interval"`
-	// TODO: To implement:
-	// - global_metrics
-	// - profiles
-}
-
-type snmpInstanceConfig struct {
-	IPAddress       string          `yaml:"ip_address"`
-	Port            int             `yaml:"port"`
-	CommunityString string          `yaml:"community_string"`
-	SnmpVersion     string          `yaml:"snmp_version"`
-	Timeout         int             `yaml:"timeout"`
-	Retries         int             `yaml:"retries"`
-	User            string          `yaml:"user"`
-	AuthProtocol    string          `yaml:"authProtocol"`
-	AuthKey         string          `yaml:"authKey"`
-	PrivProtocol    string          `yaml:"privProtocol"`
-	PrivKey         string          `yaml:"privKey"`
-	ContextName     string          `yaml:"context_name"`
-	Metrics         []metricsConfig `yaml:"metrics"`
-	// TODO: To implement:
-	//   - context_engine_id: Investigate if we can remove this configuration.
-	//   - use_global_metrics
-	//   - profile
-	//   - metrics
-	//   - metric_tags
-}
-
-type snmpConfig struct {
-	instance snmpInstanceConfig
-	initConf snmpInitConfig
 }
 
 // Run executes the check
@@ -118,14 +77,11 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(rawInitConfig, &c.config.initConf)
+	config, err := buildConfig(rawInstance, rawInitConfig)
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(rawInstance, &c.config.instance)
-	if err != nil {
-		return err
-	}
+	c.config = config
 
 	return nil
 }
