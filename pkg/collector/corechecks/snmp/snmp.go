@@ -16,14 +16,6 @@ const (
 	snmpCheckName = "snmp"
 )
 
-// metricConfigItem map a metric to a snmp unit property.
-type metricConfigItem struct {
-	metricName         string
-	propertyName       string
-	accountingProperty string
-	optional           bool // if optional log as debug when there is an issue getting the property, otherwise log as error
-}
-
 // Check aggregates metrics from one Check instance
 type Check struct {
 	core.CheckBase
