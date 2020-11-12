@@ -4,10 +4,8 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
-	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"time"
-
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/soniah/gosnmp"
 )
 
@@ -30,22 +28,13 @@ func (c *Check) Run() error {
 
 	sender.Gauge("snmp.test.metric", float64(10), "", nil)
 
-	session := gosnmp.GoSNMP{
-		Target:             "localhost",
-		Port:               uint16(1161),
-		Community:          "public",
-		Version:            gosnmp.Version2c,
-		Timeout:            time.Duration(2) * time.Second,
-		Retries:            3,
-		ExponentialTimeout: true,
-		MaxOids:            100,
-	}
+	session := buildSession(c.config)
 
-	err = session.Connect()
+	err = session.gosnmpInst.Connect()
 	if err != nil {
 		log.Errorf("Connect() err: %v", err)
 	}
-	defer session.Conn.Close()
+	defer session.gosnmpInst.Conn.Close()
 
 	oids := []string{"1.3.6.1.2.1.25.6.3.1.5.130"}
 	result, err := session.Get(oids)
