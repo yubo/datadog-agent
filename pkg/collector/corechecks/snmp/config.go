@@ -73,6 +73,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c := snmpConfig{}
 	c.IPAddress = instance.IPAddress
 	c.Port = instance.Port
+	c.CommunityString = instance.CommunityString
 	c.Metrics = instance.Metrics
 
 	return c, err
