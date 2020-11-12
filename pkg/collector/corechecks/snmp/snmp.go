@@ -21,15 +21,35 @@ type Check struct {
 	core.CheckBase
 	config snmpConfig
 }
-type unitSubstateMapping = map[string]string
 
-type snmpInstanceConfig struct {
-	PrivateSocket         string                         `yaml:"private_socket"`
-	UnitNames             []string                       `yaml:"unit_names"`
-	SubstateStatusMapping map[string]unitSubstateMapping `yaml:"substate_status_mapping"`
+type snmpInitConfig struct {
+	OidBatchSize             int `yaml:"oid_batch_size"`
+	RefreshOidsCacheInterval int `yaml:"refresh_oids_cache_interval"`
+	// TODO: To implement:
+	// - global_metrics
+	// - profiles
 }
 
-type snmpInitConfig struct{}
+type snmpInstanceConfig struct {
+	IPAddress       string `yaml:"ip_address"`
+	Port            int    `yaml:"port"`
+	CommunityString string `yaml:"community_string"`
+	SnmpVersion     string `yaml:"snmp_version"`
+	Timeout         int    `yaml:"timeout"`
+	Retries         int    `yaml:"retries"`
+	User            string `yaml:"user"`
+	AuthProtocol    string `yaml:"authProtocol"`
+	AuthKey         string `yaml:"authKey"`
+	PrivProtocol    string `yaml:"privProtocol"`
+	PrivKey         string `yaml:"privKey"`
+	ContextName     string `yaml:"context_name"`
+	// TODO: To implement:
+	//   - context_engine_id: Investigate if we can remove this configuration.
+	//   - use_global_metrics
+	//   - profile
+	//   - metrics
+	//   - metric_tags
+}
 
 type snmpConfig struct {
 	instance snmpInstanceConfig

@@ -14,12 +14,10 @@ import (
 func TestBasicConfiguration(t *testing.T) {
 	check := Check{}
 	rawInstanceConfig := []byte(`
-unit_names:
- - ssh.service
- - syslog.socket
+ip_address: 1.2.3.4
 `)
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")
 
 	assert.Nil(t, err)
-	assert.ElementsMatch(t, []string{"ssh.service", "syslog.socket"}, check.config.instance.UnitNames)
+	assert.Equal(t, "1.2.3.4", check.config.instance.IPAddress)
 }
