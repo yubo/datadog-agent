@@ -1,6 +1,7 @@
-# coresnmp
+# snmp
 
 init_config:
+  loader: core
 
 instances:
   -

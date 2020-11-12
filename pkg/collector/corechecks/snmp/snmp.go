@@ -1,4 +1,4 @@
-package coresnmp
+package snmp
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
@@ -13,11 +13,10 @@ import (
 )
 
 const (
-	coresnmpCheckName = "coresnmp"
-
+	snmpCheckName = "snmp"
 )
 
-// metricConfigItem map a metric to a coresnmp unit property.
+// metricConfigItem map a metric to a snmp unit property.
 type metricConfigItem struct {
 	metricName         string
 	propertyName       string
@@ -25,35 +24,35 @@ type metricConfigItem struct {
 	optional           bool // if optional log as debug when there is an issue getting the property, otherwise log as error
 }
 
-// CoresnmpCheck aggregates metrics from one CoresnmpCheck instance
-type CoresnmpCheck struct {
+// SnmpCheck aggregates metrics from one SnmpCheck instance
+type SnmpCheck struct {
 	core.CheckBase
-	config coresnmpConfig
+	config snmpConfig
 }
 type unitSubstateMapping = map[string]string
 
-type systemdInstanceConfig struct {
+type snmpInstanceConfig struct {
 	PrivateSocket         string                         `yaml:"private_socket"`
 	UnitNames             []string                       `yaml:"unit_names"`
 	SubstateStatusMapping map[string]unitSubstateMapping `yaml:"substate_status_mapping"`
 }
 
-type systemdInitConfig struct{}
+type snmpInitConfig struct{}
 
-type coresnmpConfig struct {
-	instance systemdInstanceConfig
-	initConf systemdInitConfig
+type snmpConfig struct {
+	instance snmpInstanceConfig
+	initConf snmpInitConfig
 }
 
 
 // Run executes the check
-func (c *CoresnmpCheck) Run() error {
+func (c *SnmpCheck) Run() error {
 	sender, err := aggregator.GetSender(c.ID())
 	if err != nil {
 		return err
 	}
 
-	sender.Gauge("coresnmp.test.metric", float64(10), "", nil)
+	sender.Gauge("snmp.test.metric", float64(10), "", nil)
 
 	session := gosnmp.GoSNMP{
 		Target: "localhost",
@@ -89,15 +88,15 @@ func (c *CoresnmpCheck) Run() error {
 		}
 	}
 
-	log.Debug("Run coresnmp")
+	log.Debug("Run snmp")
 
 	sender.Commit()
 
 	return nil
 }
 
-// Configure configures the coresnmp checks
-func (c *CoresnmpCheck) Configure(rawInstance integration.Data, rawInitConfig integration.Data, source string) error {
+// Configure configures the snmp checks
+func (c *SnmpCheck) Configure(rawInstance integration.Data, rawInitConfig integration.Data, source string) error {
 	err := c.CommonConfigure(rawInstance, source)
 	if err != nil {
 		return err
@@ -114,12 +113,12 @@ func (c *CoresnmpCheck) Configure(rawInstance integration.Data, rawInitConfig in
 	return nil
 }
 
-func coresnmpFactory() check.Check {
-	return &CoresnmpCheck{
-		CheckBase: core.NewCheckBase(coresnmpCheckName),
+func snmpFactory() check.Check {
+	return &SnmpCheck{
+		CheckBase: core.NewCheckBase(snmpCheckName),
 	}
 }
 
 func init() {
-	core.RegisterCheck(coresnmpCheckName, coresnmpFactory)
+	core.RegisterCheck(snmpCheckName, snmpFactory)
 }

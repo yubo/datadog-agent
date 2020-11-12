@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-2020 Datadog, Inc.
 
-package coresnmp
+package snmp
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestBasicConfiguration(t *testing.T) {
-	check := CoresnmpCheck{}
+	check := SnmpCheck{}
 	rawInstanceConfig := []byte(`
 unit_names:
  - ssh.service

@@ -39,7 +39,7 @@ AGENT_CORECHECKS = [
     "containerd",
     "cpu",
     "cri",
-    "coresnmp",
+    "snmp",
     "docker",
     "file_handle",
     "go_expvar",
