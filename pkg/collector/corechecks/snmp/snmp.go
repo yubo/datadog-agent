@@ -8,8 +8,8 @@ import (
 	"time"
 
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
-	yaml "gopkg.in/yaml.v2"
 	"github.com/soniah/gosnmp"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -24,8 +24,8 @@ type metricConfigItem struct {
 	optional           bool // if optional log as debug when there is an issue getting the property, otherwise log as error
 }
 
-// SnmpCheck aggregates metrics from one SnmpCheck instance
-type SnmpCheck struct {
+// Check aggregates metrics from one Check instance
+type Check struct {
 	core.CheckBase
 	config snmpConfig
 }
@@ -44,9 +44,8 @@ type snmpConfig struct {
 	initConf snmpInitConfig
 }
 
-
 // Run executes the check
-func (c *SnmpCheck) Run() error {
+func (c *Check) Run() error {
 	sender, err := aggregator.GetSender(c.ID())
 	if err != nil {
 		return err
@@ -55,7 +54,7 @@ func (c *SnmpCheck) Run() error {
 	sender.Gauge("snmp.test.metric", float64(10), "", nil)
 
 	session := gosnmp.GoSNMP{
-		Target: "localhost",
+		Target:             "localhost",
 		Port:               uint16(1161),
 		Community:          "public",
 		Version:            gosnmp.Version2c,
@@ -96,7 +95,7 @@ func (c *SnmpCheck) Run() error {
 }
 
 // Configure configures the snmp checks
-func (c *SnmpCheck) Configure(rawInstance integration.Data, rawInitConfig integration.Data, source string) error {
+func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integration.Data, source string) error {
 	err := c.CommonConfigure(rawInstance, source)
 	if err != nil {
 		return err
@@ -114,7 +113,7 @@ func (c *SnmpCheck) Configure(rawInstance integration.Data, rawInitConfig integr
 }
 
 func snmpFactory() check.Check {
-	return &SnmpCheck{
+	return &Check{
 		CheckBase: core.NewCheckBase(snmpCheckName),
 	}
 }

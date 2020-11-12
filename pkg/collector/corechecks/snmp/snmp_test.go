@@ -12,7 +12,7 @@ import (
 )
 
 func TestBasicConfiguration(t *testing.T) {
-	check := SnmpCheck{}
+	check := Check{}
 	rawInstanceConfig := []byte(`
 unit_names:
  - ssh.service
