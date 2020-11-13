@@ -35,24 +35,27 @@ func (c *Check) Run() error {
 	}
 	defer c.session.Close() // TODO: handle error?
 
-	oids := []string{"1.3.6.1.2.1.25.6.3.1.5.130"}
-	result, err := c.session.Get(oids)
-	if err != nil {
-		log.Errorf("Get() err: %v", err)
-		return nil
-	}
+	for _, metric := range c.config.Metrics {
 
-	for j, variable := range result.Variables {
-		log.Infof("%d: oid: %s ", j, variable.Name)
-		switch variable.Type {
-		case gosnmp.OctetString:
-			log.Infof("string: %s\n", string(variable.Value.([]byte)))
-		default:
-			log.Infof("number: %d\n", gosnmp.ToBigInt(variable.Value))
+		oids := []string{metric.OID}
+		result, err := c.session.Get(oids)
+		if err != nil {
+			log.Errorf("Get() err: %v", err)
+			return nil
+		}
+
+		for j, variable := range result.Variables {
+			log.Infof("%d: oid: %s ", j, variable.Name)
+			switch variable.Type {
+			case gosnmp.OctetString:
+				log.Infof("string: %s\n", string(variable.Value.([]byte)))
+			default:
+				log.Infof("number: %d\n", gosnmp.ToBigInt(variable.Value))
+				value := float64(gosnmp.ToBigInt(variable.Value).Int64())
+				sender.Gauge("snmp."+metric.Name, value, "", nil)
+			}
 		}
 	}
-
-	log.Debug("Run snmp")
 
 	sender.Commit()
 
