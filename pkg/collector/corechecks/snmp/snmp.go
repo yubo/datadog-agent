@@ -16,7 +16,8 @@ const (
 // Check aggregates metrics from one Check instance
 type Check struct {
 	core.CheckBase
-	config snmpConfig
+	config  snmpConfig
+	session snmpSession
 }
 
 // Run executes the check
@@ -28,16 +29,14 @@ func (c *Check) Run() error {
 
 	sender.Gauge("snmp.test.metric", float64(10), "", nil)
 
-	session := buildSession(c.config)
-
-	err = session.gosnmpInst.Connect()
+	err = c.session.Connect()
 	if err != nil {
 		log.Errorf("Connect() err: %v", err)
 	}
-	defer session.gosnmpInst.Conn.Close()
+	defer c.session.Close() // TODO: handle error?
 
 	oids := []string{"1.3.6.1.2.1.25.6.3.1.5.130"}
-	result, err := session.Get(oids)
+	result, err := c.session.Get(oids)
 	if err != nil {
 		log.Errorf("Get() err: %v", err)
 		return nil
@@ -71,6 +70,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 		return err
 	}
 	c.config = config
+	c.session = buildSession(c.config)
 
 	return nil
 }
