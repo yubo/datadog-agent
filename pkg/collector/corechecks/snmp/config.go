@@ -94,7 +94,6 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 }
 
 func parseVersion(rawVersion string) (gosnmp.SnmpVersion, error) {
-	// TODO: test me
 	switch rawVersion {
 	case "1":
 		return gosnmp.Version1, nil
