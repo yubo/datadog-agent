@@ -16,7 +16,7 @@ const (
 type Check struct {
 	core.CheckBase
 	config  snmpConfig
-	session snmpSession
+	session sessionAPI
 }
 
 /*
@@ -93,7 +93,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 		return err
 	}
 	c.config = config
-	c.session = buildSession(c.config)
+	c.session.Configure(c.config)
 
 	return nil
 }

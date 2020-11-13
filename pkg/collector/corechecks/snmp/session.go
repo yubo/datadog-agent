@@ -5,12 +5,19 @@ import (
 	"time"
 )
 
+type sessionAPI interface {
+	Configure(config snmpConfig)
+	Get(oids []string) (result *gosnmp.SnmpPacket, err error)
+	Connect() error
+	Close() error
+}
+
 type snmpSession struct {
 	gosnmpInst gosnmp.GoSNMP
 }
 
-func buildSession(config snmpConfig) snmpSession {
-	gosnmpInst := gosnmp.GoSNMP{
+func (s *snmpSession) Configure(config snmpConfig) {
+	s.gosnmpInst = gosnmp.GoSNMP{
 		Target:    config.IPAddress,
 		Port:      config.Port,
 		Community: config.CommunityString,
@@ -21,7 +28,6 @@ func buildSession(config snmpConfig) snmpSession {
 		ExponentialTimeout: true,
 		MaxOids:            100,
 	}
-	return snmpSession{gosnmpInst}
 }
 
 func (s *snmpSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) {
