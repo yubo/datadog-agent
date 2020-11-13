@@ -6,6 +6,7 @@
 package snmp
 
 import (
+	"github.com/soniah/gosnmp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,10 +28,93 @@ metrics:
 
 	assert.Nil(t, err)
 	assert.Equal(t, "1.2.3.4", check.config.IPAddress)
-	assert.Equal(t, 1161, check.config.Port)
+	assert.Equal(t, uint16(1161), check.config.Port)
 	metrics := []metricsConfig{
 		{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"},
 		{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"},
 	}
 	assert.Equal(t, metrics, check.config.Metrics)
+}
+
+func TestPortConfiguration(t *testing.T) {
+	// TEST Default port
+	check := Check{}
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+`)
+	err := check.Configure(rawInstanceConfig, []byte(``), "test")
+	assert.Nil(t, err)
+	assert.Equal(t, uint16(161), check.config.Port)
+
+	// TEST Custom port
+	check = Check{}
+	// language=yaml
+	rawInstanceConfig = []byte(`
+ip_address: 1.2.3.4
+port: 1234
+`)
+	err = check.Configure(rawInstanceConfig, []byte(``), "test")
+	assert.Nil(t, err)
+	assert.Equal(t, uint16(1234), check.config.Port)
+}
+
+func TestVersionConfiguration(t *testing.T) {
+	// TEST Empty case
+	check := Check{}
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+`)
+	err := check.Configure(rawInstanceConfig, []byte(``), "test")
+	assert.Nil(t, err)
+	assert.Equal(t, gosnmp.Version2c, check.config.SnmpVersion)
+
+	// TEST Valid versions
+	cases := []struct {
+		rawInstanceConfig []byte
+		expectedVersion   gosnmp.SnmpVersion
+	}{
+		// language=yaml
+		{[]byte(`
+ip_address: 1.2.3.4
+snmp_version: 2
+`), gosnmp.Version2c},
+		// language=yaml
+		{[]byte(`
+ip_address: 1.2.3.4
+snmp_version: 1
+`), gosnmp.Version1},
+		// language=yaml
+		{[]byte(`
+ip_address: 1.2.3.4
+snmp_version: 2
+`), gosnmp.Version2c},
+		// language=yaml
+		{[]byte(`
+ip_address: 1.2.3.4
+snmp_version: 2c
+`), gosnmp.Version2c},
+		// language=yaml
+		{[]byte(`
+ip_address: 1.2.3.4
+snmp_version: 3
+`), gosnmp.Version3},
+	}
+	for _, tc := range cases {
+		check = Check{}
+		err = check.Configure(tc.rawInstanceConfig, []byte(``), "test")
+		assert.Nil(t, err)
+		assert.Equal(t, tc.expectedVersion, check.config.SnmpVersion)
+	}
+
+	// TEST Invalid version
+	check = Check{}
+	// language=yaml
+	rawInstanceConfig = []byte(`
+ip_address: 1.2.3.4
+snmp_version: 4
+`)
+	err = check.Configure(rawInstanceConfig, []byte(``), "test")
+	assert.Error(t, err, "invalid snmp version `4`. Valid versions are: 1, 2, 2c, 3")
 }

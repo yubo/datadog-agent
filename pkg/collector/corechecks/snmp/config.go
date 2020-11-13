@@ -1,7 +1,9 @@
 package snmp
 
 import (
+	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
+	"github.com/soniah/gosnmp"
 	"gopkg.in/yaml.v2"
 )
 
@@ -20,7 +22,7 @@ type snmpInitConfig struct {
 
 type snmpInstanceConfig struct {
 	IPAddress       string          `yaml:"ip_address"`
-	Port            int             `yaml:"port"`
+	Port            uint16          `yaml:"port"`
 	CommunityString string          `yaml:"community_string"`
 	SnmpVersion     string          `yaml:"snmp_version"`
 	Timeout         int             `yaml:"timeout"`
@@ -42,9 +44,9 @@ type snmpInstanceConfig struct {
 
 type snmpConfig struct {
 	IPAddress       string
-	Port            int
+	Port            uint16
 	CommunityString string
-	SnmpVersion     string
+	SnmpVersion     gosnmp.SnmpVersion
 	Timeout         int
 	Retries         int
 	User            string
@@ -73,8 +75,33 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c := snmpConfig{}
 	c.IPAddress = instance.IPAddress
 	c.Port = instance.Port
+	if instance.Port == 0 {
+		c.Port = 161
+	} else {
+		c.Port = instance.Port
+	}
+
 	c.CommunityString = instance.CommunityString
 	c.Metrics = instance.Metrics
 
+	snmpVersion, err := parseVersion(instance.SnmpVersion)
+	if err != nil {
+		return snmpConfig{}, err
+	}
+	c.SnmpVersion = snmpVersion
+
 	return c, err
+}
+
+func parseVersion(rawVersion string) (gosnmp.SnmpVersion, error) {
+	// TODO: test me
+	switch rawVersion {
+	case "1":
+		return gosnmp.Version1, nil
+	case "", "2", "2c":
+		return gosnmp.Version2c, nil
+	case "3":
+		return gosnmp.Version3, nil
+	}
+	return 0, fmt.Errorf("invalid snmp version `%s`. Valid versions are: 1, 2, 2c, 3", rawVersion)
 }

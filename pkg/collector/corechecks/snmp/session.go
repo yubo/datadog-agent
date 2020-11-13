@@ -11,9 +11,9 @@ type snmpSession struct {
 
 func buildSession(config snmpConfig) snmpSession {
 	gosnmpInst := gosnmp.GoSNMP{
-		Target:             "localhost",
-		Port:               uint16(1161),
-		Community:          "public",
+		Target:             config.IPAddress,
+		Port:               config.Port,
+		Community:          config.CommunityString,
 		Version:            gosnmp.Version2c,
 		Timeout:            time.Duration(2) * time.Second,
 		Retries:            3,
