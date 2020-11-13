@@ -6,7 +6,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"github.com/soniah/gosnmp"
 )
 
 const (
@@ -42,7 +41,7 @@ type Check struct {
 	- Process each metric
 	- Find correct index
     - And use fetched values
- */
+*/
 
 // Run executes the check
 func (c *Check) Run() error {
@@ -51,34 +50,31 @@ func (c *Check) Run() error {
 		return err
 	}
 
+	log.Infof("c.config.Metrics: %#v\n", c.config.Metrics)
 	sender.Gauge("snmp.test.metric", float64(10), "", nil)
 
+	// Create connection
 	err = c.session.Connect()
 	if err != nil {
 		log.Errorf("Connect() err: %v", err)
 	}
 	defer c.session.Close() // TODO: handle error?
 
+	// Get results
+	result, err := c.session.Get(c.config.OidConfig.scalarOids)
+	if err != nil {
+		log.Errorf("Get() err: %v", err)
+		return nil
+	}
+
+	// Format values
+	floatValues, stringValues := resultToValues(result)
+	log.Infof("floatValues: %#v\n", floatValues)
+	log.Infof("stringValues: %#v\n", stringValues)
+
 	for _, metric := range c.config.Metrics {
-
-		oids := []string{metric.OID}
-		result, err := c.session.Get(oids)
-		if err != nil {
-			log.Errorf("Get() err: %v", err)
-			return nil
-		}
-
-		for j, variable := range result.Variables {
-			log.Infof("%d: oid: %s ", j, variable.Name)
-			switch variable.Type {
-			case gosnmp.OctetString:
-				log.Infof("string: %s\n", string(variable.Value.([]byte)))
-			default:
-				log.Infof("number: %d\n", gosnmp.ToBigInt(variable.Value))
-				value := float64(gosnmp.ToBigInt(variable.Value).Int64())
-				sender.Gauge("snmp."+metric.Name, value, "", nil)
-			}
-		}
+		value := floatValues[metric.OID]
+		sender.Gauge("snmp."+metric.Name, value, "", nil)
 	}
 
 	sender.Commit()

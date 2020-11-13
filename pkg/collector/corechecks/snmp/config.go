@@ -42,6 +42,11 @@ type snmpInstanceConfig struct {
 	//   - metric_tags
 }
 
+type oidConfig struct {
+	scalarOids []string
+	columnOids []string
+}
+
 type snmpConfig struct {
 	IPAddress       string
 	Port            uint16
@@ -55,6 +60,7 @@ type snmpConfig struct {
 	PrivProtocol    string
 	PrivKey         string
 	ContextName     string
+	OidConfig       oidConfig
 	Metrics         []metricsConfig
 }
 
@@ -90,7 +96,17 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	}
 	c.SnmpVersion = snmpVersion
 
+	c.OidConfig.scalarOids = parseScalarOids(instance.Metrics)
+
 	return c, err
+}
+
+func parseScalarOids(metrics []metricsConfig) []string {
+	var oids []string
+	for _, metric := range metrics {
+		oids = append(oids, metric.OID)
+	}
+	return oids
 }
 
 func parseVersion(rawVersion string) (gosnmp.SnmpVersion, error) {
