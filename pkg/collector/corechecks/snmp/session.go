@@ -7,9 +7,9 @@ import (
 
 type sessionAPI interface {
 	Configure(config snmpConfig)
-	Get(oids []string) (result *gosnmp.SnmpPacket, err error)
 	Connect() error
 	Close() error
+	Get(oids []string) (result *gosnmp.SnmpPacket, err error)
 }
 
 type snmpSession struct {
@@ -30,14 +30,14 @@ func (s *snmpSession) Configure(config snmpConfig) {
 	}
 }
 
-func (s *snmpSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) {
-	return s.gosnmpInst.Get(oids)
-}
-
 func (s *snmpSession) Connect() error {
 	return s.gosnmpInst.Connect()
 }
 
 func (s *snmpSession) Close() error {
 	return s.gosnmpInst.Conn.Close()
+}
+
+func (s *snmpSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) {
+	return s.gosnmpInst.Get(oids)
 }
