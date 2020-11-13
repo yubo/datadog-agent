@@ -100,6 +100,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 
 func snmpFactory() check.Check {
 	return &Check{
+		session: &snmpSession{},
 		CheckBase: core.NewCheckBase(snmpCheckName),
 	}
 }
