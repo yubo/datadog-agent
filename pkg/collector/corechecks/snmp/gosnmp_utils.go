@@ -6,19 +6,18 @@ import (
 )
 
 // resultToValues convert results into float and string value maps
-func resultToValues(result *gosnmp.SnmpPacket) (floatValues map[string]float64, stringValues map[string]string) {
-	floatValues = map[string]float64{}
-	stringValues = map[string]string{}
+func resultToValues(result *gosnmp.SnmpPacket) (values snmpValues) {
+	returnValues := make(map[string]interface{})
 
 	for _, pduVariable := range result.Variables {
 		name := strings.TrimLeft(pduVariable.Name, ".") // remove leading dot
 		switch pduVariable.Type {
 		case gosnmp.OctetString:
-			stringValues[name] = string(pduVariable.Value.([]byte))
+			returnValues[name] = string(pduVariable.Value.([]byte))
 		default:
 			value := float64(gosnmp.ToBigInt(pduVariable.Value).Int64())
-			floatValues[name] = value
+			returnValues[name] = value
 		}
 	}
-	return floatValues, stringValues
+	return snmpValues{returnValues}
 }

@@ -19,6 +19,10 @@ type Check struct {
 	session sessionAPI
 }
 
+type snmpValues struct {
+	values map[string]interface{}
+}
+
 /*
 
 - Parse configuration
@@ -68,13 +72,15 @@ func (c *Check) Run() error {
 	}
 
 	// Format values
-	floatValues, stringValues := resultToValues(result)
-	log.Infof("floatValues: %#v\n", floatValues)
-	log.Infof("stringValues: %#v\n", stringValues)
+	snmpValues := resultToValues(result)
+	log.Infof("values: %#v\n", snmpValues.values)
 
 	for _, metric := range c.config.Metrics {
-		value := floatValues[metric.OID]
-		sender.Gauge("snmp."+metric.Name, value, "", nil)
+		value := snmpValues.values[metric.OID]
+		floatVal, ok := value.(float64)
+		if ok {
+			sender.Gauge("snmp."+metric.Name, floatVal, "", nil)
+		}
 	}
 
 	sender.Commit()
