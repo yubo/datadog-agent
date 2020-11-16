@@ -134,14 +134,14 @@ func TestTracerExpvar(t *testing.T) {
 	}
 
 	archSpecificKprobes := [][]string{
-		{"PSySBindHits", "PXSysBindHits"},
-		{"PSySBindMisses", "PXSysBindMisses"},
-		{"PSySSocketHits", "PXSysSocketHits"},
-		{"PSySSocketMisses", "PXSysSocketMisses"},
-		{"RSySBindHits", "RXSysBindHits"},
-		{"RSySBindMisses", "RXSysBindMisses"},
-		{"RSySSocketHits", "RXSysSocketHits"},
-		{"RSySSocketMisses", "RXSysSocketMisses"},
+		{"PSySBindHits", "PXSysBindHits", "PArmSysBindHits"},
+		{"PSySBindMisses", "PXSysBindMisses", "PArmSysBindMisses"},
+		{"PSySSocketHits", "PXSysSocketHits", "PArmSysSocketHits"},
+		{"PSySSocketMisses", "PXSysSocketMisses", "PArmSysSocketMisses"},
+		{"RSySBindHits", "RXSysBindHits", "RArmSysBindHits"},
+		{"RSySBindMisses", "RXSysBindMisses", "RArmSysBindMisses"},
+		{"RSySSocketHits", "RXSysSocketHits", "RArmSysSocketHits"},
+		{"RSySSocketMisses", "RXSysSocketMisses", "RArmSysSocketMisses"},
 	}
 
 	for _, et := range expvarTypes {
