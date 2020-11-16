@@ -4,6 +4,7 @@ package ebpf
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/DataDog/datadog-agent/pkg/ebpf/bytecode"
@@ -11,7 +12,10 @@ import (
 	"github.com/DataDog/ebpf/manager"
 )
 
-const x64SyscallPrefix = "__x64_"
+var indirectSyscallPrefixes = map[string]string{
+	"amd64": "__x64_",
+	"arm64": "__arm64_",
+}
 
 // EnabledProbes returns a map of probes that are enabled per config settings.
 // This map does not include the probes used exclusively in the offset guessing process.
@@ -49,7 +53,7 @@ func (c *Config) EnabledProbes(pre410Kernel bool) (map[bytecode.ProbeName]struct
 			enabled[bytecode.UDPRecvMsg] = struct{}{}
 		}
 
-		tp, err := c.chooseSyscallProbe(bytecode.TraceSysBindEnter, bytecode.SysBindX64, bytecode.SysBind)
+		tp, err := c.chooseSyscallProbe(bytecode.TraceSysBindEnter, bytecode.SysBindIndirect, bytecode.SysBind)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +65,7 @@ func (c *Config) EnabledProbes(pre410Kernel bool) (map[bytecode.ProbeName]struct
 		}
 		enabled[tp] = struct{}{}
 
-		tp, err = c.chooseSyscallProbe(bytecode.TraceSysSocketEnter, bytecode.SysSocketX64, bytecode.SysSocket)
+		tp, err = c.chooseSyscallProbe(bytecode.TraceSysSocketEnter, bytecode.SysSocketIndirect, bytecode.SysSocket)
 		if err != nil {
 			return nil, err
 		}
@@ -78,11 +82,11 @@ func (c *Config) EnabledProbes(pre410Kernel bool) (map[bytecode.ProbeName]struct
 }
 
 func (c *Config) chooseSyscallProbeExit(tracepoint bytecode.ProbeName, fallback bytecode.ProbeName) (bytecode.ProbeName, error) {
-	// return value doesn't require the x64 indirection
+	// return value doesn't require the indirection
 	return c.chooseSyscallProbe(tracepoint, "", fallback)
 }
 
-func (c *Config) chooseSyscallProbe(tracepoint bytecode.ProbeName, x64probe bytecode.ProbeName, fallback bytecode.ProbeName) (bytecode.ProbeName, error) {
+func (c *Config) chooseSyscallProbe(tracepoint bytecode.ProbeName, indirectProbe bytecode.ProbeName, fallback bytecode.ProbeName) (bytecode.ProbeName, error) {
 	tparts := strings.Split(string(tracepoint), "/")
 	if len(tparts) != 3 || tparts[0] != "tracepoint" || tparts[1] != "syscalls" {
 		return "", fmt.Errorf("invalid tracepoint name")
@@ -96,13 +100,13 @@ func (c *Config) chooseSyscallProbe(tracepoint bytecode.ProbeName, x64probe byte
 	}
 	syscall := fparts[1]
 
-	if x64probe != "" {
-		xparts := strings.Split(string(x64probe), "/")
+	if indirectProbe != "" {
+		xparts := strings.Split(string(indirectProbe), "/")
 		if len(xparts) < 2 {
-			return "", fmt.Errorf("invalid x64 probe name")
+			return "", fmt.Errorf("invalid indirect probe name")
 		}
 		if xparts[1] != syscall {
-			return "", fmt.Errorf("x64 and fallback probe syscalls do not match")
+			return "", fmt.Errorf("indirect and fallback probe syscalls do not match")
 		}
 	}
 
@@ -111,9 +115,9 @@ func (c *Config) chooseSyscallProbe(tracepoint bytecode.ProbeName, x64probe byte
 		return tracepoint, nil
 	}
 
-	if x64probe != "" {
+	if indirectProbe != "" {
 		// In linux kernel version 4.17(?) they added architecture specific calling conventions to syscalls within the kernel.
-		// When attaching a kprobe to the `__x64_sys_` prefixed syscall, all the arguments are behind an additional layer of
+		// When attaching a kprobe to the `__x64_sys_` or `__arm64_sys` prefixed syscall, all the arguments are behind an additional layer of
 		// indirection. We are detecting this at runtime, and setting the constant `use_indirect_syscall` so the kprobe code
 		// accesses the arguments correctly.
 		//
@@ -125,8 +129,10 @@ func (c *Config) chooseSyscallProbe(tracepoint bytecode.ProbeName, x64probe byte
 		// Instead of:
 		// int domain = PT_REGS_PARM1(ctx);
 		//
-		if sysName, err := manager.GetSyscallFnName(syscall); err == nil && strings.HasPrefix(sysName, x64SyscallPrefix) {
-			return x64probe, nil
+		if sysName, err := manager.GetSyscallFnName(syscall); err == nil {
+			if prefix, ok := indirectSyscallPrefixes[runtime.GOARCH]; ok && strings.HasPrefix(sysName, prefix) {
+				return indirectProbe, nil
+			}
 		}
 	}
 	return fallback, nil

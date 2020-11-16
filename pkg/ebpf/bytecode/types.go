@@ -63,15 +63,15 @@ const (
 	InetCskAcceptReturn ProbeName = "kretprobe/inet_csk_accept"
 
 	// SysSocket traces calls to the socket kprobe
-	SysSocket    ProbeName = "kprobe/sys_socket"
-	SysSocketX64 ProbeName = "kprobe/sys_socket/x64"
+	SysSocket         ProbeName = "kprobe/sys_socket"
+	SysSocketIndirect ProbeName = "kprobe/sys_socket/indirect"
 
 	// SysSocketRet is the kretprobe for SysSocket
 	SysSocketRet ProbeName = "kretprobe/sys_socket"
 
 	// SysBind is the kprobe the bind() syscall.
-	SysBind    ProbeName = "kprobe/sys_bind"
-	SysBindX64 ProbeName = "kprobe/sys_bind/x64"
+	SysBind         ProbeName = "kprobe/sys_bind"
+	SysBindIndirect ProbeName = "kprobe/sys_bind/indirect"
 
 	// SysBindRet is the kretprobe for bind().
 	SysBindRet ProbeName = "kretprobe/sys_bind"

@@ -982,15 +982,15 @@ int tracepoint__sys_enter_bind(struct syscalls_enter_bind_args* ctx) {
     return sys_enter_bind(ctx->fd, ctx->umyaddr);
 }
 
-SEC("kprobe/sys_bind/x64")
-int kprobe__sys_bind_x64(struct pt_regs* ctx) {
+SEC("kprobe/sys_bind/indirect")
+int kprobe__sys_bind_indirect(struct pt_regs* ctx) {
     struct pt_regs* _ctx = (struct pt_regs*)PT_REGS_PARM1(ctx);
 
     __u64 fd;
     struct sockaddr* addr;
     bpf_probe_read(&fd, sizeof(fd), &(PT_REGS_PARM1(_ctx)));
     bpf_probe_read(&addr, sizeof(struct sockaddr*), &(PT_REGS_PARM2(_ctx)));
-    log_debug("kprobe/sys_bind/x64: fd=%u, umyaddr=%x\n", fd, addr);
+    log_debug("kprobe/sys_bind/indirect: fd=%u, umyaddr=%x\n", fd, addr);
     return sys_enter_bind(fd, addr);
 }
 
@@ -1083,15 +1083,15 @@ int tracepoint__sys_enter_socket(struct syscalls_enter_socket_args* ctx) {
     return sys_enter_socket(ctx->family, ctx->type);
 }
 
-SEC("kprobe/sys_socket/x64")
-int kprobe__sys_socket_x64(struct pt_regs* ctx) {
+SEC("kprobe/sys_socket/indirect")
+int kprobe__sys_socket_indirect(struct pt_regs* ctx) {
     struct pt_regs* _ctx = (struct pt_regs*)PT_REGS_PARM1(ctx);
 
     __u64 family;
     __u64 type;
     bpf_probe_read(&family, sizeof(family), &(PT_REGS_PARM1(_ctx)));
     bpf_probe_read(&type, sizeof(type), &(PT_REGS_PARM2(_ctx)));
-    log_debug("kprobe/sys_socket/x64: family=%u, type=%u\n", family, type);
+    log_debug("kprobe/sys_socket/indirect: family=%u, type=%u\n", family, type);
     return sys_enter_socket(family, type);
 }
 
