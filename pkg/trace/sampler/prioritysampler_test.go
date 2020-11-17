@@ -16,11 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	testServiceA = "service-a"
-	testServiceB = "service-b"
-)
-
 func getTestPriorityEngine() *PriorityEngine {
 	// Disable debug logs in these tests
 	seelog.UseLogger(seelog.Disabled)
@@ -240,4 +235,4 @@ func TestMaxTPSByService(t *testing.T) {
 }
 
 // Ensure PriorityEngine implements engine.
-var testPriorityEngine Engine = &PriorityEngine{}
+var _ Engine = &PriorityEngine{}

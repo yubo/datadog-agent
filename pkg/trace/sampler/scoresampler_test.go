@@ -145,4 +145,4 @@ func BenchmarkSampler(b *testing.B) {
 }
 
 // Ensure ScoreEngine implements engine.
-var testScoreEngine Engine = &ScoreEngine{}
+var _ Engine = &ScoreEngine{}

@@ -8,15 +8,13 @@ package stats
 import (
 	"bytes"
 	"fmt"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/DataDog/datadog-agent/pkg/trace/pb"
 	"github.com/DataDog/datadog-agent/pkg/trace/sampler"
 	"github.com/DataDog/datadog-agent/pkg/trace/stats/quantile"
 	"github.com/DataDog/datadog-agent/pkg/trace/traceutil"
+	"strconv"
+	"strings"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -508,11 +506,6 @@ func TestTsRounding(t *testing.T) {
 		1000,        // Keep it with full precision
 		45,          // Keep it with full precision
 		41000234,    // 10011100011001110100101010 -> 10011100010000000000000000 = 40960000
-	}
-
-	type testcase struct {
-		res time.Duration
-		exp []float64
 	}
 
 	exp := []float64{2998927360, 32413581312, 1000, 45, 40960000}

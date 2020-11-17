@@ -84,14 +84,6 @@ func TestProfileProxy(t *testing.T) {
 	}
 }
 
-func printEndpoints(endpoints []*traceconfig.Endpoint) []string {
-	ss := []string{}
-	for _, e := range endpoints {
-		ss = append(ss, e.Host+"|"+e.APIKey)
-	}
-	return ss
-}
-
 func TestProfilingEndpoints(t *testing.T) {
 	t.Run("single", func(t *testing.T) {
 		defer mockConfig("apm_config.profiling_dd_url", "https://intake.profile.datadoghq.fr/v1/input")()

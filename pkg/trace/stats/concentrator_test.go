@@ -21,11 +21,6 @@ var (
 	testBucketInterval = time.Duration(2 * time.Second).Nanoseconds()
 )
 
-func NewTestConcentrator() *Concentrator {
-	statsChan := make(chan []Bucket)
-	return NewConcentrator([]string{}, time.Second.Nanoseconds(), statsChan)
-}
-
 // getTsInBucket gives a timestamp in ns which is `offset` buckets late
 func getTsInBucket(alignedNow int64, bsize int64, offset int64) int64 {
 	return alignedNow - offset*bsize + rand.Int63n(bsize)
