@@ -96,10 +96,12 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	if err != nil {
 		return err
 	}
+
 	config, err := buildConfig(rawInstance, rawInitConfig)
 	if err != nil {
 		return err
 	}
+
 	c.config = config
 	c.session.Configure(c.config)
 
