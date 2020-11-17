@@ -17,10 +17,7 @@ type Check struct {
 	core.CheckBase
 	config  snmpConfig
 	session sessionAPI
-}
-
-type snmpValues struct {
-	values map[string]interface{}
+	sender  aggregator.Sender
 }
 
 /*
@@ -54,7 +51,8 @@ func (c *Check) Run() error {
 		return err
 	}
 
-	log.Infof("c.config.Metrics: %#v\n", c.config.Metrics)
+	c.sender = sender
+	log.Infof("c.config.Metrics: %#v\n", c.config.Metrics) // TODO: remove me
 	sender.Gauge("snmp.test.metric", float64(10), "", nil)
 
 	// Create connection
@@ -73,19 +71,23 @@ func (c *Check) Run() error {
 
 	// Format values
 	snmpValues := resultToValues(result)
-	log.Infof("values: %#v\n", snmpValues.values)
+	log.Infof("values: %#v\n", snmpValues.values) // TODO: remove me
 
+	// Submit metrics
+	c.submitMetrics(snmpValues)
+
+	// Commit
+	sender.Commit()
+	return nil
+}
+
+func (c *Check) submitMetrics(snmpValues snmpValues) {
 	for _, metric := range c.config.Metrics {
-		value := snmpValues.values[metric.OID]
-		floatVal, ok := value.(float64)
+		value, ok := snmpValues.getFloat64(metric.OID)
 		if ok {
-			sender.Gauge("snmp."+metric.Name, floatVal, "", nil)
+			c.sender.Gauge("snmp."+metric.Name, value, "", nil)
 		}
 	}
-
-	sender.Commit()
-
-	return nil
 }
 
 // Configure configures the snmp checks
@@ -106,7 +108,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 
 func snmpFactory() check.Check {
 	return &Check{
-		session: &snmpSession{},
+		session:   &snmpSession{},
 		CheckBase: core.NewCheckBase(snmpCheckName),
 	}
 }
