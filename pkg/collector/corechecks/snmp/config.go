@@ -8,6 +8,7 @@ import (
 )
 
 /*
+TODO: Shall we support 1/ deprecated syntax
 We are only supporting case 2/ for now.
 
 1/ deprecated
@@ -53,6 +54,8 @@ type metricsConfig struct {
 	// Table configs
 	Table   symbolConfig   `yaml:"table"`
 	Symbols []symbolConfig `yaml:"symbols"`
+
+	// TODO: Validate Symbol and Table are not both used
 }
 
 type snmpInitConfig struct {
@@ -64,19 +67,21 @@ type snmpInitConfig struct {
 }
 
 type snmpInstanceConfig struct {
-	IPAddress       string          `yaml:"ip_address"`
-	Port            uint16          `yaml:"port"`
-	CommunityString string          `yaml:"community_string"`
-	SnmpVersion     string          `yaml:"snmp_version"`
-	Timeout         int             `yaml:"timeout"`
-	Retries         int             `yaml:"retries"`
-	User            string          `yaml:"user"`
-	AuthProtocol    string          `yaml:"authProtocol"`
-	AuthKey         string          `yaml:"authKey"`
-	PrivProtocol    string          `yaml:"privProtocol"`
-	PrivKey         string          `yaml:"privKey"`
-	ContextName     string          `yaml:"context_name"`
-	Metrics         []metricsConfig `yaml:"metrics"`
+	IPAddress       string `yaml:"ip_address"`
+	Port            uint16 `yaml:"port"`
+	CommunityString string `yaml:"community_string"`
+	SnmpVersion     string `yaml:"snmp_version"`
+	Timeout         int    `yaml:"timeout"`
+	Retries         int    `yaml:"retries"`
+	User            string `yaml:"user"`
+	AuthProtocol    string `yaml:"authProtocol"`
+	AuthKey         string `yaml:"authKey"`
+	PrivProtocol    string `yaml:"privProtocol"`
+	PrivKey         string `yaml:"privKey"`
+	ContextName     string `yaml:"context_name"`
+
+	// Related parse metric code: https://github.com/DataDog/integrations-core/blob/86e9dc09f5a1829a8e8bf1b404c4fb73a392e0e5/snmp/datadog_checks/snmp/parsing/metrics.py#L94-L150
+	Metrics []metricsConfig `yaml:"metrics"`
 	// TODO: To implement:
 	//   - context_engine_id: Investigate if we can remove this configuration.
 	//   - use_global_metrics
@@ -87,7 +92,7 @@ type snmpInstanceConfig struct {
 
 type oidConfig struct {
 	scalarOids []string
-	//columnOids []string
+	columnOids []string
 }
 
 type snmpConfig struct {
@@ -140,6 +145,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.SnmpVersion = snmpVersion
 
 	c.OidConfig.scalarOids = parseScalarOids(instance.Metrics)
+	c.OidConfig.columnOids = parseColumnOids(instance.Metrics)
 
 	return c, err
 }
@@ -148,6 +154,16 @@ func parseScalarOids(metrics []metricsConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
 		oids = append(oids, metric.Symbol.OID)
+	}
+	return oids
+}
+
+func parseColumnOids(metrics []metricsConfig) []string {
+	var oids []string
+	for _, metric := range metrics {
+		for _, symbol := range metric.Symbols {
+			oids = append(oids, symbol.OID)
+		}
 	}
 	return oids
 }

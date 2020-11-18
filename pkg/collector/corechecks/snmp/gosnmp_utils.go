@@ -5,19 +5,36 @@ import (
 	"strings"
 )
 
-// resultToValues convert results into float and string value maps
-func resultToValues(result *gosnmp.SnmpPacket) (values snmpValues) {
-	returnValues := make(map[string]interface{})
-
-	for _, pduVariable := range result.Variables {
-		name := strings.TrimLeft(pduVariable.Name, ".") // remove leading dot
-		switch pduVariable.Type {
-		case gosnmp.OctetString:
-			returnValues[name] = string(pduVariable.Value.([]byte))
-		default:
-			value := float64(gosnmp.ToBigInt(pduVariable.Value).Int64())
-			returnValues[name] = value
-		}
+func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, interface{}) {
+	var value interface{}
+	name := strings.TrimLeft(pduVariable.Name, ".") // remove leading dot
+	switch pduVariable.Type {
+	case gosnmp.OctetString:
+		value = string(pduVariable.Value.([]byte))
+	default:
+		value = float64(gosnmp.ToBigInt(pduVariable.Value).Int64())
 	}
-	return snmpValues{returnValues}
+	return name, value
+}
+
+func resultToScalarValues(result *gosnmp.SnmpPacket) (values map[string]interface{}) {
+	returnValues := make(map[string]interface{})
+	for _, pduVariable := range result.Variables {
+		name, value := getValueFromPDU(pduVariable)
+		returnValues[name] = value
+	}
+	return returnValues
+}
+
+func resultToColumnValues(oids []string, result *gosnmp.SnmpPacket) (values map[string]map[string]interface{}) {
+	returnValues := make(map[string]map[string]interface{})
+	for i, pduVariable := range result.Variables {
+		name, value := getValueFromPDU(pduVariable)
+		oid := oids[i%len(oids)]
+		if _, ok := returnValues[oid]; !ok {
+			returnValues[oids[i]] = make(map[string]interface{})
+		}
+		returnValues[oid][name] = value
+	}
+	return returnValues
 }

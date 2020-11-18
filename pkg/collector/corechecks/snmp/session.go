@@ -10,6 +10,7 @@ type sessionAPI interface {
 	Connect() error
 	Close() error
 	Get(oids []string) (result *gosnmp.SnmpPacket, err error)
+	GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error)
 }
 
 type snmpSession struct {
@@ -40,4 +41,8 @@ func (s *snmpSession) Close() error {
 
 func (s *snmpSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) {
 	return s.gosnmpInst.Get(oids)
+}
+
+func (s *snmpSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error) {
+	return s.gosnmpInst.GetBulk(oids, 0, 10)
 }

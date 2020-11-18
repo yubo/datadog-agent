@@ -33,6 +33,11 @@ func (s *mockSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) 
 	return args.Get(0).(*gosnmp.SnmpPacket), args.Error(1)
 }
 
+func (s *mockSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error) {
+	args := s.Mock.Called(oids)
+	return args.Get(0).(*gosnmp.SnmpPacket), args.Error(1)
+}
+
 func TestBasicSample(t *testing.T) {
 	session := &mockSession{}
 	check := Check{session: session}
@@ -78,7 +83,33 @@ metrics:
 		},
 	}
 
+	bulkPacket := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.14.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 141,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.14.2",
+				Type:  gosnmp.TimeTicks,
+				Value: 142,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.20.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 201,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.20.2",
+				Type:  gosnmp.TimeTicks,
+				Value: 202,
+			},
+		},
+	}
+
 	session.On("Get", mock.Anything).Return(&packet, nil)
+	session.On("GetBulk", mock.Anything).Return(&bulkPacket, nil)
 
 	err = check.Run()
 	assert.Nil(t, err)

@@ -40,16 +40,12 @@ func (c *Check) Run() error {
 	}
 	defer c.session.Close() // TODO: handle error?
 
-	// Get results
-	result, err := c.session.Get(c.config.OidConfig.scalarOids)
+	snmpValues, err := c.fetchValues(err)
 	if err != nil {
-		log.Errorf("Get() err: %v", err)
-		return nil
+		return err
 	}
 
-	// Format values
-	snmpValues := resultToValues(result)
-	log.Infof("values: %#v\n", snmpValues.values) // TODO: remove me
+	log.Infof("scalarValues: %#v\n", snmpValues.scalarValues) // TODO: remove me
 
 	// Submit metrics
 	c.submitMetrics(snmpValues, tags)
@@ -59,9 +55,29 @@ func (c *Check) Run() error {
 	return nil
 }
 
-func (c *Check) submitMetrics(snmpValues snmpValues, tags []string) {
+func (c *Check) fetchValues(err error) (*snmpValues, error) {
+	// Get scalarResults
+	scalarResults, err := c.session.Get(c.config.OidConfig.scalarOids)
+	if err != nil {
+		log.Errorf("Get() err: %v", err)
+		//return snmpValues{}, err
+	}
+	columnResults, err := c.session.GetBulk(c.config.OidConfig.columnOids)
+	if err != nil {
+		log.Errorf("GetBulk() err: %v", err)
+		return &snmpValues{}, err
+	}
+
+	// Format scalarValues
+	snmpValues := newSnmpValues()
+	snmpValues.scalarValues = resultToScalarValues(scalarResults)
+	snmpValues.columnValues = resultToColumnValues(c.config.OidConfig.columnOids, columnResults)
+	return snmpValues, nil
+}
+
+func (c *Check) submitMetrics(snmpValues *snmpValues, tags []string) {
 	for _, metric := range c.config.Metrics {
-		value, ok := snmpValues.getFloat64(metric.Symbol.OID)
+		value, ok := snmpValues.getScalarFloat64(metric.Symbol.OID)
 		if ok {
 			c.sender.Gauge("snmp."+metric.Symbol.Name, value, "", tags)
 		}

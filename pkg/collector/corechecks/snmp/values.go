@@ -5,13 +5,18 @@ import (
 )
 
 type snmpValues struct {
-	values map[string]interface{}
+	scalarValues map[string]interface{}
+	columnValues map[string]map[string]interface{}
 }
 
-// getFloat64 look for oid and returns the value and boolean
+func newSnmpValues() *snmpValues {
+	return &snmpValues{}
+}
+
+// getScalarFloat64 look for oid and returns the value and boolean
 // weather valid value has been found
-func (v *snmpValues) getFloat64(oid string) (float64, bool) {
-	value, ok := v.values[oid]
+func (v *snmpValues) getScalarFloat64(oid string) (float64, bool) {
+	value, ok := v.scalarValues[oid]
 	if !ok {
 		return float64(0), false
 	}
