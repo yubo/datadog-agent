@@ -13,7 +13,7 @@ import (
 )
 
 func TestBasicConfiguration(t *testing.T) {
-	check := Check{}
+	check := Check{session: &snmpSession{}}
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
@@ -38,7 +38,7 @@ metrics:
 
 func TestPortConfiguration(t *testing.T) {
 	// TEST Default port
-	check := Check{}
+	check := Check{session: &snmpSession{}}
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
@@ -48,7 +48,7 @@ ip_address: 1.2.3.4
 	assert.Equal(t, uint16(161), check.config.Port)
 
 	// TEST Custom port
-	check = Check{}
+	check = Check{session: &snmpSession{}}
 	// language=yaml
 	rawInstanceConfig = []byte(`
 ip_address: 1.2.3.4
@@ -61,7 +61,7 @@ port: 1234
 
 func TestVersionConfiguration(t *testing.T) {
 	// TEST Empty case
-	check := Check{}
+	check := Check{session: &snmpSession{}}
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
@@ -102,14 +102,14 @@ snmp_version: 3
 `), gosnmp.Version3},
 	}
 	for _, tc := range cases {
-		check = Check{}
+		check = Check{session: &snmpSession{}}
 		err = check.Configure(tc.rawInstanceConfig, []byte(``), "test")
 		assert.Nil(t, err)
 		assert.Equal(t, tc.expectedVersion, check.config.SnmpVersion)
 	}
 
 	// TEST Invalid version
-	check = Check{}
+	check = Check{session: &snmpSession{}}
 	// language=yaml
 	rawInstanceConfig = []byte(`
 ip_address: 1.2.3.4

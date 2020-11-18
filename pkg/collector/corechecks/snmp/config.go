@@ -44,7 +44,7 @@ type snmpInstanceConfig struct {
 
 type oidConfig struct {
 	scalarOids []string
-	columnOids []string
+	//columnOids []string
 }
 
 type snmpConfig struct {
