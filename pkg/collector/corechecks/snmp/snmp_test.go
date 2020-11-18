@@ -50,9 +50,7 @@ metrics:
 	assert.Nil(t, err)
 
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
-	sender.On("Gauge", "snmp.test.metric", mock.Anything, mock.Anything, mock.Anything).Return()
-	sender.On("Gauge", "snmp.sysUpTimeInstance", mock.Anything, mock.Anything, mock.Anything).Return()
-	sender.On("Gauge", "snmp.ifNumber", mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("Commit").Return()
 
 	packet := gosnmp.SnmpPacket{
@@ -75,7 +73,7 @@ metrics:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	sender.AssertCalled(t, "Gauge", "snmp.test.metric", float64(10), "", []string(nil))
+	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", []string(nil))
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", []string(nil))
 	sender.AssertCalled(t, "Gauge", "snmp.ifNumber", float64(30), "", []string(nil))
 }
