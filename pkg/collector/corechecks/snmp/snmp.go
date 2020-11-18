@@ -61,9 +61,9 @@ func (c *Check) Run() error {
 
 func (c *Check) submitMetrics(snmpValues snmpValues, tags []string) {
 	for _, metric := range c.config.Metrics {
-		value, ok := snmpValues.getFloat64(metric.OID)
+		value, ok := snmpValues.getFloat64(metric.Symbol.OID)
 		if ok {
-			c.sender.Gauge("snmp."+metric.Name, value, "", tags)
+			c.sender.Gauge("snmp."+metric.Symbol.Name, value, "", tags)
 		}
 	}
 }

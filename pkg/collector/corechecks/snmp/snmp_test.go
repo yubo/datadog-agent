@@ -40,10 +40,12 @@ func TestBasicSample(t *testing.T) {
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
 metrics:
-- OID: 1.3.6.1.2.1.1.3.0
-  name: sysUpTimeInstance
-- OID: 1.3.6.1.2.1.2.1
-  name: ifNumber
+- symbol:
+    OID: 1.3.6.1.2.1.1.3.0
+    name: sysUpTimeInstance
+- symbol:
+    OID: 1.3.6.1.2.1.2.1
+    name: ifNumber
 `)
 
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")

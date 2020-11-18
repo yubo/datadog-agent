@@ -7,9 +7,28 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type metricsConfig struct {
+/*
+We are only supporting case 2/ for now.
+
+1/ deprecated
+    metrics:
+      - OID: 1.3.6.1.2.1.2.1
+        name: ifNumber
+2/
+    metrics:
+      - MIB: IF-MIB
+        symbol:
+          - OID: 1.3.6.1.2.1.2.1
+            name: ifNumber
+*/
+
+type symbolConfig struct {
 	OID  string `yaml:"OID"`
 	Name string `yaml:"name"`
+}
+
+type metricsConfig struct {
+	Symbol symbolConfig `yaml:"symbol"`
 }
 
 type snmpInitConfig struct {
@@ -104,7 +123,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 func parseScalarOids(metrics []metricsConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		oids = append(oids, metric.OID)
+		oids = append(oids, metric.Symbol.OID)
 	}
 	return oids
 }
