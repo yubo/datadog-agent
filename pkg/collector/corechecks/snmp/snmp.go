@@ -27,9 +27,11 @@ func (c *Check) Run() error {
 		return err
 	}
 
+	tags := []string{"snmp_device:" + c.config.IPAddress}
+
 	c.sender = sender
 	log.Infof("c.config.Metrics: %#v\n", c.config.Metrics) // TODO: remove me
-	sender.Gauge("snmp.devices_monitored", float64(1), "", nil)
+	sender.Gauge("snmp.devices_monitored", float64(1), "", tags)
 
 	// Create connection
 	err = c.session.Connect()
@@ -50,18 +52,18 @@ func (c *Check) Run() error {
 	log.Infof("values: %#v\n", snmpValues.values) // TODO: remove me
 
 	// Submit metrics
-	c.submitMetrics(snmpValues)
+	c.submitMetrics(snmpValues, tags)
 
 	// Commit
 	sender.Commit()
 	return nil
 }
 
-func (c *Check) submitMetrics(snmpValues snmpValues) {
+func (c *Check) submitMetrics(snmpValues snmpValues, tags []string) {
 	for _, metric := range c.config.Metrics {
 		value, ok := snmpValues.getFloat64(metric.OID)
 		if ok {
-			c.sender.Gauge("snmp."+metric.Name, value, "", nil)
+			c.sender.Gauge("snmp."+metric.Name, value, "", tags)
 		}
 	}
 }
