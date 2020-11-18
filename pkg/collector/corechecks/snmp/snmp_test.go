@@ -46,6 +46,14 @@ metrics:
 - symbol:
     OID: 1.3.6.1.2.1.2.1
     name: ifNumber
+- table:
+    OID: 1.3.6.1.2.1.2.2
+    name: ifTable
+  symbols:
+  - OID: 1.3.6.1.2.1.2.2.1.14
+    name: ifInErrors
+  - OID: 1.3.6.1.2.1.2.2.1.20
+    name: ifOutErrors
 `)
 
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")

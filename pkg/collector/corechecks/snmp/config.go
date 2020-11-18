@@ -27,8 +27,32 @@ type symbolConfig struct {
 	Name string `yaml:"name"`
 }
 
+/*
+metrics:
+  # Example for the dummy table above:
+  - MIB: EXAMPLE-MIB
+    table:
+      # Identification of the table which metrics come from.
+      OID: 1.3.6.1.4.1.10
+      name: exampleTable
+    symbols:
+      # List of symbols ('columns') to retrieve.
+      # Same format as for a single OID.
+      # Each row in the table will emit these metrics.
+      - OID: 1.3.6.1.4.1.10.1.1
+        name: exampleColumn1
+      - OID: 1.3.6.1.4.1.10.1.2
+        name: exampleColumn2
+      # ...
+*/
+
 type metricsConfig struct {
+	// Symbol configs
 	Symbol symbolConfig `yaml:"symbol"`
+
+	// Table configs
+	Table   symbolConfig   `yaml:"table"`
+	Symbols []symbolConfig `yaml:"symbols"`
 }
 
 type snmpInitConfig struct {

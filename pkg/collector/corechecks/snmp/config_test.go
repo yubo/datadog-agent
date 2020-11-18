@@ -25,6 +25,14 @@ metrics:
 - symbol:
     OID: 1.3.6.1.2.1.2.1
     name: ifNumber
+- table:
+    OID: 1.3.6.1.2.1.2.2
+    name: ifTable
+  symbols:
+  - OID: 1.3.6.1.2.1.2.2.1.14
+    name: ifInErrors
+  - OID: 1.3.6.1.2.1.2.2.1.20
+    name: ifOutErrors
 `)
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")
 
@@ -32,8 +40,15 @@ metrics:
 	assert.Equal(t, "1.2.3.4", check.config.IPAddress)
 	assert.Equal(t, uint16(1161), check.config.Port)
 	metrics := []metricsConfig{
-		{symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
-		{symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
+		{
+			Table: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
+			Symbols: []symbolConfig{
+				{OID: "1.3.6.1.2.1.2.2.1.14", Name: "ifInErrors"},
+				{OID: "1.3.6.1.2.1.2.2.1.20", Name: "ifOutErrors"},
+			},
+		},
 	}
 	assert.Equal(t, metrics, check.config.Metrics)
 }
