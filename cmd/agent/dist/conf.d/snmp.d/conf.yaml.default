@@ -8,7 +8,9 @@ instances:
     port: 1161
     community_string: public
     metrics:
-    - OID: 1.3.6.1.2.1.1.3.0
-      name: sysUpTimeInstance
-    - OID: 1.3.6.1.2.1.2.1
-      name: ifNumber
+    - symbol:
+        OID: 1.3.6.1.2.1.1.3.0
+        name: sysUpTimeInstance
+    - symbol:
+        OID: 1.3.6.1.2.1.2.1
+        name: ifNumber

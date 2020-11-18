@@ -44,5 +44,8 @@ func (s *snmpSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) 
 }
 
 func (s *snmpSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error) {
+	if len(oids) == 0 { // TODO: test me
+		return &gosnmp.SnmpPacket{}, nil
+	}
 	return s.gosnmpInst.GetBulk(oids, 0, 10)
 }

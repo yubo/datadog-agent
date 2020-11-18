@@ -57,11 +57,13 @@ func (c *Check) Run() error {
 
 func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	// Get scalarResults
+	log.Infof("Get() oids: %v", c.config.OidConfig.scalarOids)
 	scalarResults, err := c.session.Get(c.config.OidConfig.scalarOids)
 	if err != nil {
 		log.Errorf("Get() err: %v", err)
-		//return snmpValues{}, err
+		return &snmpValues{}, err
 	}
+	log.Infof("GetBulk() oids: %v", c.config.OidConfig.columnOids)
 	columnResults, err := c.session.GetBulk(c.config.OidConfig.columnOids)
 	if err != nil {
 		log.Errorf("GetBulk() err: %v", err)
@@ -77,9 +79,17 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 
 func (c *Check) submitMetrics(snmpValues *snmpValues, tags []string) {
 	for _, metric := range c.config.Metrics {
-		value, ok := snmpValues.getScalarFloat64(metric.Symbol.OID)
-		if ok {
-			c.sender.Gauge("snmp."+metric.Symbol.Name, value, "", tags)
+		if metric.Symbol.OID != "" {
+			value, ok := snmpValues.getScalarFloat64(metric.Symbol.OID)
+			if ok {
+				c.sender.Gauge("snmp."+metric.Symbol.Name, value, "", tags)
+			}
+		}
+		if metric.Table.OID != "" {
+			for _, symbol := range metric.Symbols {
+				value := snmpValues.columnValues[symbol.OID]
+				log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, value)
+			}
 		}
 	}
 }

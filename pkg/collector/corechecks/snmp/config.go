@@ -153,7 +153,9 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 func parseScalarOids(metrics []metricsConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		oids = append(oids, metric.Symbol.OID)
+		if metric.Symbol.OID != "" { // TODO: test me
+			oids = append(oids, metric.Symbol.OID)
+		}
 	}
 	return oids
 }
@@ -161,8 +163,10 @@ func parseScalarOids(metrics []metricsConfig) []string {
 func parseColumnOids(metrics []metricsConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		for _, symbol := range metric.Symbols {
-			oids = append(oids, symbol.OID)
+		if metric.Table.OID != "" { // TODO: test me
+			for _, symbol := range metric.Symbols {
+				oids = append(oids, symbol.OID)
+			}
 		}
 	}
 	return oids
