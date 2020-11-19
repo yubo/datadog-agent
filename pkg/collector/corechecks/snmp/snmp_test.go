@@ -35,7 +35,7 @@ func (s *mockSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) 
 }
 
 func (s *mockSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error) {
-	sort.Strings(oids)  // Needed to make oids argument to have deterministic order, otherwise the mocked call might not be found
+	sort.Strings(oids) // Needed to make oids argument to have deterministic order, otherwise the mocked call might not be found
 	args := s.Mock.Called(oids)
 	return args.Get(0).(*gosnmp.SnmpPacket), args.Error(1)
 }
