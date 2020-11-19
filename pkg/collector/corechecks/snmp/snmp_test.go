@@ -10,6 +10,7 @@ import (
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"sort"
 	"testing"
 )
 
@@ -34,6 +35,7 @@ func (s *mockSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) 
 }
 
 func (s *mockSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error) {
+	sort.Strings(oids)  // Needed to make oids argument to have deterministic order, otherwise the mocked call might not be found
 	args := s.Mock.Called(oids)
 	return args.Get(0).(*gosnmp.SnmpPacket), args.Error(1)
 }
@@ -91,14 +93,14 @@ metrics:
 				Value: 141,
 			},
 			{
-				Name:  "1.3.6.1.2.1.2.2.1.14.2",
-				Type:  gosnmp.TimeTicks,
-				Value: 142,
-			},
-			{
 				Name:  "1.3.6.1.2.1.2.2.1.20.1",
 				Type:  gosnmp.TimeTicks,
 				Value: 201,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.14.2",
+				Type:  gosnmp.TimeTicks,
+				Value: 142,
 			},
 			{
 				Name:  "1.3.6.1.2.1.2.2.1.20.2",
@@ -108,8 +110,24 @@ metrics:
 		},
 	}
 
+	bulkPacket2 := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.15.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 141,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.21.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 201,
+			},
+		},
+	}
+
 	session.On("Get", mock.Anything).Return(&packet, nil)
-	session.On("GetBulk", mock.Anything).Return(&bulkPacket, nil)
+	session.On("GetBulk", []string{"1.3.6.1.2.1.2.2.1.14", "1.3.6.1.2.1.2.2.1.20"}).Return(&bulkPacket, nil)
+	session.On("GetBulk", []string{"1.3.6.1.2.1.2.2.1.14.2", "1.3.6.1.2.1.2.2.1.20.2"}).Return(&bulkPacket2, nil)
 
 	err = check.Run()
 	assert.Nil(t, err)
