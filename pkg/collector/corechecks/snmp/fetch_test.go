@@ -3,7 +3,6 @@ package snmp
 import (
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
@@ -44,9 +43,34 @@ func TestFetchColumnOids(t *testing.T) {
 			},
 		},
 	}
-	session.On("GetBulk", mock.Anything).Return(&bulkPacket, nil)
+	bulkPacket2 := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.1.1.4",
+				Type:  gosnmp.TimeTicks,
+				Value: 14,
+			},
+			{
+				Name:  "1.1.1.5",
+				Type:  gosnmp.TimeTicks,
+				Value: 15,
+			},
+		},
+	}
+	bulkPacket3 := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.1.3.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 34,
+			},
+		},
+	}
+	session.On("GetBulk", []string{"1.1.1", "1.1.2"}).Return(&bulkPacket, nil)
+	session.On("GetBulk", []string{"1.1.1.3"}).Return(&bulkPacket2, nil)
+	session.On("GetBulk", []string{"1.1.1.5"}).Return(&bulkPacket3, nil)
 
-	oids := []string{"1.1.1", "1.1.2"}
+	oids := map[string]string{"1.1.1": "1.1.1", "1.1.2": "1.1.2"}
 
 	columnValues, err := fetchColumnOids(session, oids)
 	assert.Nil(t, err)
@@ -56,6 +80,8 @@ func TestFetchColumnOids(t *testing.T) {
 			"1": float64(11),
 			"2": float64(12),
 			"3": float64(13),
+			"4": float64(14),
+			"5": float64(15),
 		},
 		"1.1.2": {
 			"1": float64(21),

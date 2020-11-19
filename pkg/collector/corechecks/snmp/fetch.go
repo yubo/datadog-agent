@@ -14,17 +14,39 @@ func fetchScalarOids(session sessionAPI, oids []string) (map[string]interface{},
 	return resultToScalarValues(results), nil
 }
 
-func fetchColumnOids(session sessionAPI, oids []string) (map[string]map[string]interface{}, error) {
+func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map[string]interface{}, error) {
 	// Returns map[columnOID]map[index]interface(float64 or string)
 	// GetBulk results
 	// TODO:
 	//   - make batches
 	//   - GetBulk loop to get all rows
-	log.Debugf("fetchColumnOids() oids  : %v", oids)
-	resuts, err := session.GetBulk(oids)
-	log.Debugf("fetchColumnOids() resuts: %v", resuts)
-	if err != nil {
-		return nil, err
+	returnValues := make(map[string]map[string]interface{})
+	curOids := oids
+	for {
+		log.Debugf("fetchColumnOids() curOids  : %v", curOids)
+		var columnOids, bulkOids []string
+		for k, v := range curOids {
+			columnOids = append(columnOids, k)
+			bulkOids = append(bulkOids, v)
+		}
+		results, err := session.GetBulk(bulkOids)
+		log.Debugf("fetchColumnOids() results: %v", results)
+		if err != nil {
+			return nil, err
+		}
+		values, nextOids := resultToColumnValues(columnOids, results)
+		for columnOid, columnValues := range values {
+			for oid, value := range columnValues {
+				if _, ok := returnValues[columnOid]; !ok {
+					returnValues[columnOid] = make(map[string]interface{})
+				}
+				returnValues[columnOid][oid] = value
+			}
+		}
+		if len(nextOids) == 0 {
+			break
+		}
+		curOids = nextOids
 	}
-	return resultToColumnValues(oids, resuts), nil
+	return returnValues, nil
 }

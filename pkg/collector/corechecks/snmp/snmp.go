@@ -62,7 +62,11 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 		return &snmpValues{}, err
 	}
 
-	columnResults, err := fetchColumnOids(c.session, c.config.OidConfig.columnOids)
+	oids := make(map[string]string)
+	for _, value := range c.config.OidConfig.columnOids {
+		oids[value] = value
+	}
+	columnResults, err := fetchColumnOids(c.session, oids)
 	if err != nil {
 		log.Errorf("GetBulk() err: %v", err)
 		return &snmpValues{}, err

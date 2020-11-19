@@ -27,9 +27,10 @@ func resultToScalarValues(result *gosnmp.SnmpPacket) (values map[string]interfac
 	return returnValues
 }
 
-func resultToColumnValues(oids []string, result *gosnmp.SnmpPacket) (values map[string]map[string]interface{}) {
+func resultToColumnValues(oids []string, result *gosnmp.SnmpPacket) (map[string]map[string]interface{}, map[string]string) {
 	// TODO: test me
 	returnValues := make(map[string]map[string]interface{})
+	nextOidsMap := make(map[string]string)
 	for i, pduVariable := range result.Variables {
 		name, value := getValueFromPDU(pduVariable)
 		oid := oids[i%len(oids)]
@@ -39,7 +40,10 @@ func resultToColumnValues(oids []string, result *gosnmp.SnmpPacket) (values map[
 		prefix := oid + "."
 		if strings.HasPrefix(name, prefix) {
 			returnValues[oid][name[len(prefix):]] = value
+			nextOidsMap[oid] = name
+		} else {
+			delete(nextOidsMap, oid)
 		}
 	}
-	return returnValues
+	return returnValues, nextOidsMap
 }
