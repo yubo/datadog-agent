@@ -9,10 +9,6 @@ type snmpValues struct {
 	columnValues map[string]map[string]interface{}
 }
 
-func newSnmpValues() *snmpValues {
-	return &snmpValues{}
-}
-
 // getScalarFloat64 look for oid and returns the value and boolean
 // weather valid value has been found
 func (v *snmpValues) getScalarFloat64(oid string) (float64, bool) {

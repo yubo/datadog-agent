@@ -64,18 +64,13 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	}
 
 	log.Infof("GetBulk() oids: %v", c.config.OidConfig.columnOids)
-
 	columnResults, err := fetchColumnOids(c.session, c.config.OidConfig.columnOids)
 	if err != nil {
 		log.Errorf("GetBulk() err: %v", err)
 		return &snmpValues{}, err
 	}
 
-	// Format scalarValues
-	snmpValues := newSnmpValues()
-	snmpValues.scalarValues = scalarResults
-	snmpValues.columnValues = columnResults
-	return snmpValues, nil
+	return &snmpValues{scalarResults, columnResults}, nil
 }
 
 func (c *Check) submitMetrics(snmpValues *snmpValues, tags []string) {
