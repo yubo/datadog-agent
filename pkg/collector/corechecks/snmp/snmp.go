@@ -56,15 +56,16 @@ func (c *Check) Run() error {
 }
 
 func (c *Check) fetchValues(err error) (*snmpValues, error) {
-	// Get scalarResults
-	log.Infof("Get() oids: %v", c.config.OidConfig.scalarOids)
-	scalarResults, err := c.session.Get(c.config.OidConfig.scalarOids)
+	log.Infof("Get() oids: %v", c.session, c.config.OidConfig.scalarOids)
+	scalarResults, err := fetchScalarOids(c.session, c.config.OidConfig.scalarOids)
 	if err != nil {
 		log.Errorf("Get() err: %v", err)
 		return &snmpValues{}, err
 	}
+
 	log.Infof("GetBulk() oids: %v", c.config.OidConfig.columnOids)
-	columnResults, err := c.session.GetBulk(c.config.OidConfig.columnOids)
+
+	columnResults, err := fetchColumnOids(c.session, c.config.OidConfig.columnOids)
 	if err != nil {
 		log.Errorf("GetBulk() err: %v", err)
 		return &snmpValues{}, err
@@ -72,8 +73,8 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 
 	// Format scalarValues
 	snmpValues := newSnmpValues()
-	snmpValues.scalarValues = resultToScalarValues(scalarResults)
-	snmpValues.columnValues = resultToColumnValues(c.config.OidConfig.columnOids, columnResults)
+	snmpValues.scalarValues = scalarResults
+	snmpValues.columnValues = columnResults
 	return snmpValues, nil
 }
 
