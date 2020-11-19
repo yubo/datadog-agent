@@ -46,6 +46,7 @@ func (c *Check) Run() error {
 	}
 
 	log.Infof("scalarValues: %#v\n", snmpValues.scalarValues) // TODO: remove me
+	log.Infof("columnValues: %#v\n", snmpValues.columnValues) // TODO: remove me
 
 	// Submit metrics
 	c.submitMetrics(snmpValues, tags)
