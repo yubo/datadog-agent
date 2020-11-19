@@ -56,14 +56,12 @@ func (c *Check) Run() error {
 }
 
 func (c *Check) fetchValues(err error) (*snmpValues, error) {
-	log.Infof("Get() oids: %v", c.session, c.config.OidConfig.scalarOids)
 	scalarResults, err := fetchScalarOids(c.session, c.config.OidConfig.scalarOids)
 	if err != nil {
 		log.Errorf("Get() err: %v", err)
 		return &snmpValues{}, err
 	}
 
-	log.Infof("GetBulk() oids: %v", c.config.OidConfig.columnOids)
 	columnResults, err := fetchColumnOids(c.session, c.config.OidConfig.columnOids)
 	if err != nil {
 		log.Errorf("GetBulk() err: %v", err)

@@ -37,7 +37,7 @@ func resultToColumnValues(oids []string, result *gosnmp.SnmpPacket) (values map[
 			returnValues[oids[i]] = make(map[string]interface{})
 		}
 		prefix := oid + "."
-		if strings.HasPrefix(name, prefix) { // TODO: test me
+		if strings.HasPrefix(name, prefix) {
 			returnValues[oid][name[len(prefix):]] = value
 		}
 	}
