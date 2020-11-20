@@ -102,7 +102,7 @@ metrics:
 			{
 				Name:  "1.3.6.1.2.1.2.2.1.2.1",
 				Type:  gosnmp.OctetString,
-				Value: "desc1",
+				Value: []byte("desc1"),
 			},
 			{
 				Name:  "1.3.6.1.2.1.2.2.1.20.1",
@@ -117,7 +117,7 @@ metrics:
 			{
 				Name:  "1.3.6.1.2.1.2.2.1.2.2",
 				Type:  gosnmp.OctetString,
-				Value: "desc2",
+				Value: []byte("desc2"),
 			},
 			{
 				Name:  "1.3.6.1.2.1.2.2.1.20.2",

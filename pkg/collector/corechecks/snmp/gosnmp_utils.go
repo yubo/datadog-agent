@@ -10,9 +10,7 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, interface{}) {
 	name := strings.TrimLeft(pduVariable.Name, ".") // remove leading dot
 	switch pduVariable.Type {
 	case gosnmp.OctetString:
-		// TODO: Why gosnmp examples are using `string(pduVariable.Value.([]byte))`
-		//   but `pduVariable.Value.(string)` is the one that works
-		value = pduVariable.Value.(string)
+		value = string(pduVariable.Value.([]byte))
 	default:
 		value = float64(gosnmp.ToBigInt(pduVariable.Value).Int64())
 	}
