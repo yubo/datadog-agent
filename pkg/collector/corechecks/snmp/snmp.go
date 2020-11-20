@@ -91,24 +91,6 @@ func (c *Check) sendMetric(metric metricsConfig, metricName string, value float6
 	c.sender.Gauge("snmp."+metricName, value, "", tags)
 }
 
-// Configure configures the snmp checks
-func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integration.Data, source string) error {
-	err := c.CommonConfigure(rawInstance, source)
-	if err != nil {
-		return err
-	}
-
-	config, err := buildConfig(rawInstance, rawInitConfig)
-	if err != nil {
-		return err
-	}
-
-	c.config = config
-	c.session.Configure(c.config)
-
-	return nil
-}
-
 func (c *Check) submitScalarMetrics(metric metricsConfig, values *snmpValues, tags []string) {
 	value, err := values.getScalarFloat64(metric.Symbol.OID)
 	if err != nil {
@@ -132,6 +114,24 @@ func (c *Check) submitColumnMetrics(metricConfig metricsConfig, values *snmpValu
 		}
 		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
 	}
+}
+
+// Configure configures the snmp checks
+func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integration.Data, source string) error {
+	err := c.CommonConfigure(rawInstance, source)
+	if err != nil {
+		return err
+	}
+
+	config, err := buildConfig(rawInstance, rawInitConfig)
+	if err != nil {
+		return err
+	}
+
+	c.config = config
+	c.session.Configure(c.config)
+
+	return nil
 }
 
 func snmpFactory() check.Check {
