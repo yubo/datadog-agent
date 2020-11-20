@@ -66,6 +66,10 @@ metrics:
   metric_tags:
   - tag: if_index
     index: 1
+  - tag: interface
+	column:
+	  OID: 1.3.6.1.2.1.2.2.1.2
+	  name: ifDescr
 `)
 
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")

@@ -42,9 +42,10 @@ metrics:
       # ...
 */
 
-type metricTag struct {
-	Tag   string `yaml:"tag"`
-	Index uint   `yaml:"index"`
+type metricTagConfig struct {
+	Tag    string       `yaml:"tag"`
+	Index  uint         `yaml:"index"`
+	Column symbolConfig `yaml:"column"`
 }
 
 type metricsConfig struct {
@@ -55,7 +56,7 @@ type metricsConfig struct {
 	Table   symbolConfig   `yaml:"table"`
 	Symbols []symbolConfig `yaml:"symbols"`
 
-	MetricTags []metricTag `yaml:"metric_tags"`
+	MetricTags []metricTagConfig `yaml:"metric_tags"`
 
 	// TODO: Validate Symbol and Table are not both used
 }
