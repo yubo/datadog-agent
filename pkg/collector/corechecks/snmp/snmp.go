@@ -118,8 +118,8 @@ func (c *Check) submitScalarMetrics(metric metricsConfig, values *snmpValues, ta
 	c.sendMetric(metric, metric.Symbol.Name, value, tags)
 }
 
-func (c *Check) submitColumnMetrics(metric metricsConfig, values *snmpValues, tags []string) {
-	for _, symbol := range metric.Symbols {
+func (c *Check) submitColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
+	for _, symbol := range metricConfig.Symbols {
 		values, err := values.getColumnValue(symbol.OID)
 		if err != nil {
 			log.Warnf("error getting column value: %v", err)
@@ -127,15 +127,8 @@ func (c *Check) submitColumnMetrics(metric metricsConfig, values *snmpValues, ta
 		}
 		for fullIndex, value := range values {
 			indexes := strings.Split(fullIndex, ".")
-			rowTags := tags[:]
-			for _, metricTag := range metric.MetricTags {
-				if (metricTag.Index == 0) || (metricTag.Index > uint(len(indexes))) {
-					log.Warnf("invalid index %v, it must be between 1 and $v", metricTag.Index, len(indexes))
-					continue
-				}
-				rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
-			}
-			c.sendMetric(metric, symbol.Name, value, rowTags)
+			rowTags := append(tags, metricConfig.getTags(indexes)...)
+			c.sendMetric(metricConfig, symbol.Name, value, rowTags)
 		}
 		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
 	}
