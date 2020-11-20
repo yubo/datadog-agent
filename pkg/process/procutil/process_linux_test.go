@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/DataDog/gopsutil/process"
 )
@@ -403,5 +404,69 @@ func TestParseStat(t *testing.T) {
 		assert.Equal(t, expPpid, actual.ppid)
 		assert.Equal(t, exptimes.User, actual.cpuStat.User)
 		assert.Equal(t, exptimes.System, actual.cpuStat.System)
+	}
+}
+
+func BenchmarkTestFSStatGopsutil(b *testing.B) {
+	hostProc := "resources/test_procfs/proc"
+	os.Setenv("HOST_PROC", hostProc)
+	defer os.Unsetenv("HOST_PROC")
+
+	pids, err := process.Pids()
+	assert.NoError(b, err)
+
+	for i := 0; i < b.N; i++ {
+		for _, pid := range pids {
+			expProc, err := process.NewProcess(pid)
+			require.NoError(b, err)
+			_, err = expProc.Ppid()
+			require.NoError(b, err)
+		}
+	}
+}
+
+func BenchmarkTestFSStatProcutil(b *testing.B) {
+	hostProc := "resources/test_procfs/proc"
+	os.Setenv("HOST_PROC", hostProc)
+	defer os.Unsetenv("HOST_PROC")
+
+	probe := NewProcessProbe()
+	defer probe.Close()
+
+	pids, err := probe.getActivePIDs()
+	require.NoError(b, err)
+
+	for i := 0; i < b.N; i++ {
+		for _, pid := range pids {
+			probe.parseStat(filepath.Join(probe.procRootLoc, strconv.Itoa(int(pid))), time.Now())
+		}
+	}
+}
+
+func BenchmarkLocalFSStatGopsutil(b *testing.B) {
+	pids, err := process.Pids()
+	assert.NoError(b, err)
+
+	for i := 0; i < b.N; i++ {
+		for _, pid := range pids {
+			expProc, err := process.NewProcess(pid)
+			require.NoError(b, err)
+			_, err = expProc.Ppid()
+			require.NoError(b, err)
+		}
+	}
+}
+
+func BenchmarkLocalFSStatProcutil(b *testing.B) {
+	probe := NewProcessProbe()
+	defer probe.Close()
+
+	pids, err := probe.getActivePIDs()
+	require.NoError(b, err)
+
+	for i := 0; i < b.N; i++ {
+		for _, pid := range pids {
+			probe.parseStat(filepath.Join(probe.procRootLoc, strconv.Itoa(int(pid))), time.Now())
+		}
 	}
 }
