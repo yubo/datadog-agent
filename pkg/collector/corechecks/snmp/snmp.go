@@ -77,42 +77,18 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	return &snmpValues{scalarResults, columnResults}, nil
 }
 
-func (c *Check) submitMetrics(snmpValues *snmpValues, tags []string) {
+func (c *Check) submitMetrics(values *snmpValues, tags []string) {
 	for _, metric := range c.config.Metrics {
 		if metric.Symbol.OID != "" {
-			value, err := snmpValues.getScalarFloat64(metric.Symbol.OID)
-			if err != nil {
-				log.Warnf("error getting scalar value: %v", err)
-				continue
-			}
-			c.sender.Gauge("snmp."+metric.Symbol.Name, value, "", tags)
-		}
-		if metric.Table.OID != "" {
-
-			for _, symbol := range metric.Symbols {
-				metricName := "snmp." + symbol.Name
-
-				values, err := snmpValues.getColumnValue(symbol.OID)
-				if err != nil {
-					log.Warnf("error getting column value: %v", err)
-					continue
-				}
-				for fullIndex, value := range values {
-					indexes := strings.Split(fullIndex, ".")
-					rowTags := tags[:]
-					for _, metricTag := range metric.MetricTags {
-						if (metricTag.Index == 0) || (metricTag.Index > uint(len(indexes))) {
-							log.Warnf("invalid index %v, it must be between 1 and $v", metricTag.Index, len(indexes))
-							continue
-						}
-						rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
-					}
-					c.sender.Gauge(metricName, value, "", rowTags)
-				}
-				log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
-			}
+			c.submitScalarMetrics(metric, values, tags)
+		} else if metric.Table.OID != "" {
+			c.submitColumnMetrics(metric, values, tags)
 		}
 	}
+}
+
+func (c *Check) sendMetric(metric metricsConfig, metricName string, value float64, tags []string) {
+	c.sender.Gauge("snmp."+metricName, value, "", tags)
 }
 
 // Configure configures the snmp checks
@@ -131,6 +107,38 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	c.session.Configure(c.config)
 
 	return nil
+}
+
+func (c *Check) submitScalarMetrics(metric metricsConfig, values *snmpValues, tags []string) {
+	value, err := values.getScalarFloat64(metric.Symbol.OID)
+	if err != nil {
+		log.Warnf("error getting scalar value: %v", err)
+		return
+	}
+	c.sendMetric(metric, metric.Symbol.Name, value, tags)
+}
+
+func (c *Check) submitColumnMetrics(metric metricsConfig, values *snmpValues, tags []string) {
+	for _, symbol := range metric.Symbols {
+		values, err := values.getColumnValue(symbol.OID)
+		if err != nil {
+			log.Warnf("error getting column value: %v", err)
+			continue
+		}
+		for fullIndex, value := range values {
+			indexes := strings.Split(fullIndex, ".")
+			rowTags := tags[:]
+			for _, metricTag := range metric.MetricTags {
+				if (metricTag.Index == 0) || (metricTag.Index > uint(len(indexes))) {
+					log.Warnf("invalid index %v, it must be between 1 and $v", metricTag.Index, len(indexes))
+					continue
+				}
+				rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
+			}
+			c.sendMetric(metric, symbol.Name, value, rowTags)
+		}
+		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
+	}
 }
 
 func snmpFactory() check.Check {
