@@ -33,6 +33,9 @@ metrics:
     name: ifInErrors
   - OID: 1.3.6.1.2.1.2.2.1.20
     name: ifOutErrors
+  metric_tags:
+  - tag: if_index
+    index: 1
 `)
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")
 
@@ -47,6 +50,9 @@ metrics:
 			Symbols: []symbolConfig{
 				{OID: "1.3.6.1.2.1.2.2.1.14", Name: "ifInErrors"},
 				{OID: "1.3.6.1.2.1.2.2.1.20", Name: "ifOutErrors"},
+			},
+			MetricTags: []metricTag{
+				{Tag: "if_index", Index: 1},
 			},
 		},
 	}

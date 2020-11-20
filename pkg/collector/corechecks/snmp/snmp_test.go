@@ -61,6 +61,11 @@ metrics:
     name: ifInErrors
   - OID: 1.3.6.1.2.1.2.2.1.20
     name: ifOutErrors
+
+  # TODO: Create separate test for index metric_tags
+  metric_tags:
+  - tag: if_index
+    index: 1
 `)
 
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")
@@ -136,4 +141,8 @@ metrics:
 	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", tags)
 	sender.AssertCalled(t, "Gauge", "snmp.ifNumber", float64(30), "", tags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", append(tags, "if_index:1"))
+	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", append(tags, "if_index:2"))
+	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(201), "", append(tags, "if_index:1"))
+	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(202), "", append(tags, "if_index:2"))
 }

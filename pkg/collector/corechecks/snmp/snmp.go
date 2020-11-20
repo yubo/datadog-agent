@@ -6,6 +6,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"strings"
 )
 
 const (
@@ -79,15 +80,36 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 func (c *Check) submitMetrics(snmpValues *snmpValues, tags []string) {
 	for _, metric := range c.config.Metrics {
 		if metric.Symbol.OID != "" {
-			value, ok := snmpValues.getScalarFloat64(metric.Symbol.OID)
-			if ok {
-				c.sender.Gauge("snmp."+metric.Symbol.Name, value, "", tags)
+			value, err := snmpValues.getScalarFloat64(metric.Symbol.OID)
+			if err != nil {
+				log.Warnf("error getting scalar value: %v", err)
+				continue
 			}
+			c.sender.Gauge("snmp."+metric.Symbol.Name, value, "", tags)
 		}
 		if metric.Table.OID != "" {
+
 			for _, symbol := range metric.Symbols {
-				value := snmpValues.columnValues[symbol.OID]
-				log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, value)
+				metricName := "snmp." + symbol.Name
+
+				values, err := snmpValues.getColumnValue(symbol.OID)
+				if err != nil {
+					log.Warnf("error getting column value: %v", err)
+					continue
+				}
+				for fullIndex, value := range values {
+					indexes := strings.Split(fullIndex, ".")
+					rowTags := tags[:]
+					for _, metricTag := range metric.MetricTags {
+						if (metricTag.Index == 0) || (metricTag.Index > uint(len(indexes))) {
+							log.Warnf("invalid index %v, it must be between 1 and $v", metricTag.Index, len(indexes))
+							continue
+						}
+						rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
+					}
+					c.sender.Gauge(metricName, value, "", rowTags)
+				}
+				log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
 			}
 		}
 	}
