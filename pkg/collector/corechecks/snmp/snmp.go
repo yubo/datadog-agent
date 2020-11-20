@@ -6,7 +6,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"strings"
 )
 
 const (
@@ -102,14 +101,13 @@ func (c *Check) submitScalarMetrics(metric metricsConfig, values *snmpValues, ta
 
 func (c *Check) submitColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
 	for _, symbol := range metricConfig.Symbols {
-		values, err := values.getColumnValue(symbol.OID)
+		metricValues, err := values.getColumnFloatValues(symbol.OID)
 		if err != nil {
 			log.Warnf("error getting column value: %v", err)
 			continue
 		}
-		for fullIndex, value := range values {
-			indexes := strings.Split(fullIndex, ".")
-			rowTags := append(tags, metricConfig.getTags(indexes)...)
+		for fullIndex, value := range metricValues {
+			rowTags := append(tags, metricConfig.getTags(fullIndex, values)...)
 			c.sendMetric(metricConfig, symbol.Name, value, rowTags)
 		}
 		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)

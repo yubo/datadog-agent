@@ -1,6 +1,9 @@
 package snmp
 
-import "github.com/DataDog/datadog-agent/pkg/util/log"
+import (
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"strings"
+)
 
 /*
 TODO: Shall we support 1/ deprecated syntax
@@ -61,14 +64,25 @@ type metricsConfig struct {
 	// TODO: Validate Symbol and Table are not both used
 }
 
-func (m *metricsConfig) getTags(indexes []string) []string {
+func (m *metricsConfig) getTags(fullIndex string, values *snmpValues) []string {
 	var rowTags []string
+	indexes := strings.Split(fullIndex, ".")
 	for _, metricTag := range m.MetricTags {
 		if (metricTag.Index == 0) || (metricTag.Index > uint(len(indexes))) {
 			log.Warnf("invalid index %v, it must be between 1 and $v", metricTag.Index, len(indexes))
-			continue
+		} else {
+			rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
 		}
-		rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
+		if metricTag.Column.OID != "" {
+			//tagValueOid := metricTag.Column.OID + "." + fullIndex
+			stringValues, err := values.getColumnStringValues(metricTag.Column.OID)
+			if err != nil {
+				log.Warnf("error getting column value: %v", err)
+				continue
+			}
+			tagValue := stringValues[fullIndex]
+			rowTags = append(rowTags, metricTag.Tag+":"+tagValue)
+		}
 	}
 	return rowTags
 }

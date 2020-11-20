@@ -116,6 +116,11 @@ func parseColumnOids(metrics []metricsConfig) []string {
 			for _, symbol := range metric.Symbols {
 				oids = append(oids, symbol.OID)
 			}
+			for _, metricTag := range metric.MetricTags {
+				if metricTag.Column.OID != "" {
+					oids = append(oids, metricTag.Column.OID)
+				}
+			}
 		}
 	}
 	return oids

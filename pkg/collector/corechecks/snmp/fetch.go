@@ -1,6 +1,9 @@
 package snmp
 
-import "github.com/DataDog/datadog-agent/pkg/util/log"
+import (
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"sort"
+)
 
 func fetchScalarOids(session sessionAPI, oids []string) (map[string]interface{}, error) {
 	// Get results
@@ -29,6 +32,9 @@ func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map
 			columnOids = append(columnOids, k)
 			bulkOids = append(bulkOids, v)
 		}
+		// sorting columnOids and bulkOids to make them deterministic for testing purpose
+		sort.Strings(columnOids)
+		sort.Strings(bulkOids)
 		results, err := session.GetBulk(bulkOids)
 		log.Debugf("fetchColumnOids() results: %v", results)
 		if err != nil {

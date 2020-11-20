@@ -26,6 +26,18 @@ func toFloat64(value interface{}) float64 {
 	return retValue
 }
 
+func toString(value interface{}) string {
+	var retValue string
+
+	switch value.(type) {
+	case float64:
+		retValue = strconv.Itoa(int(value.(float64)))
+	case string:
+		retValue = value.(string)
+	}
+	return retValue
+}
+
 // getScalarFloat64 look for oid and returns the value and boolean
 // weather valid value has been found
 func (v *snmpValues) getScalarFloat64(oid string) (float64, error) {
@@ -36,7 +48,7 @@ func (v *snmpValues) getScalarFloat64(oid string) (float64, error) {
 	return toFloat64(value), nil
 }
 
-func (v *snmpValues) getColumnValue(oid string) (map[string]float64, error) {
+func (v *snmpValues) getColumnFloatValues(oid string) (map[string]float64, error) {
 	retValues := make(map[string]float64)
 	values, ok := v.columnValues[oid]
 	if !ok {
@@ -44,6 +56,19 @@ func (v *snmpValues) getColumnValue(oid string) (map[string]float64, error) {
 	}
 	for index, value := range values {
 		retValues[index] = toFloat64(value)
+	}
+
+	return retValues, nil
+}
+
+func (v *snmpValues) getColumnStringValues(oid string) (map[string]string, error) {
+	retValues := make(map[string]string)
+	values, ok := v.columnValues[oid]
+	if !ok {
+		return nil, fmt.Errorf("value for Scalar OID not found: %s", oid)
+	}
+	for index, value := range values {
+		retValues[index] = toString(value)
 	}
 
 	return retValues, nil
