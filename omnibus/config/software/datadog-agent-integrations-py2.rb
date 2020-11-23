@@ -41,6 +41,7 @@ if linux?
   dependency 'nfsiostat'
   # need kerberos for hdfs
   dependency 'libkrb5'
+  dependency 'gstatus'
 
   unless suse? || arm?
     dependency 'aerospike-py2'

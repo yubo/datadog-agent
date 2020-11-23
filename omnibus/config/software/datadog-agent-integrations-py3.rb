@@ -36,6 +36,8 @@ if linux?
   # need kerberos for hdfs
   dependency 'libkrb5'
 
+  dependency 'gstatus'
+
   unless suse? || arm?
     dependency 'aerospike-py3'
   end
