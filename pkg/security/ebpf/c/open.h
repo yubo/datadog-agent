@@ -187,6 +187,16 @@ int kretprobe__ovl_d_real(struct pt_regs *ctx) {
     return 0;
 }
 
+SEC("kretprobe/ovl_path_type")
+int kretprobe__ovl_path_type(struct pt_regs *ctx) {
+   struct syscall_cache_t *syscall = peek_syscall(SYSCALL_OPEN | SYSCALL_EXEC);
+    if (!syscall)
+        return 0;
+    int retval = PT_REGS_RC(ctx);
+    syscall->open.overlay_numlower = retval;
+    return 0;
+}
+
 SEC("kprobe/do_dentry_open")
 int kprobe__do_dentry_open(struct pt_regs *ctx) {
     struct syscall_cache_t *syscall = peek_syscall(SYSCALL_OPEN | SYSCALL_EXEC);
@@ -228,7 +238,7 @@ int __attribute__((always_inline)) trace__sys_open_ret(struct pt_regs *ctx) {
         .file = {
             .inode = inode,
             .mount_id = syscall->open.path_key.mount_id,
-            .overlay_numlower = get_overlay_numlower(syscall->open.dentry),
+            .overlay_numlower = syscall->open.overlay_numlower == 0 ? 1 : 0,
             .path_id = syscall->open.path_key.path_id,
         },
         .flags = syscall->open.flags,

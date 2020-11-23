@@ -117,13 +117,13 @@ func (td *testDrive) Unmount() error {
 
 func (td *testDrive) Close() {
 	if err := td.Unmount(); err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 	}
 	if err := td.dev.Detach(); err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 	}
 	if err := td.dev.Remove(); err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 	}
 	os.Remove(td.file.Name())
 	os.Remove(td.mountPoint)
