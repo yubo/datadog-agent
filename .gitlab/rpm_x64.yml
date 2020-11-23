@@ -1,0 +1,108 @@
+include: '.gitlab/common.yml'
+
+stages:
+  - deps_fetch
+  - source_test
+
+variables:
+  # The SRC_PATH is in the GOPATH of the builders which
+  # currently is /go
+  SRC_PATH: /go/src/github.com/DataDog/datadog-agent
+  # Directory in which we execute the omnibus build.
+  # For an unknown reason, it does not go well with
+  # a ruby dependency if we build directly into $CI_PROJECT_DIR/.omnibus
+  OMNIBUS_BASE_DIR: /.omnibus
+  # Directory in which we put the artifacts after the build
+  # Must be in $CI_PROJECT_DIR
+  OMNIBUS_PACKAGE_DIR: $CI_PROJECT_DIR/.omnibus/pkg/
+  # Directory in which we execute the omnibus build for SUSE
+  # as we want to separate the RPM built for this distro.
+  OMNIBUS_BASE_DIR_SUSE: /.omnibus/suse
+  # Directory in which we put the artifacts after the build
+  # Must be in $CI_PROJECT_DIR
+  OMNIBUS_PACKAGE_DIR_SUSE: $CI_PROJECT_DIR/.omnibus/suse/pkg
+  OMNIBUS_BASE_DIR_WIN: c:\omni-base\$CI_RUNNER_ID
+  OMNIBUS_BASE_DIR_WIN_OMNIBUS: c:/omni-base/$CI_RUNNER_ID
+  DD_AGENT_TESTING_DIR: $CI_PROJECT_DIR/test/kitchen
+  STATIC_BINARIES_DIR: bin/static
+  DOGSTATSD_BINARIES_DIR: bin/dogstatsd
+  AGENT_BINARIES_DIR: bin/agent
+  CLUSTER_AGENT_BINARIES_DIR: bin/datadog-cluster-agent
+  CLUSTER_AGENT_CLOUDFOUNDRY_BINARIES_DIR: bin/datadog-cluster-agent-cloudfoundry
+  SYSTEM_PROBE_BINARIES_DIR: bin/system-probe
+  DEB_S3_BUCKET: apt.datad0g.com
+  RPM_S3_BUCKET: yum.datad0g.com
+  MACOS_S3_BUCKET: dd-agent-macostesting
+  WIN_S3_BUCKET: dd-agent-mstesting
+  PROCESS_S3_BUCKET: datad0g-process-agent
+  ANDROID_S3_BUCKET: dd-agent-androidtesting
+  DEB_RPM_BUCKET_BRANCH: nightly  # branch of the DEB_S3_BUCKET and RPM_S3_BUCKET repos to release to, 'nightly' or 'beta'
+  DEB_TESTING_S3_BUCKET: apttesting.datad0g.com
+  RPM_TESTING_S3_BUCKET: yumtesting.datad0g.com
+  WINDOWS_TESTING_S3_BUCKET_A6: pipelines/A6/$PARENT_PIPELINE_ID
+  WINDOWS_TESTING_S3_BUCKET_A7: pipelines/A7/$PARENT_PIPELINE_ID
+  WINDOWS_BUILDS_S3_BUCKET: $WIN_S3_BUCKET/builds
+  ANDROID_BUILDS_S3_BUCKET: $ANDROID_S3_BUCKET/builds
+  DEB_RPM_TESTING_BUCKET_BRANCH: testing  # branch of the DEB_TESTING_S3_BUCKET and RPM_TESTING_S3_BUCKET repos to release to, 'testing'
+  DD_REPO_BRANCH_NAME: $CI_COMMIT_REF_NAME
+  S3_CP_OPTIONS: --only-show-errors --region us-east-1 --sse AES256
+  S3_CP_CMD: aws s3 cp $S3_CP_OPTIONS
+  S3_ARTIFACTS_URI: s3://dd-ci-artefacts-build-stable/$CI_PROJECT_NAME/$PARENT_PIPELINE_ID
+## comment out both lines below (S3_OMNIBUS_CACHE_BUCKET and USE_S3_CACHING) to allow
+## build to succeed with S3 caching disabled.
+  S3_OMNIBUS_CACHE_BUCKET: dd-ci-datadog-agent-omnibus-cache-build-stable
+  USE_S3_CACHING: --omnibus-s3-cache
+  S3_DSD6_URI: s3://dsd6-staging
+  RELEASE_VERSION_6: nightly
+  RELEASE_VERSION_7: nightly-a7
+  DATADOG_AGENT_BUILDIMAGES: v2894686-d80c3ce
+  DATADOG_AGENT_BUILDERS: v3399751-fc72c60
+  DATADOG_AGENT_WINBUILDIMAGES: v3283120-ecb88be
+  DATADOG_AGENT_ARMBUILDIMAGES: v2894686-d80c3ce
+  DATADOG_AGENT_SYSPROBE_BUILDIMAGES: v2894686-d80c3ce
+  BCC_VERSION: v0.12.0
+  SYSTEM_PROBE_GO_VERSION: 1.14.7
+  DATADOG_AGENT_EMBEDDED_PATH: /opt/datadog-agent/embedded
+  RPM_GPG_KEY_SSM_NAME: ci.datadog-agent.rpm_signing_private_key_e09422b3
+  RPM_SIGNING_PASSPHRASE_SSM_NAME: ci.datadog-agent.rpm_signing_key_passphrase_e09422b3
+  # docker.io authentication
+  DOCKER_REGISTRY_LOGIN_SSM_KEY: docker_hub_login
+  DOCKER_REGISTRY_PWD_SSM_KEY: docker_hub_pwd
+  DOCKER_REGISTRY_URL: docker.io
+
+go_deps_rpm-x64:
+  extends: .go_deps
+  stage: deps_fetch
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_x64:$DATADOG_AGENT_BUILDIMAGES
+  tags: [ "runner:main", "size:2xlarge" ]
+
+test_py2_rpm-x64:
+  extends: .tests_preparation
+  stage: source_test
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_x64:$DATADOG_AGENT_BUILDIMAGES
+  tags: [ "runner:main", "size:2xlarge" ]
+  needs: [ "go_deps_rpm-x64" ]
+  variables:
+    PYTHON_RUNTIMES: '2'
+    CONDA_ENV: ddpy2
+  script:
+    # Exclude systemd because it cannot succeed on Centos 6: the image doesn't have the shared object required by
+    # https://github.com/coreos/go-systemd/blob/c8cc474ba8655dfbdb0ac7fcc09b7faf5b643caf/sdjournal/functions.go#L46
+    # This is OK because the test on systemd still runs on the debian image
+    - inv -e test --race --profile --python-runtimes "$PYTHON_RUNTIMES" --cpus 4 --build-exclude=systemd
+
+test_py3_rpm-x64:
+  extends: .tests_preparation
+  stage: source_test
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_x64:$DATADOG_AGENT_BUILDIMAGES
+  tags: [ "runner:main", "size:2xlarge" ]
+  needs: [ "go_deps_rpm-x64" ]
+  variables:
+    PYTHON_RUNTIMES: '3'
+    CONDA_ENV: ddpy3
+  script:
+    # Exclude systemd because it cannot succeed on Centos 6: the image doesn't have the shared object required by
+    # https://github.com/coreos/go-systemd/blob/c8cc474ba8655dfbdb0ac7fcc09b7faf5b643caf/sdjournal/functions.go#L46
+    # This is OK because the test on systemd still runs on the debian image
+    - inv -e test --race --profile --python-runtimes "$PYTHON_RUNTIMES" --cpus 4 --build-exclude=systemd
+
