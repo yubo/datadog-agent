@@ -35,7 +35,7 @@ if linux?
   dependency 'nfsiostat'
   # need kerberos for hdfs
   dependency 'libkrb5'
-
+  # need for glusterfs
   dependency 'gstatus'
 
   unless suse? || arm?
