@@ -46,9 +46,6 @@ func TestBasicSample(t *testing.T) {
 ip_address: 1.2.3.4
 metrics:
 - symbol:
-    OID: 1.3.6.1.2.1.1.3.0
-    name: sysUpTimeInstance
-- symbol:
     OID: 1.3.6.1.2.1.2.1
     name: ifNumber
 - table:

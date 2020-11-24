@@ -87,6 +87,8 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.CommunityString = instance.CommunityString
 	c.Metrics = instance.Metrics
 
+	c.Metrics = append(c.Metrics, getUptimeMetricConfig())
+
 	snmpVersion, err := parseVersion(instance.SnmpVersion)
 	if err != nil {
 		return snmpConfig{}, err
@@ -97,6 +99,11 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.OidConfig.columnOids = parseColumnOids(instance.Metrics)
 
 	return c, err
+}
+
+func getUptimeMetricConfig() metricsConfig {
+	// Reference sysUpTimeInstance directly, see http://oidref.com/1.3.6.1.2.1.1.3.0
+	return metricsConfig{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}}
 }
 
 func parseScalarOids(metrics []metricsConfig) []string {

@@ -20,9 +20,6 @@ ip_address: 1.2.3.4
 port: 1161
 metrics:
 - symbol:
-    OID: 1.3.6.1.2.1.1.3.0
-    name: sysUpTimeInstance
-- symbol:
     OID: 1.3.6.1.2.1.2.1
     name: ifNumber
 - table:
@@ -47,7 +44,6 @@ metrics:
 	assert.Equal(t, "1.2.3.4", check.config.IPAddress)
 	assert.Equal(t, uint16(1161), check.config.Port)
 	metrics := []metricsConfig{
-		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
 		{
 			Table: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
@@ -60,6 +56,7 @@ metrics:
 				{Tag: "if_desc", Column: symbolConfig{OID: "1.3.6.1.2.1.2.2.1.2", Name: "ifDescr"}},
 			},
 		},
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
 	}
 	assert.Equal(t, metrics, check.config.Metrics)
 }
