@@ -19,6 +19,7 @@ func fetchScalarOidsOne(session sessionAPI, oids []string) (map[string]snmpValue
 
 func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int) (map[string]snmpValue, error) {
 	// Get results
+	// TODO: Improve batching algorithm and make it more readable
 	retValues := make(map[string]snmpValue)
 
 	if oidBatchSize == 0 {
@@ -47,6 +48,8 @@ func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int)
 
 func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize int) (map[string]map[string]snmpValue, error) {
 	// Get results
+	// TODO: Improve batching algorithm and make it more readable
+	//   -
 
 	if oidBatchSize == 0 {
 		// TODO: test me
