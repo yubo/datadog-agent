@@ -37,6 +37,91 @@ func TestFetchColumnOids(t *testing.T) {
 				Value: 13,
 			},
 			{
+				Name:  "1.1.3.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 31,
+			},
+		},
+	}
+	bulkPacket2 := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.1.1.4",
+				Type:  gosnmp.TimeTicks,
+				Value: 14,
+			},
+			{
+				Name:  "1.1.1.5",
+				Type:  gosnmp.TimeTicks,
+				Value: 15,
+			},
+		},
+	}
+	bulkPacket3 := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.1.3.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 34,
+			},
+		},
+	}
+	session.On("GetBulk", []string{"1.1.1", "1.1.2"}).Return(&bulkPacket, nil)
+	session.On("GetBulk", []string{"1.1.1.3"}).Return(&bulkPacket2, nil)
+	session.On("GetBulk", []string{"1.1.1.5"}).Return(&bulkPacket3, nil)
+
+	oids := map[string]string{"1.1.1": "1.1.1", "1.1.2": "1.1.2"}
+
+	columnValues, err := fetchColumnOids(session, oids, 100)
+	assert.Nil(t, err)
+
+	expectedColumnValues := map[string]map[string]snmpValue{
+		"1.1.1": {
+			"1": snmpValue{val: float64(11)},
+			"2": snmpValue{val: float64(12)},
+			"3": snmpValue{val: float64(13)},
+			"4": snmpValue{val: float64(14)},
+			"5": snmpValue{val: float64(15)},
+		},
+		"1.1.2": {
+			"1": snmpValue{val: float64(21)},
+			"2": snmpValue{val: float64(22)},
+		},
+	}
+	assert.Equal(t, expectedColumnValues, columnValues)
+}
+
+func TestFetchColumnOidsBatch(t *testing.T) {
+	session := &mockSession{}
+
+	bulkPacket := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.1.1.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 11,
+			},
+			{
+				Name:  "1.1.2.1",
+				Type:  gosnmp.TimeTicks,
+				Value: 21,
+			},
+			{
+				Name:  "1.1.1.2",
+				Type:  gosnmp.TimeTicks,
+				Value: 12,
+			},
+			{
+				Name:  "1.1.2.2",
+				Type:  gosnmp.TimeTicks,
+				Value: 22,
+			},
+			{
+				Name:  "1.1.1.3",
+				Type:  gosnmp.TimeTicks,
+				Value: 13,
+			},
+			{
 				Name:  "1.1.9.1",
 				Type:  gosnmp.TimeTicks,
 				Value: 31,
@@ -166,22 +251,22 @@ func TestFetchOidBatchSize(t *testing.T) {
 		},
 	}
 
-	session.On("Get", []string{"1.1.1.1.0", "1.1.1.2.0"}).Return(&getPacket1, nil)
-	session.On("Get", []string{"1.1.1.3.0", "1.1.1.4.0"}).Return(&getPacket2, nil)
+	session.On("Get", []string{"1.1.1.1.0","1.1.1.2.0"}).Return(&getPacket1, nil)
+	session.On("Get", []string{"1.1.1.3.0","1.1.1.4.0"}).Return(&getPacket2, nil)
 	session.On("Get", []string{"1.1.1.5.0", "1.1.1.6.0"}).Return(&getPacket3, nil)
 
-	oids := []string{"1.1.1.1.0", "1.1.1.2.0", "1.1.1.3.0", "1.1.1.4.0", "1.1.1.5.0", "1.1.1.6.0"}
+	oids := []string{"1.1.1.1.0","1.1.1.2.0","1.1.1.3.0","1.1.1.4.0","1.1.1.5.0", "1.1.1.6.0"}
 
 	columnValues, err := fetchScalarOidsByBatch(session, oids, 2)
 	assert.Nil(t, err)
 
 	expectedColumnValues := map[string]snmpValue{
-		"1.1.1.1.0": {val: float64(10)},
-		"1.1.1.2.0": {val: float64(20)},
-		"1.1.1.3.0": {val: float64(30)},
-		"1.1.1.4.0": {val: float64(40)},
-		"1.1.1.5.0": {val: float64(50)},
-		"1.1.1.6.0": {val: float64(60)},
+		"1.1.1.1.0": snmpValue{val: float64(10)},
+		"1.1.1.2.0": snmpValue{val: float64(20)},
+		"1.1.1.3.0": snmpValue{val: float64(30)},
+		"1.1.1.4.0": snmpValue{val: float64(40)},
+		"1.1.1.5.0": snmpValue{val: float64(50)},
+		"1.1.1.6.0": snmpValue{val: float64(60)},
 	}
 	assert.Equal(t, expectedColumnValues, columnValues)
 }
