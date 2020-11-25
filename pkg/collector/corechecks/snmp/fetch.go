@@ -24,6 +24,9 @@ func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map
 	//   - make batches
 	//   - GetBulk loop to get all rows
 	returnValues := make(map[string]map[string]snmpValue)
+	if len(oids) == 0 {
+		return returnValues, nil
+	}
 	curOids := oids
 	for {
 		log.Debugf("fetchColumnOids() curOids  : %v", curOids)
