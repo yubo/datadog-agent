@@ -86,31 +86,25 @@ func (c *Check) submitMetrics(values *snmpValues, tags []string) {
 	}
 }
 
-func (c *Check) sendMetric(metric metricsConfig, metricName string, value float64, tags []string) {
-	// TODO: Submit using the right type
-	//   See https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L34-L48
-	c.sender.Gauge("snmp."+metricName, value, "", tags)
-}
-
 func (c *Check) submitScalarMetrics(metric metricsConfig, values *snmpValues, tags []string) {
-	value, err := values.getScalarFloat64(metric.Symbol.OID)
+	value, err := values.getScalarValues(metric.Symbol.OID)
 	if err != nil {
 		log.Warnf("error getting scalar val: %v", err)
 		return
 	}
-	c.sendMetric(metric, metric.Symbol.Name, value, tags)
+	sendMetric(c.sender, metric.Symbol.Name, value, tags)
 }
 
 func (c *Check) submitColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
 	for _, symbol := range metricConfig.Symbols {
-		metricValues, err := values.getColumnFloatValues(symbol.OID)
+		metricValues, err := values.getColumnValues(symbol.OID)
 		if err != nil {
 			log.Warnf("error getting column value: %v", err)
 			continue
 		}
 		for fullIndex, value := range metricValues {
 			rowTags := append(tags, metricConfig.getTags(fullIndex, values)...)
-			c.sendMetric(metricConfig, symbol.Name, value, rowTags)
+			sendMetric(c.sender, symbol.Name, value, rowTags)
 		}
 		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
 	}

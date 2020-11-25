@@ -28,14 +28,14 @@ type snmpValues struct {
 	columnValues map[string]map[string]snmpValue
 }
 
-func toFloat64(svalue snmpValue) float64 {
+func (sv *snmpValue) toFloat64() float64 {
 	var retValue float64
 
-	switch svalue.val.(type) {
+	switch sv.val.(type) {
 	case float64:
-		retValue = svalue.val.(float64)
+		retValue = sv.val.(float64)
 	case string:
-		val, err := strconv.ParseInt(svalue.val.(string), 10, 64)
+		val, err := strconv.ParseInt(sv.val.(string), 10, 64)
 		if err != nil {
 			return float64(0)
 		}
@@ -56,24 +56,24 @@ func toString(svalue snmpValue) string {
 	return retValue
 }
 
-// getScalarFloat64 look for oid and returns the val and boolean
+// getScalarValues look for oid and returns the val and boolean
 // weather valid value has been found
-func (v *snmpValues) getScalarFloat64(oid string) (float64, error) {
+func (v *snmpValues) getScalarValues(oid string) (snmpValue, error) {
 	value, ok := v.scalarValues[oid]
 	if !ok {
-		return float64(0), fmt.Errorf("value for Scalar OID not found: %s", oid)
+		return snmpValue{}, fmt.Errorf("value for Scalar OID not found: %s", oid)
 	}
-	return toFloat64(value), nil
+	return value, nil
 }
 
-func (v *snmpValues) getColumnFloatValues(oid string) (map[string]float64, error) {
-	retValues := make(map[string]float64)
+func (v *snmpValues) getColumnValues(oid string) (map[string]snmpValue, error) {
+	retValues := make(map[string]snmpValue)
 	values, ok := v.columnValues[oid]
 	if !ok {
 		return nil, fmt.Errorf("value for Scalar OID not found: %s", oid)
 	}
 	for index, value := range values {
-		retValues[index] = toFloat64(value)
+		retValues[index] = value
 	}
 
 	return retValues, nil
