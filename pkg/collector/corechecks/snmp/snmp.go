@@ -58,7 +58,7 @@ func (c *Check) Run() error {
 }
 
 func (c *Check) fetchValues(err error) (*snmpValues, error) {
-	scalarResults, err := fetchScalarOids(c.session, c.config.OidConfig.scalarOids)
+	scalarResults, err := fetchScalarOidsByBatch(c.session, c.config.OidConfig.scalarOids, c.config.OidBatchSize)
 	if err != nil {
 		log.Errorf("Get() err: %v", err)
 		return &snmpValues{}, err
@@ -68,7 +68,7 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	for _, value := range c.config.OidConfig.columnOids {
 		oids[value] = value
 	}
-	columnResults, err := fetchColumnOids(c.session, oids)
+	columnResults, err := fetchColumnOids(c.session, oids, c.config.OidBatchSize)
 	if err != nil {
 		log.Errorf("GetBulk() err: %v", err)
 		return &snmpValues{}, err

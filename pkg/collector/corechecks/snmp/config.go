@@ -7,6 +7,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var defaultOidBatchSize = 10
+
 type snmpInitConfig struct {
 	OidBatchSize             int `yaml:"oid_batch_size"`
 	RefreshOidsCacheInterval int `yaml:"refresh_oids_cache_interval"`
@@ -59,6 +61,7 @@ type snmpConfig struct {
 	ContextName     string
 	OidConfig       oidConfig
 	Metrics         []metricsConfig
+	OidBatchSize    int
 }
 
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
@@ -98,6 +101,11 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.OidConfig.scalarOids = parseScalarOids(instance.Metrics)
 	c.OidConfig.columnOids = parseColumnOids(instance.Metrics)
 
+	if init.OidBatchSize == 0 {
+		c.OidBatchSize = defaultOidBatchSize
+	} else {
+		c.OidBatchSize = init.OidBatchSize
+	}
 	return c, err
 }
 
