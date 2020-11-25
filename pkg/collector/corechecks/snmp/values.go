@@ -19,13 +19,16 @@ const (
 )
 
 type snmpValue struct {
+	// valType is used for knowing which default submission type
+	// we should use (gauge, rate, etc)
 	valType valueType
+	// val might be a `string` or `float64`
 	val     interface{}
 }
 
 type snmpValues struct {
-	scalarValues map[string]snmpValue
-	columnValues map[string]map[string]snmpValue
+	scalarValues map[string]snmpValue  // map[instanceOid]snmpValue
+	columnValues map[string]map[string]snmpValue  // map[columnOid]map[rowOid]snmpValue
 }
 
 func (sv *snmpValue) toFloat64() float64 {
