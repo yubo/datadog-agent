@@ -41,18 +41,20 @@ func (sv *snmpValue) toFloat64() float64 {
 		}
 		retValue = float64(val)
 	}
+	// TODO: only float64/string are expected. Probably no need to support other cases.
 	return retValue
 }
 
-func toString(svalue snmpValue) string {
+func (sv snmpValue) toString() string {
 	var retValue string
 
-	switch svalue.val.(type) {
+	switch sv.val.(type) {
 	case float64:
-		retValue = strconv.Itoa(int(svalue.val.(float64)))
+		retValue = strconv.Itoa(int(sv.val.(float64)))
 	case string:
-		retValue = svalue.val.(string)
+		retValue = sv.val.(string)
 	}
+	// TODO: only float64/string are expected. Probably no need to support other cases.
 	return retValue
 }
 
@@ -74,19 +76,6 @@ func (v *snmpValues) getColumnValues(oid string) (map[string]snmpValue, error) {
 	}
 	for index, value := range values {
 		retValues[index] = value
-	}
-
-	return retValues, nil
-}
-
-func (v *snmpValues) getColumnStringValues(oid string) (map[string]string, error) {
-	retValues := make(map[string]string)
-	values, ok := v.columnValues[oid]
-	if !ok {
-		return nil, fmt.Errorf("value for Scalar OID not found: %s", oid)
-	}
-	for index, value := range values {
-		retValues[index] = toString(value)
 	}
 
 	return retValues, nil

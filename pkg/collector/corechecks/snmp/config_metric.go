@@ -75,13 +75,13 @@ func (m *metricsConfig) getTags(fullIndex string, values *snmpValues) []string {
 		}
 		if metricTag.Column.OID != "" {
 			//tagValueOid := metricTag.Column.OID + "." + fullIndex
-			stringValues, err := values.getColumnStringValues(metricTag.Column.OID)
+			stringValues, err := values.getColumnValues(metricTag.Column.OID)
 			if err != nil {
 				log.Warnf("error getting column value: %v", err)
 				continue
 			}
 			tagValue := stringValues[fullIndex]
-			rowTags = append(rowTags, metricTag.Tag+":"+tagValue)
+			rowTags = append(rowTags, metricTag.Tag+":"+tagValue.toString())
 		}
 	}
 	return rowTags
