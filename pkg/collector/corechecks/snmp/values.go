@@ -5,19 +5,37 @@ import (
 	"strconv"
 )
 
-type snmpValues struct {
-	scalarValues map[string]interface{}
-	columnValues map[string]map[string]interface{}
+type valueType byte
+
+// For now, we are only interested in Counter val type,
+// this is needed a metric submission step to send metrics
+// as `rate` submission type.
+// Other is used as catch all, we will use `gauge` as submission type.
+// Related Python integration code:
+// https://github.com/DataDog/integrations-core/blob/51b1d2366b7cb7864c4b4aed29945ffd14e512d6/snmp/datadog_checks/snmp/metrics.py#L20-L21
+const (
+	Other valueType = iota
+	Counter
+)
+
+type snmpValue struct {
+	valType valueType
+	val     interface{}
 }
 
-func toFloat64(value interface{}) float64 {
+type snmpValues struct {
+	scalarValues map[string]snmpValue
+	columnValues map[string]map[string]snmpValue
+}
+
+func toFloat64(svalue snmpValue) float64 {
 	var retValue float64
 
-	switch value.(type) {
+	switch svalue.val.(type) {
 	case float64:
-		retValue = value.(float64)
+		retValue = svalue.val.(float64)
 	case string:
-		val, err := strconv.ParseInt(value.(string), 10, 64)
+		val, err := strconv.ParseInt(svalue.val.(string), 10, 64)
 		if err != nil {
 			return float64(0)
 		}
@@ -26,19 +44,19 @@ func toFloat64(value interface{}) float64 {
 	return retValue
 }
 
-func toString(value interface{}) string {
+func toString(svalue snmpValue) string {
 	var retValue string
 
-	switch value.(type) {
+	switch svalue.val.(type) {
 	case float64:
-		retValue = strconv.Itoa(int(value.(float64)))
+		retValue = strconv.Itoa(int(svalue.val.(float64)))
 	case string:
-		retValue = value.(string)
+		retValue = svalue.val.(string)
 	}
 	return retValue
 }
 
-// getScalarFloat64 look for oid and returns the value and boolean
+// getScalarFloat64 look for oid and returns the val and boolean
 // weather valid value has been found
 func (v *snmpValues) getScalarFloat64(oid string) (float64, error) {
 	value, ok := v.scalarValues[oid]

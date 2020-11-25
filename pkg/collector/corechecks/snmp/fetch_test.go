@@ -75,17 +75,17 @@ func TestFetchColumnOids(t *testing.T) {
 	columnValues, err := fetchColumnOids(session, oids)
 	assert.Nil(t, err)
 
-	expectedColumnValues := map[string]map[string]interface{}{
+	expectedColumnValues := map[string]map[string]snmpValue{
 		"1.1.1": {
-			"1": float64(11),
-			"2": float64(12),
-			"3": float64(13),
-			"4": float64(14),
-			"5": float64(15),
+			"1": snmpValue{val: float64(11)},
+			"2": snmpValue{val: float64(12)},
+			"3": snmpValue{val: float64(13)},
+			"4": snmpValue{val: float64(14)},
+			"5": snmpValue{val: float64(15)},
 		},
 		"1.1.2": {
-			"1": float64(21),
-			"2": float64(22),
+			"1": snmpValue{val: float64(21)},
+			"2": snmpValue{val: float64(22)},
 		},
 	}
 	assert.Equal(t, expectedColumnValues, columnValues)

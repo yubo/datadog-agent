@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-func fetchScalarOids(session sessionAPI, oids []string) (map[string]interface{}, error) {
+func fetchScalarOids(session sessionAPI, oids []string) (map[string]snmpValue, error) {
 	// Get results
 	// TODO: make batches
 	log.Debugf("fetchScalarOids() oids: %v", oids)
@@ -17,13 +17,13 @@ func fetchScalarOids(session sessionAPI, oids []string) (map[string]interface{},
 	return resultToScalarValues(results), nil
 }
 
-func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map[string]interface{}, error) {
+func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map[string]snmpValue, error) {
 	// Returns map[columnOID]map[index]interface(float64 or string)
 	// GetBulk results
 	// TODO:
 	//   - make batches
 	//   - GetBulk loop to get all rows
-	returnValues := make(map[string]map[string]interface{})
+	returnValues := make(map[string]map[string]snmpValue)
 	curOids := oids
 	for {
 		log.Debugf("fetchColumnOids() curOids  : %v", curOids)
@@ -44,7 +44,7 @@ func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map
 		for columnOid, columnValues := range values {
 			for oid, value := range columnValues {
 				if _, ok := returnValues[columnOid]; !ok {
-					returnValues[columnOid] = make(map[string]interface{})
+					returnValues[columnOid] = make(map[string]snmpValue)
 				}
 				returnValues[columnOid][oid] = value
 			}
