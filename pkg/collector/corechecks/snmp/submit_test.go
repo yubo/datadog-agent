@@ -40,11 +40,13 @@ func TestSendMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.caseName, func(t *testing.T) {
-			sender := mocksender.NewMockSender("foo")
-			sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
-			sender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
-			sendMetric(sender, tt.metricName, tt.value, tt.tags)
-			sender.AssertCalled(t, tt.expectedMethod, tt.expectedMetricName, tt.expectedValue, "", tt.expectedTags)
+			mockSender := mocksender.NewMockSender("foo")
+			metricSender := metricSender{mockSender}
+			mockSender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+			mockSender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+
+			metricSender.sendMetric(tt.metricName, tt.value, tt.tags)
+			mockSender.AssertCalled(t, tt.expectedMethod, tt.expectedMetricName, tt.expectedValue, "", tt.expectedTags)
 		})
 	}
 }

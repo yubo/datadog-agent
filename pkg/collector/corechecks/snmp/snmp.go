@@ -17,7 +17,7 @@ type Check struct {
 	core.CheckBase
 	config  snmpConfig
 	session sessionAPI
-	sender  aggregator.Sender
+	sender  metricSender
 }
 
 // Run executes the check
@@ -29,7 +29,8 @@ func (c *Check) Run() error {
 
 	tags := []string{"snmp_device:" + c.config.IPAddress}
 
-	c.sender = sender
+	c.sender = metricSender{sender}
+
 	log.Infof("c.config.Metrics: %#v\n", c.config.Metrics) // TODO: remove me
 	sender.Gauge("snmp.devices_monitored", float64(1), "", tags)
 
@@ -49,7 +50,7 @@ func (c *Check) Run() error {
 	log.Infof("columnValues: %#v\n", snmpValues.columnValues) // TODO: remove me
 
 	// Submit metrics
-	c.submitMetrics(snmpValues, tags)
+	c.sender.submitMetrics(c.config.Metrics, snmpValues, tags)
 
 	// Commit
 	sender.Commit()
@@ -74,40 +75,6 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	}
 
 	return &snmpValues{scalarResults, columnResults}, nil
-}
-
-func (c *Check) submitMetrics(values *snmpValues, tags []string) {
-	for _, metric := range c.config.Metrics {
-		if metric.Symbol.OID != "" {
-			c.submitScalarMetrics(metric, values, tags)
-		} else if metric.Table.OID != "" {
-			c.submitColumnMetrics(metric, values, tags)
-		}
-	}
-}
-
-func (c *Check) submitScalarMetrics(metric metricsConfig, values *snmpValues, tags []string) {
-	value, err := values.getScalarValues(metric.Symbol.OID)
-	if err != nil {
-		log.Warnf("error getting scalar val: %v", err)
-		return
-	}
-	sendMetric(c.sender, metric.Symbol.Name, value, tags)
-}
-
-func (c *Check) submitColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
-	for _, symbol := range metricConfig.Symbols {
-		metricValues, err := values.getColumnValues(symbol.OID)
-		if err != nil {
-			log.Warnf("error getting column value: %v", err)
-			continue
-		}
-		for fullIndex, value := range metricValues {
-			rowTags := append(tags, metricConfig.getTags(fullIndex, values)...)
-			sendMetric(c.sender, symbol.Name, value, rowTags)
-		}
-		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
-	}
 }
 
 // Configure configures the snmp checks
