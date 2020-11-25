@@ -29,22 +29,24 @@ func resultToScalarValues(result *gosnmp.SnmpPacket) (values map[string]snmpValu
 	return returnValues
 }
 
-func resultToColumnValues(oids []string, result *gosnmp.SnmpPacket) (map[string]map[string]snmpValue, map[string]string) {
+func resultToColumnValues(columnOids []string, result *gosnmp.SnmpPacket) (map[string]map[string]snmpValue, map[string]string) {
 	// TODO: test me
 	returnValues := make(map[string]map[string]snmpValue)
 	nextOidsMap := make(map[string]string)
 	for i, pduVariable := range result.Variables {
-		name, value := getValueFromPDU(pduVariable)
-		oid := oids[i%len(oids)]
-		if _, ok := returnValues[oid]; !ok {
-			returnValues[oids[i]] = make(map[string]snmpValue)
+		oid, value := getValueFromPDU(pduVariable)
+		columnOid := columnOids[i%len(columnOids)]
+		if _, ok := returnValues[columnOid]; !ok {
+			returnValues[columnOids[i]] = make(map[string]snmpValue)
 		}
-		prefix := oid + "."
-		if strings.HasPrefix(name, prefix) {
-			returnValues[oid][name[len(prefix):]] = value
-			nextOidsMap[oid] = name
+		prefix := columnOid + "."
+		if strings.HasPrefix(oid, prefix) {
+			returnValues[columnOid][oid[len(prefix):]] = value
+			nextOidsMap[columnOid] = oid
 		} else {
-			delete(nextOidsMap, oid)
+			// if oid is not prefixed by columnOid, it means it's not part of the column
+			// and we can stop requesting the next row of this column
+			delete(nextOidsMap, columnOid)
 		}
 	}
 	return returnValues, nextOidsMap
