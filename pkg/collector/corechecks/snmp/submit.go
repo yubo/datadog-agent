@@ -6,7 +6,7 @@ import (
 )
 
 type metricSender struct {
-	sender  aggregator.Sender
+	sender aggregator.Sender
 }
 
 func (ms *metricSender) submitMetrics(metrics []metricsConfig, values *snmpValues, tags []string) {
