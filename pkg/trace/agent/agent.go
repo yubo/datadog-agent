@@ -354,9 +354,6 @@ func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang string) {
 	a.OutStats <- &out
 }
 
-func handleDistributions(hitsSummaryData []byte, errorSummaryData []byte) (hitsSummary *quantile.SliceSummary, errorSummary *quantile.SliceSummary, err error){
-}
-
 // sample decides whether the trace will be kept and extracts any APM events
 // from it.
 func (a *Agent) sample(ts *info.TagStats, pt ProcessedTrace) (events []*pb.Span, keep bool) {

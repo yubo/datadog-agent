@@ -7,7 +7,7 @@ import (
 
 // ddSketchToGK only support positive values
 func ddSketchToGK(ddSketch *ddSketchReader) *SliceSummary {
-	gkSketch := SliceSummary{Entries: make([]Entry, 0, ddSketch.nBuckets)}
+	gkSketch := SliceSummary{Entries: make([]Entry, 0, ddSketch.nBuckets())}
 	zeros := ddSketch.zeroCount
 	if zeros > 0 {
 		gkSketch.Entries = append(gkSketch.Entries, Entry{V: 0, G: zeros, Delta: 0})
@@ -45,13 +45,14 @@ func DDSketchesToGK(okSummaryData []byte, errorSummaryData []byte) (hitsSketch *
 	if err := proto.Unmarshal(errorSummaryData, &errorSummary); err != nil {
 		return nil, nil, err
 	}
-	hitsDDSketch, err := newDDSketch([]*pb.DDSketch{&okSummary, &errorSummary})
+	okDDSketch, err := ddSketchReaderFromProto(&okSummary)
 	if err != nil {
 		return nil, nil, err
 	}
-	errorDDSketch, err := newDDSketch([]*pb.DDSketch{&errorSummary})
+	errorDDSketch, err := ddSketchReaderFromProto(&errorSummary)
 	if err != nil {
 		return nil, nil, err
 	}
+	hitsDDSketch := okDDSketch.merge(errorDDSketch)
 	return ddSketchToGK(hitsDDSketch), ddSketchToGK(errorDDSketch), nil
 }

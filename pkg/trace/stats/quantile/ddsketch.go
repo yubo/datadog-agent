@@ -18,6 +18,10 @@ type ddSketchIterator struct {
 	minIndex int
 }
 
+func (i *ddSketchIterator) nBuckets() int {
+	return i.maxIndex - i.minIndex + 1
+}
+
 func (i *ddSketchIterator) hasNext() bool {
 	return i.currentIndex <= i.maxIndex
 }
@@ -33,39 +37,27 @@ func (i *ddSketchIterator) next() (index, count int) {
 	return index, count
 }
 
-func min(values []int) int {
-	min := values[0]
-	for i := 1; i < len(values); i++ {
-		if values[i] < min {
-			min = values[i]
-		}
+func min(x, y int) int {
+	if x < y {
+		return x
 	}
-	return min
+	return y
 }
 
-func max(values []int) int {
-	max := values[0]
-	for i := 1; i < len(values); i++ {
-		if values[i] > max {
-			max = values[i]
-		}
+func max(x, y int) int {
+	if x > y {
+		return x
 	}
-	return max
+	return y
 }
 
-func newDDSketchIterator(sketches []*pb.DDSketch) ddSketchIterator {
-	i := ddSketchIterator{
-		bins: make([][]float64, len(sketches)),
-		minIndexes: make([]int, len(sketches)),
-		maxIndexes: make([]int, len(sketches)),
-	}
-	for j := 0; j < len(sketches); j++ {
-		i.bins[j] = sketches[j].PositiveValues.ContiguousBinCounts
-		i.minIndexes[j] = int(sketches[j].PositiveValues.ContiguousBinIndexOffset)
-		i.maxIndexes[j] = i.minIndexes[j] + len(i.bins[j]) - 1
-	}
-	i.maxIndex = max(i.maxIndexes)
-	i.minIndex = min(i.minIndexes)
+func newDDSketchIterator(bins []float64, offset int) ddSketchIterator {
+	i := ddSketchIterator{}
+	i.bins = append(i.bins, bins)
+	i.minIndexes = append(i.minIndexes, offset)
+	i.maxIndexes = append(i.maxIndexes, offset + len(bins) - 1)
+	i.maxIndex = i.maxIndexes[0]
+	i.minIndex = i.minIndexes[0]
 	i.currentIndex = i.minIndex
 	return i
 }
@@ -86,19 +78,30 @@ func getDDSketchMapping(protoMapping *pb.IndexMapping) (m mapping.IndexMapping, 
 type ddSketchReader struct {
 	ddSketchIterator
 	zeroCount int
-	// nBuckets is the number of buckets, including empty buckets
-	nBuckets int
 	mapping mapping.IndexMapping
 }
 
-func newDDSketch(sketches []*pb.DDSketch) (sketch *ddSketchReader, err error) {
+// merge merges r and r2 into a new ddSketchReader.
+// It's not reallocating the bins
+// it assumes that r and r2 are mergable (same gamma, same interpolation)
+func (r *ddSketchReader) merge(r2 *ddSketchReader) *ddSketchReader {
+	merged := ddSketchReader{}
+	merged.bins = append(r.bins, r2.bins...)
+	merged.maxIndexes = append(r.maxIndexes, r2.maxIndexes...)
+	merged.minIndexes = append(r.minIndexes, r2.minIndexes...)
+	merged.currentIndex = 0
+	merged.maxIndex = max(r.maxIndex, r2.maxIndex)
+	merged.minIndex = min(r.minIndex, r2.minIndex)
+	merged.zeroCount = r.zeroCount + r2.zeroCount
+	merged.mapping = r.mapping
+	return &merged
+}
+
+func ddSketchReaderFromProto(s *pb.DDSketch) (sketch *ddSketchReader, err error) {
 	sketch = &ddSketchReader{
-		ddSketchIterator: newDDSketchIterator(sketches),
+		ddSketchIterator: newDDSketchIterator(s.PositiveValues.ContiguousBinCounts, int(s.PositiveValues.ContiguousBinIndexOffset)),
 	}
-	for _, s := range sketches {
-		sketch.zeroCount += int(s.ZeroCount)
-	}
-	sketch.nBuckets = sketch.maxIndex - sketch.minIndex + 1
-	sketch.mapping, err = getDDSketchMapping(sketches[0].Mapping)
+	sketch.zeroCount += int(s.ZeroCount)
+	sketch.mapping, err = getDDSketchMapping(s.Mapping)
 	return sketch, err
 }
