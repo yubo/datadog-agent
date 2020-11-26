@@ -10,7 +10,7 @@ import (
 // it's a way to "merge" sketches without allocating any memory
 // it only supports positive contiguousBins
 type ddSketchIterator struct {
-	sketches []*pb.DDSketch
+	bins [][]float64
 	maxIndexes []int
 	minIndexes []int
 	currentIndex int
@@ -24,9 +24,9 @@ func (i *ddSketchIterator) hasNext() bool {
 
 func (i *ddSketchIterator) next() (index, count int) {
 	index = i.currentIndex
-	for j := 0; j < len(i.sketches); j++ {
+	for j := 0; j < len(i.bins); j++ {
 		if i.currentIndex >= i.minIndexes[j] && i.currentIndex <= i.maxIndexes[j] {
-			count += int(i.sketches[j].PositiveValues.ContiguousBinCounts[i.currentIndex-i.minIndexes[j]])
+			count += int(i.bins[j][i.currentIndex-i.minIndexes[j]])
 		}
 	}
 	i.currentIndex++
@@ -53,20 +53,21 @@ func max(values []int) int {
 	return max
 }
 
-func newDDSketchIterator(sketches []*pb.DDSketch) *ddSketchIterator {
+func newDDSketchIterator(sketches []*pb.DDSketch) ddSketchIterator {
 	i := ddSketchIterator{
-		sketches: sketches,
+		bins: make([][]float64, len(sketches)),
 		minIndexes: make([]int, len(sketches)),
 		maxIndexes: make([]int, len(sketches)),
 	}
-	for j := 0; j < len(i.sketches); j++ {
+	for j := 0; j < len(sketches); j++ {
+		i.bins[j] = sketches[j].PositiveValues.ContiguousBinCounts
 		i.minIndexes[j] = int(sketches[j].PositiveValues.ContiguousBinIndexOffset)
-		i.maxIndexes[j] = i.minIndexes[j] + len(i.sketches[j].PositiveValues.ContiguousBinCounts) - 1
+		i.maxIndexes[j] = i.minIndexes[j] + len(i.bins[j]) - 1
 	}
 	i.maxIndex = max(i.maxIndexes)
 	i.minIndex = min(i.minIndexes)
 	i.currentIndex = i.minIndex
-	return &i
+	return i
 }
 
 func getDDSketchMapping(protoMapping *pb.IndexMapping) (m mapping.IndexMapping, err error) {
@@ -82,23 +83,22 @@ func getDDSketchMapping(protoMapping *pb.IndexMapping) (m mapping.IndexMapping, 
 	}
 }
 
-type ddSketch struct {
+type ddSketchReader struct {
+	ddSketchIterator
 	zeroCount int
 	// nBuckets is the number of buckets, including empty buckets
 	nBuckets int
 	mapping mapping.IndexMapping
-	iterator *ddSketchIterator
 }
 
-func newDDSketch(sketches []*pb.DDSketch) (sketch *ddSketch, err error) {
-	sketch = &ddSketch{
-		iterator: newDDSketchIterator(sketches),
+func newDDSketch(sketches []*pb.DDSketch) (sketch *ddSketchReader, err error) {
+	sketch = &ddSketchReader{
+		ddSketchIterator: newDDSketchIterator(sketches),
 	}
 	for _, s := range sketches {
-		fmt.Println("zero", s.ZeroCount)
 		sketch.zeroCount += int(s.ZeroCount)
 	}
-	sketch.nBuckets = sketch.iterator.maxIndex - sketch.iterator.minIndex + 1
+	sketch.nBuckets = sketch.maxIndex - sketch.minIndex + 1
 	sketch.mapping, err = getDDSketchMapping(sketches[0].Mapping)
 	return sketch, err
 }
