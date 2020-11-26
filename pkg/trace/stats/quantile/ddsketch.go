@@ -6,37 +6,6 @@ import (
 	"github.com/DataDog/sketches-go/ddsketch/mapping"
 )
 
-// ddSketchIterator is an iterator on a list of ddSketches.
-// it's a way to "merge" sketches without allocating any memory
-// it only supports positive contiguousBins
-type ddSketchIterator struct {
-	bins [][]float64
-	maxIndexes []int
-	minIndexes []int
-	currentIndex int
-	maxIndex int
-	minIndex int
-}
-
-func (i *ddSketchIterator) nBuckets() int {
-	return i.maxIndex - i.minIndex + 1
-}
-
-func (i *ddSketchIterator) hasNext() bool {
-	return i.currentIndex <= i.maxIndex
-}
-
-func (i *ddSketchIterator) next() (index, count int) {
-	index = i.currentIndex
-	for j := 0; j < len(i.bins); j++ {
-		if i.currentIndex >= i.minIndexes[j] && i.currentIndex <= i.maxIndexes[j] {
-			count += int(i.bins[j][i.currentIndex-i.minIndexes[j]])
-		}
-	}
-	i.currentIndex++
-	return index, count
-}
-
 func min(x, y int) int {
 	if x < y {
 		return x
@@ -51,15 +20,65 @@ func max(x, y int) int {
 	return y
 }
 
-func newDDSketchIterator(bins []float64, offset int) ddSketchIterator {
-	i := ddSketchIterator{}
-	i.bins = append(i.bins, bins)
-	i.minIndexes = append(i.minIndexes, offset)
-	i.maxIndexes = append(i.maxIndexes, offset + len(bins) - 1)
-	i.maxIndex = i.maxIndexes[0]
-	i.minIndex = i.minIndexes[0]
-	i.currentIndex = i.minIndex
-	return i
+// ddSketchReader is used to iterator over the bins of a ddSketch.
+// It allows merging of ddSketches without heavy allocations of bins.
+// It only supports positive contiguous values.
+type ddSketchReader struct {
+	bins [][]float64
+	maxIndexes []int
+	minIndexes []int
+	currentIndex int
+	maxIndex int
+	minIndex int
+	zeroCount int
+	mapping mapping.IndexMapping
+}
+
+func ddSketchReaderFromProto(sPb *pb.DDSketch) (s *ddSketchReader, err error) {
+	s = &ddSketchReader{}
+	s.bins = append(s.bins, sPb.PositiveValues.ContiguousBinCounts)
+	s.minIndexes = append(s.minIndexes, int(sPb.PositiveValues.ContiguousBinIndexOffset))
+	s.maxIndexes = append(s.maxIndexes, s.minIndexes[0] + len(s.bins[0]) - 1)
+	s.maxIndex = s.maxIndexes[0]
+	s.minIndex = s.minIndexes[0]
+	s.currentIndex = s.minIndex
+	s.zeroCount += int(sPb.ZeroCount)
+	s.mapping, err = getDDSketchMapping(sPb.Mapping)
+	return s, err
+}
+
+// merge merges r and r2 into a new ddSketchReader.
+// it assumes that r and r2 are mergable (same gamma, same interpolation)
+func (r *ddSketchReader) merge(r2 *ddSketchReader) *ddSketchReader {
+	return &ddSketchReader{
+		bins : append(r.bins, r2.bins...),
+		maxIndexes : append(r.maxIndexes, r2.maxIndexes...),
+		minIndexes : append(r.minIndexes, r2.minIndexes...),
+		currentIndex : 0,
+		maxIndex : max(r.maxIndex, r2.maxIndex),
+		minIndex : min(r.minIndex, r2.minIndex),
+		zeroCount : r.zeroCount + r2.zeroCount,
+		mapping : r.mapping,
+	}
+}
+
+func (r *ddSketchReader) nBuckets() int {
+	return r.maxIndex - r.minIndex + 1
+}
+
+func (r *ddSketchReader) hasNext() bool {
+	return r.currentIndex <= r.maxIndex
+}
+
+func (r *ddSketchReader) next() (index, count int) {
+	index = r.currentIndex
+	for j := 0; j < len(r.bins); j++ {
+		if r.currentIndex >= r.minIndexes[j] && r.currentIndex <= r.maxIndexes[j] {
+			count += int(r.bins[j][r.currentIndex-r.minIndexes[j]])
+		}
+	}
+	r.currentIndex++
+	return index, count
 }
 
 func getDDSketchMapping(protoMapping *pb.IndexMapping) (m mapping.IndexMapping, err error) {
@@ -73,35 +92,4 @@ func getDDSketchMapping(protoMapping *pb.IndexMapping) (m mapping.IndexMapping, 
 	default:
 		return nil, fmt.Errorf("interpolation not supported: %d", protoMapping.Interpolation)
 	}
-}
-
-type ddSketchReader struct {
-	ddSketchIterator
-	zeroCount int
-	mapping mapping.IndexMapping
-}
-
-// merge merges r and r2 into a new ddSketchReader.
-// It's not reallocating the bins
-// it assumes that r and r2 are mergable (same gamma, same interpolation)
-func (r *ddSketchReader) merge(r2 *ddSketchReader) *ddSketchReader {
-	merged := ddSketchReader{}
-	merged.bins = append(r.bins, r2.bins...)
-	merged.maxIndexes = append(r.maxIndexes, r2.maxIndexes...)
-	merged.minIndexes = append(r.minIndexes, r2.minIndexes...)
-	merged.currentIndex = 0
-	merged.maxIndex = max(r.maxIndex, r2.maxIndex)
-	merged.minIndex = min(r.minIndex, r2.minIndex)
-	merged.zeroCount = r.zeroCount + r2.zeroCount
-	merged.mapping = r.mapping
-	return &merged
-}
-
-func ddSketchReaderFromProto(s *pb.DDSketch) (sketch *ddSketchReader, err error) {
-	sketch = &ddSketchReader{
-		ddSketchIterator: newDDSketchIterator(s.PositiveValues.ContiguousBinCounts, int(s.PositiveValues.ContiguousBinIndexOffset)),
-	}
-	sketch.zeroCount += int(s.ZeroCount)
-	sketch.mapping, err = getDDSketchMapping(s.Mapping)
-	return sketch, err
 }
