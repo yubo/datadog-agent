@@ -404,7 +404,6 @@ func (r *HTTPReceiver) handleStats(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	metrics.Count("datadog.trace_agent.receiver.stats_buckets", int64(len(in.Stats)), nil, 1)
-
 	r.statsProcessor.ProcessStats(in, req.Header.Get(headerLang))
 }
 

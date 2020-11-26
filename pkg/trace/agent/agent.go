@@ -7,6 +7,7 @@ package agent
 
 import (
 	"context"
+	"github.com/DataDog/datadog-agent/pkg/trace/stats/quantile"
 	"runtime"
 	"strconv"
 	"strings"
@@ -282,9 +283,9 @@ func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang string) {
 	var buf strings.Builder
 	for _, group := range in.Stats {
 		for _, b := range group.Stats {
-			normalizeStatsGroup(&b, lang)
-			a.obfuscator.ObfuscateStatsGroup(&b)
-			a.Replacer.ReplaceStatsGroup(&b)
+			normalizeStatsGroup(b, lang)
+			a.obfuscator.ObfuscateStatsGroup(b)
+			a.Replacer.ReplaceStatsGroup(b)
 
 			tags := map[string]string{"version": in.Version}
 			if b.HTTPStatusCode != 0 {
@@ -294,6 +295,7 @@ func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang string) {
 				Start:    int64(group.Start),
 				Duration: int64(group.Duration),
 				Counts:   make(map[string]stats.Count),
+				Distributions: make(map[string]stats.Distribution),
 			}
 			grain, tagset := stats.AssembleGrain(&buf, out.Env, b.Resource, b.Service, tags)
 			key := stats.GrainKey(b.Name, stats.HITS, grain)
@@ -323,11 +325,36 @@ func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang string) {
 				TopLevel: float64(b.Hits),
 				Value:    float64(b.Duration),
 			}
+			hitsSummary, errorSummary, err := quantile.DDSketchesToGK(b.HitsSummary, b.ErrorSummary)
+			if err != nil {
+				log.Errorf("Error handling distributions. Dropping payload %v", err)
+				continue
+			}
+			newb.Distributions[key] = stats.Distribution{
+				Key:      key,
+				Name:     b.Name,
+				Measure:  stats.DURATION,
+				TagSet:   tagset,
+				TopLevel: 0,
+				Summary: hitsSummary,
+			}
+			newb.ErrDistributions[key] = stats.Distribution{
+				Key:      key,
+				Name:     b.Name,
+				Measure:  stats.DURATION,
+				TagSet:   tagset,
+				TopLevel: 0,
+				Summary: errorSummary,
+			}
+
 			out.Stats = append(out.Stats, newb)
 		}
 	}
 
 	a.OutStats <- &out
+}
+
+func handleDistributions(hitsSummaryData []byte, errorSummaryData []byte) (hitsSummary *quantile.SliceSummary, errorSummary *quantile.SliceSummary, err error){
 }
 
 // sample decides whether the trace will be kept and extracts any APM events
