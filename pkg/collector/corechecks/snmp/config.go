@@ -104,6 +104,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	}
 	c.SnmpVersion = snmpVersion
 
+	// TODO: test me
 	c.OidConfig.scalarOids = parseScalarOids(c.Metrics)
 	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
 
