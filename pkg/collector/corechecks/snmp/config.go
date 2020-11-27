@@ -104,8 +104,8 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	}
 	c.SnmpVersion = snmpVersion
 
-	c.OidConfig.scalarOids = parseScalarOids(instance.Metrics)
-	c.OidConfig.columnOids = parseColumnOids(instance.Metrics)
+	c.OidConfig.scalarOids = parseScalarOids(c.Metrics)
+	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
 
 	if init.OidBatchSize == 0 {
 		c.OidBatchSize = defaultOidBatchSize
