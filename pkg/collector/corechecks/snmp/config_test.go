@@ -63,9 +63,9 @@ profiles:
 		},
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
 	}
-	profiles := map[string]profileConfig{
+	profiles := profilesConfig{
 		"f5-big-ip": {"f5-big-ip.yaml"},
-		"router": {"generic-router.yaml"},
+		"router":    {"generic-router.yaml"},
 	}
 	assert.Equal(t, metrics, check.config.Metrics)
 	assert.Equal(t, profiles, check.config.Profiles)

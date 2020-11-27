@@ -65,7 +65,7 @@ type snmpConfig struct {
 	OidConfig       oidConfig
 	Metrics         []metricsConfig
 	OidBatchSize    int
-	Profiles        map[string]profileConfig
+	Profiles        profilesConfig
 }
 
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
