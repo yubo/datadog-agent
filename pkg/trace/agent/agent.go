@@ -7,12 +7,13 @@ package agent
 
 import (
 	"context"
-	"github.com/DataDog/datadog-agent/pkg/trace/stats/quantile"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/DataDog/datadog-agent/pkg/trace/stats/quantile"
 
 	"github.com/DataDog/datadog-agent/pkg/trace/api"
 	"github.com/DataDog/datadog-agent/pkg/trace/config"
@@ -292,10 +293,11 @@ func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang string) {
 				tags["http.status_code"] = strconv.Itoa(int(b.HTTPStatusCode))
 			}
 			newb := stats.Bucket{
-				Start:    int64(group.Start),
-				Duration: int64(group.Duration),
-				Counts:   make(map[string]stats.Count),
-				Distributions: make(map[string]stats.Distribution),
+				Start:            int64(group.Start),
+				Duration:         int64(group.Duration),
+				Counts:           make(map[string]stats.Count),
+				Distributions:    make(map[string]stats.Distribution),
+				ErrDistributions: make(map[string]stats.Distribution),
 			}
 			grain, tagset := stats.AssembleGrain(&buf, out.Env, b.Resource, b.Service, tags)
 			key := stats.GrainKey(b.Name, stats.HITS, grain)
@@ -336,7 +338,7 @@ func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang string) {
 				Measure:  stats.DURATION,
 				TagSet:   tagset,
 				TopLevel: 0,
-				Summary: hitsSummary,
+				Summary:  hitsSummary,
 			}
 			newb.ErrDistributions[key] = stats.Distribution{
 				Key:      key,
@@ -344,7 +346,7 @@ func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang string) {
 				Measure:  stats.DURATION,
 				TagSet:   tagset,
 				TopLevel: 0,
-				Summary: errorSummary,
+				Summary:  errorSummary,
 			}
 
 			out.Stats = append(out.Stats, newb)
