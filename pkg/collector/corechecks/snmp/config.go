@@ -33,6 +33,9 @@ type snmpInstanceConfig struct {
 
 	// Related parse metric code: https://github.com/DataDog/integrations-core/blob/86e9dc09f5a1829a8e8bf1b404c4fb73a392e0e5/snmp/datadog_checks/snmp/parsing/metrics.py#L94-L150
 	Metrics []metricsConfig `yaml:"metrics"`
+
+	Profiles map[string]profileConfig `yaml:"profiles"`
+
 	// TODO: To implement:
 	//   - context_engine_id: Investigate if we can remove this configuration.
 	//   - use_global_metrics
@@ -62,6 +65,7 @@ type snmpConfig struct {
 	OidConfig       oidConfig
 	Metrics         []metricsConfig
 	OidBatchSize    int
+	Profiles        map[string]profileConfig
 }
 
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
@@ -91,6 +95,8 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.Metrics = instance.Metrics
 
 	c.Metrics = append(c.Metrics, getUptimeMetricConfig())
+
+	c.Profiles = instance.Profiles
 
 	snmpVersion, err := parseVersion(instance.SnmpVersion)
 	if err != nil {

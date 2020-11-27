@@ -37,6 +37,11 @@ metrics:
     column:
       OID: 1.3.6.1.2.1.2.2.1.2
       name: ifDescr
+profiles:
+  f5-big-ip:
+    definition_file: f5-big-ip.yaml
+  router:
+    definition_file: generic-router.yaml
 `)
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")
 
@@ -58,7 +63,12 @@ metrics:
 		},
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
 	}
+	profiles := map[string]profileConfig{
+		"f5-big-ip": {"f5-big-ip.yaml"},
+		"router": {"generic-router.yaml"},
+	}
 	assert.Equal(t, metrics, check.config.Metrics)
+	assert.Equal(t, profiles, check.config.Profiles)
 }
 
 func TestPortConfiguration(t *testing.T) {
