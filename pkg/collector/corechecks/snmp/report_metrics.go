@@ -9,17 +9,17 @@ type metricSender struct {
 	sender aggregator.Sender
 }
 
-func (ms *metricSender) submitMetrics(metrics []metricsConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *snmpValues, tags []string) {
 	for _, metric := range metrics {
 		if metric.Symbol.OID != "" {
-			ms.submitScalarMetrics(metric, values, tags)
+			ms.reportScalarMetrics(metric, values, tags)
 		} else if metric.Table.OID != "" {
-			ms.submitColumnMetrics(metric, values, tags)
+			ms.report(metric, values, tags)
 		}
 	}
 }
 
-func (ms *metricSender) submitScalarMetrics(metric metricsConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *snmpValues, tags []string) {
 	value, err := values.getScalarValues(metric.Symbol.OID)
 	if err != nil {
 		log.Warnf("error getting scalar val: %v", err)
@@ -28,7 +28,7 @@ func (ms *metricSender) submitScalarMetrics(metric metricsConfig, values *snmpVa
 	ms.sendMetric(metric.Symbol.Name, value, tags)
 }
 
-func (ms *metricSender) submitColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) report(metricConfig metricsConfig, values *snmpValues, tags []string) {
 	for _, symbol := range metricConfig.Symbols {
 		metricValues, err := values.getColumnValues(symbol.OID)
 		if err != nil {

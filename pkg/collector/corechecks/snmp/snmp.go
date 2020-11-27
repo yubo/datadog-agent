@@ -49,8 +49,8 @@ func (c *Check) Run() error {
 	log.Infof("scalarValues: %#v\n", snmpValues.scalarValues) // TODO: remove me
 	log.Infof("columnValues: %#v\n", snmpValues.columnValues) // TODO: remove me
 
-	// Submit metrics
-	c.sender.submitMetrics(c.config.Metrics, snmpValues, tags)
+	// Report metrics
+	c.sender.reportMetrics(c.config.Metrics, snmpValues, tags)
 
 	// Commit
 	sender.Commit()
