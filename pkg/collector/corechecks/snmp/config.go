@@ -32,7 +32,8 @@ type snmpInstanceConfig struct {
 	ContextName     string `yaml:"context_name"`
 
 	// Related parse metric code: https://github.com/DataDog/integrations-core/blob/86e9dc09f5a1829a8e8bf1b404c4fb73a392e0e5/snmp/datadog_checks/snmp/parsing/metrics.py#L94-L150
-	Metrics []metricsConfig `yaml:"metrics"`
+	Metrics    []metricsConfig   `yaml:"metrics"`
+	MetricTags []metricTagConfig `yaml:"metric_tags"`
 
 	Profiles profilesConfig `yaml:"profiles"`
 	Profile  string         `yaml:"profile"`
@@ -65,6 +66,7 @@ type snmpConfig struct {
 	ContextName     string
 	OidConfig       oidConfig
 	Metrics         []metricsConfig
+	MetricTags      []metricTagConfig
 	OidBatchSize    int
 	Profiles        profileDefinitionMap
 }
@@ -72,6 +74,7 @@ type snmpConfig struct {
 func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
 	// https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py#L181-L200
 	c.Metrics = append(c.Metrics, definition.Metrics...)
+	c.MetricTags = append(c.MetricTags, definition.MetricTags...)
 	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, parseScalarOids(definition.Metrics)...)
 	c.OidConfig.columnOids = append(c.OidConfig.columnOids, parseColumnOids(definition.Metrics)...)
 	// TODO: Add device tag
@@ -104,6 +107,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.Metrics = instance.Metrics
 
 	c.Metrics = append(c.Metrics, getUptimeMetricConfig())
+	c.MetricTags = instance.MetricTags
 
 	snmpVersion, err := parseVersion(instance.SnmpVersion)
 	if err != nil {

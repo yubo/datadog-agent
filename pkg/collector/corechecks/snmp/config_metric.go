@@ -46,9 +46,15 @@ metrics:
 */
 
 type metricTagConfig struct {
-	Tag    string       `yaml:"tag"`
+	Tag string `yaml:"tag"`
+
+	// Table config
 	Index  uint         `yaml:"index"`
 	Column symbolConfig `yaml:"column"`
+
+	// Symbol config
+	OID  string `yaml:"OID"`
+	Name string `yaml:"symbol"`
 }
 
 type metricsConfig struct {

@@ -6,6 +6,7 @@
 package snmp
 
 import (
+	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/soniah/gosnmp"
 	"testing"
 
@@ -13,6 +14,8 @@ import (
 )
 
 func TestBasicConfiguration(t *testing.T) {
+	config.Datadog.Set("confd_path", "./test/conf.d")
+
 	check := Check{session: &snmpSession{}}
 	// language=yaml
 	rawInstanceConfig := []byte(`
@@ -37,11 +40,14 @@ metrics:
     column:
       OID: 1.3.6.1.2.1.2.2.1.2
       name: ifDescr
+metric_tags:
+  - OID: 1.2.3
+    symbol: mySymbol
+    tag: my_symbol
 profiles:
   f5-big-ip:
     definition_file: f5-big-ip.yaml
-  router:
-    definition_file: generic-router.yaml
+profile: f5-big-ip
 `)
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")
 
@@ -62,10 +68,28 @@ profiles:
 			},
 		},
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
+		{Symbol: symbolConfig{OID: "1.3.6.1.4.1.3375.2.1.1.2.1.44.0", Name: "sysStatMemoryTotal"}},
+		{
+			Table: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
+			Symbols: []symbolConfig{
+				{OID: "1.3.6.1.2.1.2.2.1.14", Name: "ifInErrors"},
+				{OID: "1.3.6.1.2.1.2.2.1.13", Name: "ifInDiscards"},
+			},
+			MetricTags: []metricTagConfig{
+				{Tag: "interface", Column: symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.1", Name: "ifName"}},
+				{Tag: "interface_alias", Column: symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.18", Name: "ifAlias"}},
+			},
+		},
+	}
+
+	metricsTags := []metricTagConfig{
+		{Tag: "my_symbol", OID: "1.2.3", Name: "mySymbol"},
+		{Tag: "snmp_host", OID: "1.3.6.1.2.1.1.5.0", Name: "sysName"},
 	}
 
 	assert.Equal(t, metrics, check.config.Metrics)
-	assert.Equal(t, 2, len(check.config.Profiles))
+	assert.Equal(t, metricsTags, check.config.MetricTags)
+	assert.Equal(t, 1, len(check.config.Profiles))
 }
 
 func TestPortConfiguration(t *testing.T) {
