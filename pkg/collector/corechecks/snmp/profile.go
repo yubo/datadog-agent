@@ -9,10 +9,15 @@ import (
 
 type profileDefinitionMap map[string]profileDefinition
 
+type deviceMeta struct {
+	Vendor string `yaml:"vendor"`
+}
+
 type profileDefinition struct {
 	Metrics    []metricsConfig   `yaml:"metrics"`
 	MetricTags []metricTagConfig `yaml:"metric_tags"`
 	Extends    []string          `yaml:"extends"`
+	Device     deviceMeta        `yaml:"device"`
 }
 
 func loadProfiles(pConfig profilesConfig) (profileDefinitionMap, error) {

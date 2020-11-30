@@ -69,6 +69,7 @@ type snmpConfig struct {
 	MetricTags      []metricTagConfig
 	OidBatchSize    int
 	Profiles        profileDefinitionMap
+	Tags            []string
 }
 
 func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
@@ -77,7 +78,13 @@ func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
 	c.MetricTags = append(c.MetricTags, definition.MetricTags...)
 	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, parseScalarOids(definition.Metrics, definition.MetricTags)...)
 	c.OidConfig.columnOids = append(c.OidConfig.columnOids, parseColumnOids(definition.Metrics)...)
-	// TODO: Add device tag
+
+	if definition.Device.Vendor != "" {
+		c.Tags = append(c.Tags, "device_vendor:"+definition.Device.Vendor)
+	}
+
+	//device = profile['definition'].get('device', {})
+	//self.add_device_tags(device)
 }
 
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
@@ -136,6 +143,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		if _, ok := c.Profiles[profile]; !ok {
 			return snmpConfig{}, fmt.Errorf("unknown profile '%s'", profile)
 		}
+		c.Tags = append(c.Tags, "profile:"+profile)
 		c.refreshWithProfile(c.Profiles[profile])
 	}
 

@@ -28,6 +28,7 @@ func (c *Check) Run() error {
 	}
 
 	tags := []string{"snmp_device:" + c.config.IPAddress}
+	tags = append(tags, c.config.Tags...)
 
 	c.sender = metricSender{sender}
 

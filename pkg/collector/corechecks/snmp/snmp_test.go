@@ -164,13 +164,16 @@ metric_tags:
 	tags := []string{"snmp_device:1.2.3.4"}
 	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
 
-	snmpTags := append(tags, "snmp_host:foo_sys_name")
+	snmpTags := append(tags[:], "snmp_host:foo_sys_name")
+	row1Tags := append(snmpTags[:], "if_index:1", "if_desc:desc1")
+	row2Tags := append(snmpTags[:], "if_index:2", "if_desc:desc2")
+
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
 	sender.AssertCalled(t, "Gauge", "snmp.ifNumber", float64(30), "", snmpTags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", append(snmpTags, "if_index:1", "if_desc:desc1"))
-	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", append(snmpTags, "if_index:2", "if_desc:desc2"))
-	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(201), "", append(snmpTags, "if_index:1", "if_desc:desc1"))
-	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(202), "", append(snmpTags, "if_index:2", "if_desc:desc2"))
+	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", row1Tags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", row2Tags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(201), "", row1Tags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(202), "", row2Tags)
 }
 
 func TestSupportedMetricTypes(t *testing.T) {
@@ -349,14 +352,17 @@ profiles:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	tags := []string{"snmp_device:1.2.3.4"}
+	tags := []string{"snmp_device:1.2.3.4", "profile:f5-big-ip", "device_vendor:f5"}
 	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
 
-	snmpTags := append(tags, "snmp_host:foo_sys_name")
+	snmpTags := append(tags[:], "snmp_host:foo_sys_name")
+	row1Tags := append(snmpTags[:], "interface:nameRow1", "interface_alias:descRow1")
+	row2Tags := append(snmpTags[:], "interface:nameRow2", "interface_alias:descRow2")
+
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", append(snmpTags, "interface:nameRow1", "interface_alias:descRow1"))
-	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", append(snmpTags, "interface:nameRow2", "interface_alias:descRow2"))
-	sender.AssertCalled(t, "Gauge", "snmp.ifInDiscards", float64(131), "", append(snmpTags, "interface:nameRow1", "interface_alias:descRow1"))
-	sender.AssertCalled(t, "Gauge", "snmp.ifInDiscards", float64(132), "", append(snmpTags, "interface:nameRow2", "interface_alias:descRow2"))
+	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", row1Tags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", row2Tags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifInDiscards", float64(131), "", row1Tags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifInDiscards", float64(132), "", row2Tags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
 }
