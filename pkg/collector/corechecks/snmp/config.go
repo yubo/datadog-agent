@@ -75,7 +75,7 @@ func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
 	// https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py#L181-L200
 	c.Metrics = append(c.Metrics, definition.Metrics...)
 	c.MetricTags = append(c.MetricTags, definition.MetricTags...)
-	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, parseScalarOids(definition.Metrics)...)
+	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, parseScalarOids(definition.Metrics, definition.MetricTags)...)
 	c.OidConfig.columnOids = append(c.OidConfig.columnOids, parseColumnOids(definition.Metrics)...)
 	// TODO: Add device tag
 }
@@ -116,7 +116,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.SnmpVersion = snmpVersion
 
 	// TODO: test me
-	c.OidConfig.scalarOids = parseScalarOids(c.Metrics)
+	c.OidConfig.scalarOids = parseScalarOids(c.Metrics, c.MetricTags)
 	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
 
 	if init.OidBatchSize == 0 {
@@ -147,11 +147,16 @@ func getUptimeMetricConfig() metricsConfig {
 	return metricsConfig{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}}
 }
 
-func parseScalarOids(metrics []metricsConfig) []string {
+func parseScalarOids(metrics []metricsConfig, metricTags []metricTagConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
 		if metric.Symbol.OID != "" { // TODO: test me
 			oids = append(oids, metric.Symbol.OID)
+		}
+	}
+	for _, metricTag := range metricTags {
+		if metricTag.OID != "" { // TODO: test me
+			oids = append(oids, metricTag.OID)
 		}
 	}
 	return oids

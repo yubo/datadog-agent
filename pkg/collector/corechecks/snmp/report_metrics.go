@@ -9,7 +9,15 @@ type metricSender struct {
 	sender aggregator.Sender
 }
 
-func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metricTagConfig, values *snmpValues, tags []string) {
+	for _, metricTag := range metricTags {
+		value, err := values.getScalarValues(metricTag.OID)
+		if err != nil {
+			log.Warnf("error getting scalar val: %v", err)
+			continue
+		}
+		tags = append(tags, metricTag.Tag+":"+value.toString())
+	}
 	for _, metric := range metrics {
 		if metric.Symbol.OID != "" {
 			ms.reportScalarMetrics(metric, values, tags)

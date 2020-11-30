@@ -50,7 +50,7 @@ func (c *Check) Run() error {
 	log.Infof("columnValues: %#v\n", snmpValues.columnValues) // TODO: remove me
 
 	// Report metrics
-	c.sender.reportMetrics(c.config.Metrics, snmpValues, tags)
+	c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
 
 	// Commit
 	sender.Commit()
