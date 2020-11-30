@@ -7,6 +7,7 @@ package snmp
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator/mocksender"
+	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -223,4 +224,121 @@ metrics:
 	sender.AssertCalled(t, "Gauge", "snmp.SomeGaugeMetric", float64(30), "", tags)
 	sender.AssertCalled(t, "Rate", "snmp.SomeCounter32Metric", float64(40), "", tags)
 	sender.AssertCalled(t, "Rate", "snmp.SomeCounter64Metric", float64(50), "", tags)
+}
+
+func TestProfile(t *testing.T) {
+	config.Datadog.Set("confd_path", "./test/conf.d")
+
+	session := &mockSession{}
+	check := Check{session: session}
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+profile: f5-big-ip
+profiles:
+  f5-big-ip:
+    definition_file: f5-big-ip.yaml
+`)
+
+	err := check.Configure(rawInstanceConfig, []byte(``), "test")
+	assert.Nil(t, err)
+
+	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
+	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("Commit").Return()
+
+	packet := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.1.3.0",
+				Type:  gosnmp.TimeTicks,
+				Value: 20,
+			},
+			{
+				Name:  "1.3.6.1.4.1.3375.2.1.1.2.1.44.0",
+				Type:  gosnmp.Integer,
+				Value: 30,
+			},
+		},
+	}
+
+	bulkPacket := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.13.1",
+				Type:  gosnmp.Integer,
+				Value: 131,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.14.1",
+				Type:  gosnmp.Integer,
+				Value: 141,
+			},
+			{
+				Name:  "1.3.6.1.2.1.31.1.1.1.1.1",
+				Type:  gosnmp.OctetString,
+				Value: []byte("nameRow1"),
+			},
+			{
+				Name:  "1.3.6.1.2.1.31.1.1.1.18.1",
+				Type:  gosnmp.OctetString,
+				Value: []byte("descRow1"),
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.13.2",
+				Type:  gosnmp.Integer,
+				Value: 132,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.14.2",
+				Type:  gosnmp.Integer,
+				Value: 142,
+			},
+			{
+				Name:  "1.3.6.1.2.1.31.1.1.1.1.2",
+				Type:  gosnmp.OctetString,
+				Value: []byte("nameRow2"),
+			},
+			{
+				Name:  "1.3.6.1.2.1.31.1.1.1.18.2",
+				Type:  gosnmp.OctetString,
+				Value: []byte("descRow2"),
+			},
+			{
+				Name:  "9", // exit table
+				Type:  gosnmp.Integer,
+				Value: 999,
+			},
+			{
+				Name:  "9", // exit table
+				Type:  gosnmp.Integer,
+				Value: 999,
+			},
+			{
+				Name:  "9", // exit table
+				Type:  gosnmp.Integer,
+				Value: 999,
+			},
+			{
+				Name:  "9", // exit table
+				Type:  gosnmp.Integer,
+				Value: 999,
+			},
+		},
+	}
+
+	session.On("Get", []string{"1.3.6.1.2.1.1.3.0", "1.3.6.1.4.1.3375.2.1.1.2.1.44.0"}).Return(&packet, nil)
+	session.On("GetBulk", []string{"1.3.6.1.2.1.2.2.1.13", "1.3.6.1.2.1.2.2.1.14", "1.3.6.1.2.1.31.1.1.1.1", "1.3.6.1.2.1.31.1.1.1.18"}).Return(&bulkPacket, nil)
+
+	err = check.Run()
+	assert.Nil(t, err)
+
+	tags := []string{"snmp_device:1.2.3.4"}
+	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
+	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", tags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", append(tags, "interface:nameRow1", "interface_alias:descRow1"))
+	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", append(tags, "interface:nameRow2", "interface_alias:descRow2"))
+	sender.AssertCalled(t, "Gauge", "snmp.ifInDiscards", float64(131), "", append(tags, "interface:nameRow1", "interface_alias:descRow1"))
+	sender.AssertCalled(t, "Gauge", "snmp.ifInDiscards", float64(132), "", append(tags, "interface:nameRow2", "interface_alias:descRow2"))
+	sender.AssertCalled(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", tags)
 }

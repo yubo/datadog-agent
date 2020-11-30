@@ -35,6 +35,7 @@ type snmpInstanceConfig struct {
 	Metrics []metricsConfig `yaml:"metrics"`
 
 	Profiles profilesConfig `yaml:"profiles"`
+	Profile  string         `yaml:"profile"`
 
 	// TODO: To implement:
 	//   - context_engine_id: Investigate if we can remove this configuration.
@@ -68,6 +69,14 @@ type snmpConfig struct {
 	Profiles        profileDefinitionMap
 }
 
+func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
+	// https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py#L181-L200
+	c.Metrics = append(c.Metrics, definition.Metrics...)
+	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, parseScalarOids(definition.Metrics)...)
+	c.OidConfig.columnOids = append(c.OidConfig.columnOids, parseColumnOids(definition.Metrics)...)
+	// TODO: Add device tag
+}
+
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
 	instance := snmpInstanceConfig{}
 	init := snmpInitConfig{}
@@ -96,12 +105,6 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 
 	c.Metrics = append(c.Metrics, getUptimeMetricConfig())
 
-	profiles, err := loadProfiles(instance.Profiles)
-	if err != nil {
-		return snmpConfig{}, err
-	}
-	c.Profiles = profiles
-
 	snmpVersion, err := parseVersion(instance.SnmpVersion)
 	if err != nil {
 		return snmpConfig{}, err
@@ -117,6 +120,21 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	} else {
 		c.OidBatchSize = init.OidBatchSize
 	}
+
+	profiles, err := loadProfiles(instance.Profiles)
+	if err != nil {
+		return snmpConfig{}, err
+	}
+	c.Profiles = profiles
+	profile := instance.Profile
+
+	if profile != "" {
+		if _, ok := c.Profiles[profile]; !ok {
+			return snmpConfig{}, fmt.Errorf("unknown profile '%s'", profile)
+		}
+		c.refreshWithProfile(c.Profiles[profile])
+	}
+
 	return c, err
 }
 

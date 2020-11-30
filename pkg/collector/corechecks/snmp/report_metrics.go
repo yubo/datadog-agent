@@ -14,7 +14,7 @@ func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *snmpValue
 		if metric.Symbol.OID != "" {
 			ms.reportScalarMetrics(metric, values, tags)
 		} else if metric.Table.OID != "" {
-			ms.report(metric, values, tags)
+			ms.reportColumnMetrics(metric, values, tags)
 		}
 	}
 }
@@ -28,7 +28,7 @@ func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *snmpVa
 	ms.sendMetric(metric.Symbol.Name, value, tags)
 }
 
-func (ms *metricSender) report(metricConfig metricsConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
 	for _, symbol := range metricConfig.Symbols {
 		metricValues, err := values.getColumnValues(symbol.OID)
 		if err != nil {
