@@ -356,7 +356,7 @@ profiles:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	tags := []string{"snmp_device:1.2.3.4", "profile:f5-big-ip", "device_vendor:f5"}
+	tags := []string{"snmp_device:1.2.3.4", "snmp_profile:f5-big-ip", "device_vendor:f5"}
 	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
 
 	var snmpTags, row1Tags, row2Tags []string

@@ -82,9 +82,6 @@ func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
 	if definition.Device.Vendor != "" {
 		c.Tags = append(c.Tags, "device_vendor:"+definition.Device.Vendor)
 	}
-
-	//device = profile['definition'].get('device', {})
-	//self.add_device_tags(device)
 }
 
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
@@ -143,7 +140,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		if _, ok := c.Profiles[profile]; !ok {
 			return snmpConfig{}, fmt.Errorf("unknown profile '%s'", profile)
 		}
-		c.Tags = append(c.Tags, "profile:"+profile)
+		c.Tags = append(c.Tags, "snmp_profile:"+profile)
 		c.refreshWithProfile(c.Profiles[profile])
 	}
 
