@@ -10,19 +10,22 @@ type metricSender struct {
 }
 
 func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metricTagConfig, values *snmpValues, tags []string) {
+	var newTags []string
+	newTags = append(newTags, tags...)
+
 	for _, metricTag := range metricTags {
 		value, err := values.getScalarValues(metricTag.OID)
 		if err != nil {
 			log.Warnf("error getting scalar val: %v", err)
 			continue
 		}
-		tags = append(tags, metricTag.Tag+":"+value.toString())
+		newTags = append(newTags, metricTag.Tag+":"+value.toString())
 	}
 	for _, metric := range metrics {
 		if metric.Symbol.OID != "" {
-			ms.reportScalarMetrics(metric, values, tags)
+			ms.reportScalarMetrics(metric, values, newTags)
 		} else if metric.Table.OID != "" {
-			ms.reportColumnMetrics(metric, values, tags)
+			ms.reportColumnMetrics(metric, values, newTags)
 		}
 	}
 }
@@ -44,7 +47,9 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 			continue
 		}
 		for fullIndex, value := range metricValues {
-			rowTags := append(tags, metricConfig.getTags(fullIndex, values)...)
+			var rowTags []string
+			rowTags = append(rowTags, tags...)
+			rowTags = append(rowTags, metricConfig.getTags(fullIndex, values)...)
 			ms.sendMetric(symbol.Name, value, rowTags)
 		}
 		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
