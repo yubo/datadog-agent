@@ -3,6 +3,7 @@ package quantile
 import (
 	"errors"
 	"fmt"
+
 	"github.com/DataDog/datadog-agent/pkg/trace/pb"
 	"github.com/DataDog/sketches-go/ddsketch/mapping"
 	"github.com/davecgh/go-spew/spew"
@@ -10,14 +11,14 @@ import (
 )
 
 type ddSketch struct {
-	bins []float64
-	offset int
-	zeros int
+	bins    []float64
+	offset  int
+	zeros   int
 	mapping mapping.IndexMapping
 }
 
 func (s *ddSketch) get(index int) int {
-	if index < s.offset || index >= s.offset + len(s.bins) {
+	if index < s.offset || index >= s.offset+len(s.bins) {
 		return 0
 	}
 	return int(s.bins[index-s.offset])
@@ -30,6 +31,7 @@ func decodeDDSketch(data []byte) (ddSketch, error) {
 	if err := proto.Unmarshal(data, &sketchPb); err != nil {
 		return ddSketch{}, err
 	}
+	spew.Dump(sketchPb)
 	mapping, err := ddSketchMappingFromProto(sketchPb.Mapping)
 	if err != nil {
 		return ddSketch{}, err
@@ -42,9 +44,9 @@ func decodeDDSketch(data []byte) (ddSketch, error) {
 	}
 	return ddSketch{
 		mapping: mapping,
-		bins: sketchPb.PositiveValues.ContiguousBinCounts,
-		offset: int(sketchPb.PositiveValues.ContiguousBinIndexOffset),
-		zeros: int(sketchPb.ZeroCount),
+		bins:    sketchPb.PositiveValues.ContiguousBinCounts,
+		offset:  int(sketchPb.PositiveValues.ContiguousBinIndexOffset),
+		zeros:   int(sketchPb.ZeroCount),
 	}, nil
 }
 
@@ -94,8 +96,8 @@ func DDToGKSketches(okSketchData []byte, errSketchData []byte) (hits, errors *Sl
 	spew.Dump(errDDSketch)
 
 	minOffset := min(okDDSketch.offset, errDDSketch.offset)
-	maxIndex := max(okDDSketch.offset + len(okDDSketch.bins), errDDSketch.offset + len(errDDSketch.bins))
-	hits = &SliceSummary{Entries: make([]Entry, 0, maxIndex - minOffset)}
+	maxIndex := max(okDDSketch.offset+len(okDDSketch.bins), errDDSketch.offset+len(errDDSketch.bins))
+	hits = &SliceSummary{Entries: make([]Entry, 0, maxIndex-minOffset)}
 	errors = &SliceSummary{Entries: make([]Entry, 0, len(errDDSketch.bins))}
 	if zeros := okDDSketch.zeros + errDDSketch.zeros; zeros > 0 {
 		hits.Entries = append(hits.Entries, Entry{V: 0, G: zeros, Delta: 0})
