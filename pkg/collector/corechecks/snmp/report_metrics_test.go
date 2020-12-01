@@ -12,6 +12,7 @@ func TestSendMetric(t *testing.T) {
 		metricName         string
 		value              snmpValue
 		tags               []string
+		forcedType         string
 		expectedMethod     string
 		expectedMetricName string
 		expectedValue      float64
@@ -22,6 +23,7 @@ func TestSendMetric(t *testing.T) {
 			"gauge.metric",
 			snmpValue{valType: Other, val: float64(10)},
 			[]string{},
+			"",
 			"Gauge",
 			"snmp.gauge.metric",
 			float64(10),
@@ -32,8 +34,64 @@ func TestSendMetric(t *testing.T) {
 			"counter.metric",
 			snmpValue{valType: Counter, val: float64(10)},
 			[]string{},
+			"",
 			"Rate",
 			"snmp.counter.metric",
+			float64(10),
+			[]string{},
+		},
+		{
+			"Forced gauge metric case",
+			"my.metric",
+			snmpValue{valType: Counter, val: float64(10)},
+			[]string{},
+			"gauge",
+			"Gauge",
+			"snmp.my.metric",
+			float64(10),
+			[]string{},
+		},
+		{
+			"Forced counter metric case",
+			"my.metric",
+			snmpValue{valType: Counter, val: float64(10)},
+			[]string{},
+			"counter",
+			"Rate",
+			"snmp.my.metric",
+			float64(10),
+			[]string{},
+		},
+		{
+			"Forced monotonic_count metric case",
+			"my.metric",
+			snmpValue{valType: Counter, val: float64(10)},
+			[]string{},
+			"monotonic_count",
+			"MonotonicCount",
+			"snmp.my.metric",
+			float64(10),
+			[]string{},
+		},
+		{
+			"Forced monotonic_count_and_rate metric case: MonotonicCount called",
+			"my.metric",
+			snmpValue{valType: Counter, val: float64(10)},
+			[]string{},
+			"monotonic_count_and_rate",
+			"MonotonicCount",
+			"snmp.my.metric",
+			float64(10),
+			[]string{},
+		},
+		{
+			"Forced monotonic_count_and_rate metric case: Rate called",
+			"my.metric",
+			snmpValue{valType: Counter, val: float64(10)},
+			[]string{},
+			"monotonic_count_and_rate",
+			"Rate",
+			"snmp.my.metric",
 			float64(10),
 			[]string{},
 		},
@@ -42,10 +100,11 @@ func TestSendMetric(t *testing.T) {
 		t.Run(tt.caseName, func(t *testing.T) {
 			mockSender := mocksender.NewMockSender("foo")
 			metricSender := metricSender{mockSender}
+			mockSender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 			mockSender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 			mockSender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 
-			metricSender.sendMetric(tt.metricName, tt.value, tt.tags)
+			metricSender.sendMetric(tt.metricName, tt.value, tt.tags, tt.forcedType)
 			mockSender.AssertCalled(t, tt.expectedMethod, tt.expectedMetricName, tt.expectedValue, "", tt.expectedTags)
 		})
 	}

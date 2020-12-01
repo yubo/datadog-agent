@@ -67,6 +67,8 @@ type metricsConfig struct {
 
 	MetricTags []metricTagConfig `yaml:"metric_tags"`
 
+	ForcedType string `yaml:"forced_type"`
+
 	// TODO: Validate Symbol and Table are not both used
 }
 

@@ -68,9 +68,10 @@ profile: f5-big-ip
 			},
 		},
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
-		{Symbol: symbolConfig{OID: "1.3.6.1.4.1.3375.2.1.1.2.1.44.0", Name: "sysStatMemoryTotal"}},
+		{Symbol: symbolConfig{OID: "1.3.6.1.4.1.3375.2.1.1.2.1.44.0", Name: "sysStatMemoryTotal"}, ForcedType: "gauge"},
 		{
-			Table: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
+			Table:      symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
+			ForcedType: "monotonic_count",
 			Symbols: []symbolConfig{
 				{OID: "1.3.6.1.2.1.2.2.1.14", Name: "ifInErrors"},
 				{OID: "1.3.6.1.2.1.2.2.1.13", Name: "ifInDiscards"},

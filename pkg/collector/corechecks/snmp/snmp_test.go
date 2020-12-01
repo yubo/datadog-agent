@@ -263,6 +263,7 @@ profiles:
 
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
 	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("Commit").Return()
 
 	packet := gosnmp.SnmpPacket{
@@ -368,9 +369,9 @@ profiles:
 	row2Tags = append(row2Tags, "interface:nameRow2", "interface_alias:descRow2")
 
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", row1Tags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", row2Tags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifInDiscards", float64(131), "", row1Tags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifInDiscards", float64(132), "", row2Tags)
+	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(141), "", row1Tags)
+	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(142), "", row2Tags)
+	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
+	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
 }

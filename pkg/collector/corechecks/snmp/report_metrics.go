@@ -36,7 +36,7 @@ func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *snmpVa
 		log.Warnf("error getting scalar val: %v", err)
 		return
 	}
-	ms.sendMetric(metric.Symbol.Name, value, tags)
+	ms.sendMetric(metric.Symbol.Name, value, tags, metric.ForcedType)
 }
 
 func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
@@ -50,21 +50,40 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 			var rowTags []string
 			rowTags = append(rowTags, tags...)
 			rowTags = append(rowTags, metricConfig.getTags(fullIndex, values)...)
-			ms.sendMetric(symbol.Name, value, rowTags)
+			ms.sendMetric(symbol.Name, value, rowTags, metricConfig.ForcedType)
 		}
 		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
 	}
 }
 
-func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []string) {
+func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []string, forcedType string) {
 	// TODO: Submit using the right type
 	//   See https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L34-L48
-	var senderFn func(metric string, value float64, hostname string, tags []string)
-	switch value.valType {
-	case Counter:
-		senderFn = ms.sender.Rate
-	default:
-		senderFn = ms.sender.Gauge
+	metricFullName := "snmp." + metricName
+	floatValue := value.toFloat64()
+
+	// TODO: test all cases
+	if forcedType != "" {
+		switch forcedType {
+		case "gauge":
+			ms.sender.Gauge(metricFullName, floatValue, "", tags)
+		case "counter":
+			ms.sender.Rate(metricFullName, floatValue, "", tags)
+		case "monotonic_count":
+			ms.sender.MonotonicCount(metricFullName, floatValue, "", tags)
+		case "monotonic_count_and_rate":
+			ms.sender.MonotonicCount(metricFullName, floatValue, "", tags)
+			ms.sender.Rate(metricFullName, floatValue, "", tags)
+		//case "percent": // TODO: Implement me
+		default:
+			log.Warnf("Unsupported forcedType: %s", forcedType)
+		}
+	} else {
+		switch value.valType {
+		case Counter:
+			ms.sender.Rate(metricFullName, floatValue, "", tags)
+		default:
+			ms.sender.Gauge(metricFullName, floatValue, "", tags)
+		}
 	}
-	senderFn("snmp."+metricName, value.toFloat64(), "", tags)
 }
