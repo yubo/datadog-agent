@@ -161,17 +161,15 @@ metric_tags:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	tags := []string{"snmp_device:1.2.3.4"}
-	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
+	snmpTags := []string{"snmp_device:1.2.3.4", "snmp_host:foo_sys_name"}
 
-	var snmpTags, row1Tags, row2Tags []string
-	snmpTags = append(snmpTags, tags...)
-	snmpTags = append(snmpTags, "snmp_host:foo_sys_name")
+	var row1Tags, row2Tags []string
 	row1Tags = append(row1Tags, snmpTags...)
 	row1Tags = append(row1Tags, "if_index:1", "if_desc:desc1")
 	row2Tags = append(row2Tags, snmpTags...)
 	row2Tags = append(row2Tags, "if_index:2", "if_desc:desc2")
 
+	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
 	sender.AssertCalled(t, "Gauge", "snmp.ifNumber", float64(30), "", snmpTags)
 	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", row1Tags)
@@ -357,17 +355,15 @@ profiles:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	tags := []string{"snmp_device:1.2.3.4", "snmp_profile:f5-big-ip", "device_vendor:f5"}
-	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
+	snmpTags := []string{"snmp_device:1.2.3.4", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
 
-	var snmpTags, row1Tags, row2Tags []string
-	snmpTags = append(snmpTags, tags...)
-	snmpTags = append(snmpTags, "snmp_host:foo_sys_name")
+	var row1Tags, row2Tags []string
 	row1Tags = append(row1Tags, snmpTags...)
 	row1Tags = append(row1Tags, "interface:nameRow1", "interface_alias:descRow1")
 	row2Tags = append(row2Tags, snmpTags...)
 	row2Tags = append(row2Tags, "interface:nameRow2", "interface_alias:descRow2")
 
+	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
 	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(141), "", row1Tags)
 	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(142), "", row2Tags)

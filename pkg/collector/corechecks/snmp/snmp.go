@@ -33,7 +33,6 @@ func (c *Check) Run() error {
 	c.sender = metricSender{sender}
 
 	log.Infof("c.config.Metrics: %#v\n", c.config.Metrics) // TODO: remove me
-	sender.Gauge("snmp.devices_monitored", float64(1), "", tags)
 
 	// Create connection
 	err = c.session.Connect()
