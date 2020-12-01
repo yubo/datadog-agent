@@ -75,7 +75,7 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []st
 			ms.sender.MonotonicCount(metricFullName, floatValue, "", tags)
 		case "monotonic_count_and_rate":
 			ms.sender.MonotonicCount(metricFullName, floatValue, "", tags)
-			ms.sender.Rate(metricFullName, floatValue, "", tags)
+			ms.sender.Rate(metricFullName + ".rate", floatValue, "", tags)
 		//case "percent": // TODO: Implement me
 		default:
 			log.Warnf("Unsupported forcedType: %s", forcedType)

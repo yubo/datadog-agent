@@ -91,7 +91,7 @@ func TestSendMetric(t *testing.T) {
 			[]string{},
 			"monotonic_count_and_rate",
 			"Rate",
-			"snmp.my.metric",
+			"snmp.my.metric.rate",
 			float64(10),
 			[]string{},
 		},
