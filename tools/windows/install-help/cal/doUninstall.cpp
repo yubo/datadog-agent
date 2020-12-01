@@ -1,10 +1,13 @@
 #include "stdafx.h"
 #include "TargetMachine.h"
+#include "SID.h"
 
 extern std::wstring versionhistoryfilename;
 
 UINT doUninstallAs(UNINSTALL_TYPE t)
 {
+    // Required to access COM APIs
+    CoInitialize(nullptr);
 
     DWORD er = ERROR_SUCCESS;
     CustomActionData data;

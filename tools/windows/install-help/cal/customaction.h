@@ -2,22 +2,7 @@
 #define MIN_PASS_LEN 12
 #define MAX_PASS_LEN 18
 
-template <class P>
-struct heap_deleter
-{
-    typedef P* pointer;
 
-    void operator()(pointer ptr) const
-    {
-        HeapFree(GetProcessHeap(), 0, ptr);
-    }
-};
-typedef std::unique_ptr<SID, heap_deleter<SID>> sid_ptr;
-
-inline sid_ptr make_sid(size_t sidLength)
-{
-    return sid_ptr(static_cast<sid_ptr::pointer>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sidLength)));
-}
 
 // usercreate.cpp
 bool generatePassword(wchar_t* passbuf, int passbuflen);
@@ -40,16 +25,9 @@ bool InitLsaString(
 	PLSA_UNICODE_STRING pLsaString,
 	LPCWSTR pwszString);
 
-/// <summary>
-/// Retrives the Security Identifier Descriptor of the specified user.
-/// </summary>
-/// <param name="host">The host to search on.</param>
-/// <param name="user">The username to look for.</param>
-/// <returns>A tuple containing a pointer to the SID of the user and and error code.
-/// If no user is found, the pointer to the SID will be NULL and the DWORD will contain  the result of <see cref="GetLastError">.</returns>
-std::tuple<sid_ptr, DWORD>  GetSidForUser(LPCWSTR host, LPCWSTR user);
 
-bool GetNameForSid(LPCWSTR host, PSID sid, std::wstring& namestr);
+
+
 
 LSA_HANDLE GetPolicyHandle();
 

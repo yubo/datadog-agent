@@ -1,8 +1,13 @@
 #include "stdafx.h"
 #include "TargetMachine.h"
+#include "SID.h"
+#include "ActiveDirectory.h"
 
 UINT doFinalizeInstall(CustomActionData& data)
 {
+    // Required to access COM APIs
+    CoInitialize(nullptr);
+
     HRESULT hr = S_OK;
     UINT er = ERROR_SUCCESS;
 
@@ -29,24 +34,21 @@ UINT doFinalizeInstall(CustomActionData& data)
     WcaLog(LOGMSG_STANDARD, "Checking to see if the user \"%S\" is already present in \"%S\"",
            data.UnqualifiedUsername().c_str(), data.Domain().c_str());
     auto [sid, err] = GetSidForUser(nullptr, data.Username().c_str());
-    if (err == ERROR_NONE_MAPPED)
+    if (err == ERROR_NONE_MAPPED &&
+        data.GetTargetMachine().IsDomainJoined())
     {
-        // The DNS domain name can be != from the joined domain name (if pre-Windows 2000 domain name was set differently)
-        // so we'll try by swapping the domain name for the joined domain.
-        if (data.GetTargetMachine().IsDomainJoined() &&
-            _wcsicmp(data.GetTargetMachine().JoinedDomainName().c_str(), data.Domain().c_str()) != 0)
+        // Let's search the domain
+        std::wstring joinedDomainUser = data.GetTargetMachine().JoinedDomainName() + L"\\" + data.UnqualifiedUsername();
+        WcaLog(LOGMSG_STANDARD, "None found. Checking to see if the user \"%S\" is already present in joined domain \"%S\"",
+               data.UnqualifiedUsername().c_str(), data.GetTargetMachine().JoinedDomainName().c_str());
+
+        auto [newsid, newerr] = SearchActiveDirectory(data.UnqualifiedUsername(), DomainNameToLDAPDataInterchangeFormat(data.Domain()));
+        err = newerr;
+        if (err == S_OK)
         {
-            std::wstring joinedDomainUser = data.GetTargetMachine().JoinedDomainName() + L"\\" + data.UnqualifiedUsername();
-            WcaLog(LOGMSG_STANDARD, "None found. Checking to see if the user \"%S\" is already present in joined domain \"%S\"",
-                   data.UnqualifiedUsername().c_str(), data.GetTargetMachine().JoinedDomainName().c_str());
-            auto [newsid, newerr] = GetSidForUser(nullptr, joinedDomainUser.c_str());
-            err = newerr;
-            if (err == S_OK)
-            {
-                // We found the user, use that one in the subsequent calls
-                sid.reset(newsid.release());
-                data.Domain(data.GetTargetMachine().JoinedDomainName());
-            }
+            // We found the user, use that one in the subsequent calls
+            sid.reset(newsid.release());
+            data.Domain(data.GetTargetMachine().JoinedDomainName());
         }
     }
 
