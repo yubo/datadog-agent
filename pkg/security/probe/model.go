@@ -195,8 +195,8 @@ func (e *FileEvent) ResolveBasename(event *Event) string {
 func (e *FileEvent) marshalJSONInode(event *Event, inode uint64) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"filename":"%s",`, e.ResolveInode(event))
-	fmt.Fprintf(&buf, `"container_path":"%s",`, e.ResolveContainerPath(event))
+	fmt.Fprintf(&buf, `"filename":%s,`, escapeJSONString(e.ResolveInode(event)))
+	fmt.Fprintf(&buf, `"container_path":%s,`, escapeJSONString(e.ResolveContainerPath(event)))
 	fmt.Fprintf(&buf, `"inode":%d,`, inode)
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"overlay_numlower":%d`, e.OverlayNumLower)
@@ -254,8 +254,8 @@ type ChmodEvent struct {
 func (e *ChmodEvent) marshalJSON(event *Event) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"filename":"%s",`, e.ResolveInode(event))
-	fmt.Fprintf(&buf, `"container_path":"%s",`, e.ResolveContainerPath(event))
+	fmt.Fprintf(&buf, `"filename":%s,`, escapeJSONString(e.ResolveInode(event)))
+	fmt.Fprintf(&buf, `"container_path":%s,`, escapeJSONString(e.ResolveContainerPath(event)))
 	fmt.Fprintf(&buf, `"inode":%d,`, e.Inode)
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"overlay_numlower":%d,`, e.OverlayNumLower)
@@ -292,8 +292,8 @@ type ChownEvent struct {
 func (e *ChownEvent) marshalJSON(event *Event) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"filename":"%s",`, e.ResolveInode(event))
-	fmt.Fprintf(&buf, `"container_path":"%s",`, e.ResolveContainerPath(event))
+	fmt.Fprintf(&buf, `"filename":%s,`, escapeJSONString(e.ResolveInode(event)))
+	fmt.Fprintf(&buf, `"container_path":%s,`, escapeJSONString(e.ResolveContainerPath(event)))
 	fmt.Fprintf(&buf, `"inode":%d,`, e.Inode)
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"overlay_numlower":%d,`, e.OverlayNumLower)
@@ -334,8 +334,8 @@ type SetXAttrEvent struct {
 func (e *SetXAttrEvent) marshalJSON(event *Event) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"filename":"%s",`, e.ResolveInode(event))
-	fmt.Fprintf(&buf, `"container_path":"%s",`, e.ResolveContainerPath(event))
+	fmt.Fprintf(&buf, `"filename":%s,`, escapeJSONString(e.ResolveInode(event)))
+	fmt.Fprintf(&buf, `"container_path":%s,`, escapeJSONString(e.ResolveContainerPath(event)))
 	fmt.Fprintf(&buf, `"inode":%d,`, e.Inode)
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"overlay_numlower":%d,`, e.OverlayNumLower)
@@ -392,8 +392,8 @@ type OpenEvent struct {
 func (e *OpenEvent) marshalJSON(event *Event) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"filename":"%s",`, e.ResolveInode(event))
-	fmt.Fprintf(&buf, `"container_path":"%s",`, e.ResolveContainerPath(event))
+	fmt.Fprintf(&buf, `"filename":%s,`, escapeJSONString(e.ResolveInode(event)))
+	fmt.Fprintf(&buf, `"container_path":%s,`, escapeJSONString(e.ResolveContainerPath(event)))
 	fmt.Fprintf(&buf, `"inode":%d,`, e.Inode)
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"overlay_numlower":%d,`, e.OverlayNumLower)
@@ -431,8 +431,8 @@ type MkdirEvent struct {
 func (e *MkdirEvent) marshalJSON(event *Event) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"filename":"%s",`, e.ResolveInode(event))
-	fmt.Fprintf(&buf, `"container_path":"%s",`, e.ResolveContainerPath(event))
+	fmt.Fprintf(&buf, `"filename":%s,`, escapeJSONString(e.ResolveInode(event)))
+	fmt.Fprintf(&buf, `"container_path":%s,`, escapeJSONString(e.ResolveContainerPath(event)))
 	fmt.Fprintf(&buf, `"inode":%d,`, e.Inode)
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"overlay_numlower":%d,`, e.OverlayNumLower)
@@ -483,9 +483,9 @@ type UnlinkEvent struct {
 func (e *UnlinkEvent) marshalJSON(event *Event) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"filename":"%s",`, e.ResolveInode(event))
+	fmt.Fprintf(&buf, `"filename":%s,`, escapeJSONString(e.ResolveInode(event)))
+	fmt.Fprintf(&buf, `"container_path":%s,`, escapeJSONString(e.ResolveContainerPath(event)))
 	fmt.Fprintf(&buf, `"flags":"%s",`, UnlinkFlags(e.Flags))
-	fmt.Fprintf(&buf, `"container_path":"%s",`, e.ResolveContainerPath(event))
 	fmt.Fprintf(&buf, `"inode":%d,`, e.Inode)
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"overlay_numlower":%d`, e.OverlayNumLower)
@@ -554,8 +554,8 @@ type UtimesEvent struct {
 func (e *UtimesEvent) marshalJSON(event *Event) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"filename":"%s",`, e.ResolveInode(event))
-	fmt.Fprintf(&buf, `"container_path":"%s",`, e.ResolveContainerPath(event))
+	fmt.Fprintf(&buf, `"filename":%s,`, escapeJSONString(e.ResolveInode(event)))
+	fmt.Fprintf(&buf, `"container_path":%s,`, escapeJSONString(e.ResolveContainerPath(event)))
 	fmt.Fprintf(&buf, `"inode":%d,`, e.Inode)
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"overlay_numlower":%d,`, e.OverlayNumLower)
@@ -642,12 +642,12 @@ type MountEvent struct {
 func (e *MountEvent) marshalJSON(event *Event) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteRune('{')
-	fmt.Fprintf(&buf, `"mount_point":"%s",`, e.ResolveMountPoint(event))
+	fmt.Fprintf(&buf, `"mount_point":%s,`, escapeJSONString(e.ResolveMountPoint(event)))
 	fmt.Fprintf(&buf, `"parent_mount_id":%d,`, e.ParentMountID)
 	fmt.Fprintf(&buf, `"parent_inode":%d,`, e.ParentInode)
 	fmt.Fprintf(&buf, `"root_inode":%d,`, e.RootInode)
 	fmt.Fprintf(&buf, `"root_mount_id":%d,`, e.RootInode)
-	fmt.Fprintf(&buf, `"root":"%s",`, e.ResolveRoot(event))
+	fmt.Fprintf(&buf, `"root":%s,`, escapeJSONString(e.ResolveRoot(event)))
 	fmt.Fprintf(&buf, `"mount_id":%d,`, e.MountID)
 	fmt.Fprintf(&buf, `"group_id":%d,`, e.GroupID)
 	fmt.Fprintf(&buf, `"device":%d,`, e.Device)
@@ -1165,6 +1165,11 @@ func (e *Event) String() string {
 		return err.Error()
 	}
 	return string(d)
+}
+
+func escapeJSONString(str string) string {
+	marshalled, _ := json.Marshal(str)
+	return string(marshalled)
 }
 
 type eventMarshaler struct {
