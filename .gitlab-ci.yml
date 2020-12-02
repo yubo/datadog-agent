@@ -1978,8 +1978,8 @@ deploy_windows_testing-a7:
     - when: manual
       allow_failure: true
     - changes:
-        - $SRC_PATH/pkg/ebpf/*
-        - $SRC_PATH/pkg/network/*
+        - pkg/ebpf/**/*
+        - pkg/network/**/*
       allow_failure: true
   needs: ["tests_ebpf"]
   variables:

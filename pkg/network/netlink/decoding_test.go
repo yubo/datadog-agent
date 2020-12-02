@@ -25,7 +25,7 @@ func TestDecodeAndReleaseEvent(t *testing.T) {
 		},
 	}
 	connections := DecodeAndReleaseEvent(e)
-	assert.Len(t, connections, 1)
+	assert.Len(t, connections, 0)
 	c := connections[0]
 
 	assert.True(t, net.ParseIP("10.0.2.15").Equal(*c.Origin.Src))
