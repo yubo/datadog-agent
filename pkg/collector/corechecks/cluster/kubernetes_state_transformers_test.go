@@ -56,7 +56,7 @@ func Test_resourcequotaTransformer(t *testing.T) {
 				hostname: "foo",
 			},
 			expected: &metricsExpected{
-				name:     "kubernetes_state.resourcequota.pods.limit",
+				name:     "kubernetes_state_core.resourcequota.pods.limit",
 				val:      15000,
 				tags:     []string{"resourcequota:gke-resource-quotas", "foo:bar"},
 				hostname: "foo",
@@ -77,7 +77,7 @@ func Test_resourcequotaTransformer(t *testing.T) {
 				tags: []string{"resourcequota:gke-resource-quotas", "foo:bar"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.resourcequota.pods.used",
+				name: "kubernetes_state_core.resourcequota.pods.used",
 				val:  7,
 				tags: []string{"resourcequota:gke-resource-quotas", "foo:bar"},
 			},
@@ -157,7 +157,7 @@ func Test_cronJobNextScheduleTransformer(t *testing.T) {
 				now:      func() time.Time { return time.Unix(int64(1595501615-2), 0) },
 			},
 			expected: &serviceCheck{
-				name:     "kubernetes_state.cronjob.on_schedule_check",
+				name:     "kubernetes_state_core.cronjob.on_schedule_check",
 				status:   metrics.ServiceCheckOK,
 				tags:     []string{"cronjob:foo", "namespace:default"},
 				hostname: "foo",
@@ -179,7 +179,7 @@ func Test_cronJobNextScheduleTransformer(t *testing.T) {
 				now:  func() time.Time { return time.Unix(int64(1595501615+2), 0) },
 			},
 			expected: &serviceCheck{
-				name:    "kubernetes_state.cronjob.on_schedule_check",
+				name:    "kubernetes_state_core.cronjob.on_schedule_check",
 				status:  metrics.ServiceCheckCritical,
 				tags:    []string{"cronjob:foo", "namespace:default"},
 				message: "The cron job check scheduled at 2020-07-23 10:53:35 +0000 UTC is 2 seconds late",
@@ -224,7 +224,7 @@ func Test_cronJobLastScheduleTransformer(t *testing.T) {
 				now:      func() time.Time { return time.Unix(int64(1595501615+60), 0) },
 			},
 			expected: &metricsExpected{
-				name:     "kubernetes_state.cronjob.duration_since_last_schedule",
+				name:     "kubernetes_state_core.cronjob.duration_since_last_schedule",
 				val:      60,
 				tags:     []string{"cronjob:foo", "namespace:default"},
 				hostname: "foo",
@@ -267,7 +267,7 @@ func Test_jobCompleteTransformer(t *testing.T) {
 				tags: []string{"job_name:foo-1509998340", "namespace:default"},
 			},
 			expected: &serviceCheck{
-				name:   "kubernetes_state.job.complete",
+				name:   "kubernetes_state_core.job.complete",
 				status: metrics.ServiceCheckOK,
 				tags:   []string{"job_name:foo", "namespace:default"},
 			},
@@ -286,7 +286,7 @@ func Test_jobCompleteTransformer(t *testing.T) {
 				tags: []string{"job:foo-1509998340", "namespace:default"},
 			},
 			expected: &serviceCheck{
-				name:   "kubernetes_state.job.complete",
+				name:   "kubernetes_state_core.job.complete",
 				status: metrics.ServiceCheckOK,
 				tags:   []string{"job:foo", "namespace:default"},
 			},
@@ -342,7 +342,7 @@ func Test_jobFailedTransformer(t *testing.T) {
 				tags: []string{"job_name:foo-1509998340", "namespace:default"},
 			},
 			expected: &serviceCheck{
-				name:   "kubernetes_state.job.complete",
+				name:   "kubernetes_state_core.job.complete",
 				status: metrics.ServiceCheckCritical,
 				tags:   []string{"job_name:foo", "namespace:default"},
 			},
@@ -361,7 +361,7 @@ func Test_jobFailedTransformer(t *testing.T) {
 				tags: []string{"job:foo-1509998340", "namespace:default"},
 			},
 			expected: &serviceCheck{
-				name:   "kubernetes_state.job.complete",
+				name:   "kubernetes_state_core.job.complete",
 				status: metrics.ServiceCheckCritical,
 				tags:   []string{"job:foo", "namespace:default"},
 			},
@@ -417,7 +417,7 @@ func Test_jobStatusSucceededTransformer(t *testing.T) {
 				tags: []string{"job_name:foo-1509998340", "namespace:default"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.job.succeeded",
+				name: "kubernetes_state_core.job.succeeded",
 				val:  1,
 				tags: []string{"job_name:foo", "namespace:default"},
 			},
@@ -436,7 +436,7 @@ func Test_jobStatusSucceededTransformer(t *testing.T) {
 				tags: []string{"job:foo-1509998340", "namespace:default"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.job.succeeded",
+				name: "kubernetes_state_core.job.succeeded",
 				val:  1,
 				tags: []string{"job:foo", "namespace:default"},
 			},
@@ -492,7 +492,7 @@ func Test_jobStatusFailedTransformer(t *testing.T) {
 				tags: []string{"job_name:foo-1509998340", "namespace:default"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.job.failed",
+				name: "kubernetes_state_core.job.failed",
 				val:  1,
 				tags: []string{"job_name:foo", "namespace:default"},
 			},
@@ -511,7 +511,7 @@ func Test_jobStatusFailedTransformer(t *testing.T) {
 				tags: []string{"job:foo-1509998340", "namespace:default"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.job.failed",
+				name: "kubernetes_state_core.job.failed",
 				val:  1,
 				tags: []string{"job:foo", "namespace:default"},
 			},
@@ -567,7 +567,7 @@ func Test_pvPhaseTransformer(t *testing.T) {
 				tags: []string{"persistentvolume:local-pv-103fef5d", "phase:Available"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.persistentvolume.by_phase",
+				name: "kubernetes_state_core.persistentvolume.by_phase",
 				val:  1,
 				tags: []string{"persistentvolume:local-pv-103fef5d", "phase:Available"},
 			},
@@ -624,7 +624,7 @@ func Test_serviceTypeTransformer(t *testing.T) {
 				tags: []string{"namespace:default", "service:kubernetes", "type:ClusterIP"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.service.type",
+				name: "kubernetes_state_core.service.type",
 				val:  1,
 				tags: []string{"namespace:default", "service:kubernetes", "type:ClusterIP"},
 			},
@@ -682,7 +682,7 @@ func Test_podPhaseTransformer(t *testing.T) {
 				tags: []string{"pod:foo", "phase:Failed", "namespace:default"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.pod.status_phase",
+				name: "kubernetes_state_core.pod.status_phase",
 				val:  1,
 				tags: []string{"pod:foo", "phase:Failed", "namespace:default"},
 			},
@@ -741,7 +741,7 @@ func Test_containerWaitingReasonTransformer(t *testing.T) {
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:CrashLoopBackOff"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.container.status_report.count.waiting",
+				name: "kubernetes_state_core.container.status_report.count.waiting",
 				val:  1,
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:CrashLoopBackOff"},
 			},
@@ -762,7 +762,7 @@ func Test_containerWaitingReasonTransformer(t *testing.T) {
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:ErrImagePull"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.container.status_report.count.waiting",
+				name: "kubernetes_state_core.container.status_report.count.waiting",
 				val:  1,
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:ErrImagePull"},
 			},
@@ -783,7 +783,7 @@ func Test_containerWaitingReasonTransformer(t *testing.T) {
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:ImagePullBackoff"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.container.status_report.count.waiting",
+				name: "kubernetes_state_core.container.status_report.count.waiting",
 				val:  1,
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:ImagePullBackoff"},
 			},
@@ -804,7 +804,7 @@ func Test_containerWaitingReasonTransformer(t *testing.T) {
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:ContainerCreating"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.container.status_report.count.waiting",
+				name: "kubernetes_state_core.container.status_report.count.waiting",
 				val:  1,
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:ContainerCreating"},
 			},
@@ -847,7 +847,7 @@ func Test_containerTerminatedReasonTransformer(t *testing.T) {
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:OOMKilled"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.container.status_report.count.terminated",
+				name: "kubernetes_state_core.container.status_report.count.terminated",
 				val:  1,
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:OOMKilled"},
 			},
@@ -868,7 +868,7 @@ func Test_containerTerminatedReasonTransformer(t *testing.T) {
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:ContainerCannotRun"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.container.status_report.count.terminated",
+				name: "kubernetes_state_core.container.status_report.count.terminated",
 				val:  1,
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:ContainerCannotRun"},
 			},
@@ -889,7 +889,7 @@ func Test_containerTerminatedReasonTransformer(t *testing.T) {
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:Error"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.container.status_report.count.terminated",
+				name: "kubernetes_state_core.container.status_report.count.terminated",
 				val:  1,
 				tags: []string{"container:foo", "pod:bar", "namespace:default", "reason:Error"},
 			},
@@ -931,7 +931,7 @@ func Test_limitrangeTransformer(t *testing.T) {
 				tags: []string{"constraint:default_request", "limitrange:limits", "resource:cpu"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.limitrange.cpu.default_request",
+				name: "kubernetes_state_core.limitrange.cpu.default_request",
 				val:  0.1,
 				tags: []string{"constraint:default_request", "limitrange:limits", "resource:cpu"},
 			},
@@ -1017,7 +1017,7 @@ func Test_nodeUnschedulableTransformer(t *testing.T) {
 				tags: []string{"node:foo"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.node.status",
+				name: "kubernetes_state_core.node.status",
 				val:  1.0,
 				tags: []string{"node:foo", "status:schedulable"},
 			},
@@ -1035,7 +1035,7 @@ func Test_nodeUnschedulableTransformer(t *testing.T) {
 				tags: []string{"node:foo"},
 			},
 			expected: &metricsExpected{
-				name: "kubernetes_state.node.status",
+				name: "kubernetes_state_core.node.status",
 				val:  1.0,
 				tags: []string{"node:foo", "status:unschedulable"},
 			},
@@ -1092,13 +1092,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:Ready", "status:true"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.ready",
+				name:    "kubernetes_state_core.node.ready",
 				tags:    []string{"node:foo", "condition:Ready", "status:true"},
 				status:  metrics.ServiceCheckOK,
 				message: "foo is currently reporting Ready = true",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:Ready", "status:true"},
 			},
@@ -1118,13 +1118,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:Ready", "status:false"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.ready",
+				name:    "kubernetes_state_core.node.ready",
 				tags:    []string{"node:foo", "condition:Ready", "status:false"},
 				status:  metrics.ServiceCheckCritical,
 				message: "foo is currently reporting Ready = false",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:Ready", "status:false"},
 			},
@@ -1144,13 +1144,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:Ready", "status:unknown"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.ready",
+				name:    "kubernetes_state_core.node.ready",
 				tags:    []string{"node:foo", "condition:Ready", "status:unknown"},
 				status:  metrics.ServiceCheckUnknown,
 				message: "foo is currently reporting Ready = unknown",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:Ready", "status:unknown"},
 			},
@@ -1188,7 +1188,7 @@ func Test_nodeConditionTransformer(t *testing.T) {
 			},
 			expectedServiceCheck: nil,
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:foo", "status:unknown"},
 			},
@@ -1224,13 +1224,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:Ready", "status:foo"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.ready",
+				name:    "kubernetes_state_core.node.ready",
 				tags:    []string{"node:foo", "condition:Ready", "status:foo"},
 				status:  metrics.ServiceCheckUnknown,
 				message: "foo is currently reporting Ready = foo",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:Ready", "status:foo"},
 			},
@@ -1250,7 +1250,7 @@ func Test_nodeConditionTransformer(t *testing.T) {
 			},
 			expectedServiceCheck: nil,
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:Ready"},
 			},
@@ -1270,13 +1270,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:OutOfDisk", "status:false"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.out_of_disk",
+				name:    "kubernetes_state_core.node.out_of_disk",
 				tags:    []string{"node:foo", "condition:OutOfDisk", "status:false"},
 				status:  metrics.ServiceCheckOK,
 				message: "foo is currently reporting OutOfDisk = false",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:OutOfDisk", "status:false"},
 			},
@@ -1296,13 +1296,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:OutOfDisk", "status:true"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.out_of_disk",
+				name:    "kubernetes_state_core.node.out_of_disk",
 				tags:    []string{"node:foo", "condition:OutOfDisk", "status:true"},
 				status:  metrics.ServiceCheckCritical,
 				message: "foo is currently reporting OutOfDisk = true",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:OutOfDisk", "status:true"},
 			},
@@ -1322,13 +1322,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:DiskPressure", "status:true"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.disk_pressure",
+				name:    "kubernetes_state_core.node.disk_pressure",
 				tags:    []string{"node:foo", "condition:DiskPressure", "status:true"},
 				status:  metrics.ServiceCheckCritical,
 				message: "foo is currently reporting DiskPressure = true",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:DiskPressure", "status:true"},
 			},
@@ -1348,13 +1348,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:NetworkUnavailable", "status:true"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.network_unavailable",
+				name:    "kubernetes_state_core.node.network_unavailable",
 				tags:    []string{"node:foo", "condition:NetworkUnavailable", "status:true"},
 				status:  metrics.ServiceCheckCritical,
 				message: "foo is currently reporting NetworkUnavailable = true",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:NetworkUnavailable", "status:true"},
 			},
@@ -1374,13 +1374,13 @@ func Test_nodeConditionTransformer(t *testing.T) {
 				tags: []string{"node:foo", "condition:MemoryPressure", "status:true"},
 			},
 			expectedServiceCheck: &serviceCheck{
-				name:    "kubernetes_state.node.memory_pressure",
+				name:    "kubernetes_state_core.node.memory_pressure",
 				tags:    []string{"node:foo", "condition:MemoryPressure", "status:true"},
 				status:  metrics.ServiceCheckCritical,
 				message: "foo is currently reporting MemoryPressure = true",
 			},
 			expectedMetric: &metricsExpected{
-				name: "kubernetes_state.node.by_condition",
+				name: "kubernetes_state_core.node.by_condition",
 				val:  1.0,
 				tags: []string{"node:foo", "condition:MemoryPressure", "status:true"},
 			},

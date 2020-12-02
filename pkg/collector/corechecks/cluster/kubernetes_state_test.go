@@ -67,12 +67,12 @@ func TestProcessMetrics(t *testing.T) {
 			metricTransformers: metricTransformers,
 			expected: []metricsExpected{
 				{
-					name: "kubernetes_state.container.running",
+					name: "kubernetes_state_core.container.running",
 					val:  1,
 					tags: []string{"kube_container_name:kube-state-metrics", "kube_namespace:default", "pod_name:kube-state-metrics-b7fbc487d-4phhj", "uid:bec19172-8abf-11ea-8546-42010a80022c"},
 				},
 				{
-					name: "kubernetes_state.container.running",
+					name: "kubernetes_state_core.container.running",
 					val:  0,
 					tags: []string{"kube_container_name:hello", "kube_namespace:default", "pod_name:hello-1509998340-k4f8q", "uid:05e99c5f-8a64-11ea-8546-42010a80022c"},
 				},
@@ -104,7 +104,7 @@ func TestProcessMetrics(t *testing.T) {
 			metricTransformers: metricTransformers,
 			expected: []metricsExpected{
 				{
-					name:     "kubernetes_state.container.running",
+					name:     "kubernetes_state_core.container.running",
 					val:      1,
 					tags:     []string{"kube_container_name:kube-state-metrics", "kube_namespace:default", "pod_name:kube-state-metrics-b7fbc487d-4phhj", "node:minikube"},
 					hostname: "minikube",
@@ -158,7 +158,7 @@ func TestProcessMetrics(t *testing.T) {
 			metricTransformers: metricTransformers,
 			expected: []metricsExpected{
 				{
-					name:     "kubernetes_state.deployment.replicas",
+					name:     "kubernetes_state_core.deployment.replicas",
 					val:      1,
 					tags:     []string{"kube_namespace:default", "kube_deployment:redis", "env:dev", "service:redis", "version:v1"},
 					hostname: "",
@@ -191,7 +191,7 @@ func TestProcessMetrics(t *testing.T) {
 			metricTransformers: metricTransformers,
 			expected: []metricsExpected{
 				{
-					name:     "kubernetes_state.deployment.replicas",
+					name:     "kubernetes_state_core.deployment.replicas",
 					val:      1,
 					tags:     []string{"kube_namespace:default", "kube_deployment:redis", "env:dev"},
 					hostname: "",
@@ -487,25 +487,25 @@ func TestSendTelemetry(t *testing.T) {
 			},
 			expected: []metricsExpected{
 				{
-					name:     "kubernetes_state.telemetry.metrics.count.total",
+					name:     "kubernetes_state_core.telemetry.metrics.count.total",
 					val:      5,
 					tags:     []string{"kube_cluster_name:foo"},
 					hostname: "",
 				},
 				{
-					name:     "kubernetes_state.telemetry.metrics.count",
+					name:     "kubernetes_state_core.telemetry.metrics.count",
 					val:      2,
 					tags:     []string{"kube_cluster_name:foo", "resource_name:baz"},
 					hostname: "",
 				},
 				{
-					name:     "kubernetes_state.telemetry.metrics.count",
+					name:     "kubernetes_state_core.telemetry.metrics.count",
 					val:      3,
 					tags:     []string{"kube_cluster_name:foo", "resource_name:bar"},
 					hostname: "",
 				},
 				{
-					name:     "kubernetes_state.telemetry.unknown_metrics.count",
+					name:     "kubernetes_state_core.telemetry.unknown_metrics.count",
 					val:      1,
 					tags:     []string{"kube_cluster_name:foo"},
 					hostname: "",
