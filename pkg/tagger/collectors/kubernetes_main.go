@@ -115,11 +115,14 @@ func (c *KubeMetadataCollector) Pull() error {
 	now := time.Now()
 
 	for _, tagInfo := range tagInfos {
+		log.Warnf("TAGGER: seen %s", tagInfo.Entity)
 		c.lastSeen[tagInfo.Entity] = now
 	}
 
 	if now.Sub(c.lastExpire) >= c.expireFreq {
+		log.Warnf("TAGGER: pruning")
 		for id, lastSeen := range c.lastSeen {
+			log.Warnf("TAGGER: %s last seen seen %s ago", id, now.Sub(lastSeen))
 			if now.Sub(lastSeen) >= c.expireFreq {
 				delete(c.lastSeen, id)
 				entityID, err := kubelet.KubeIDToTaggerEntityID(id)
@@ -127,6 +130,12 @@ func (c *KubeMetadataCollector) Pull() error {
 					log.Warnf("error extracting tagger entity id from %q: %s", id, err)
 					continue
 				}
+
+				if entityID != id {
+					log.Warnf("TAGGER: %s => %s", id, entityID)
+				}
+
+				log.Warnf("TAGGER: deleting %s", entityID)
 
 				tagInfos = append(tagInfos, &TagInfo{
 					Source:       kubeMetadataCollectorName,
@@ -137,6 +146,8 @@ func (c *KubeMetadataCollector) Pull() error {
 		}
 
 		c.lastExpire = now
+	} else {
+		log.Warnf("TAGGER: not pruning yet: %s since last expire, needs %s", now.Sub(c.lastExpire), c.expireFreq)
 	}
 
 	c.lastUpdate = now
