@@ -1975,11 +1975,12 @@ deploy_windows_testing-a7:
     - .kitchen_azure_location_north_central_us
   <<: *kitchen_common
   rules:
-    - when: manual
-      allow_failure: true
     - changes:
         - pkg/ebpf/**/*
         - pkg/network/**/*
+      when: on_success
+      allow_failure: true
+    - when: manual
       allow_failure: true
   needs: ["tests_ebpf"]
   variables:
