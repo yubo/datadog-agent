@@ -273,15 +273,16 @@ func (k *KSMCheck) processMetrics(sender aggregator.Sender, metrics map[string][
 				log.Tracef("KSM metric '%s' is unknown for the check, ignoring it", metricFamily.Name)
 				continue
 			}
+			objType := objTypeFromMetricName(metricFamily.Name)
 			if transform, found := metricTransformers[metricFamily.Name]; found {
 				for _, m := range metricFamily.ListMetrics {
-					hostname, tags := k.hostnameAndTags(m.Labels, metricsToGet)
+					hostname, tags := k.hostnameAndTags(objType, m.Labels, metricsToGet)
 					transform(sender, metricFamily.Name, m, hostname, tags)
 				}
 				continue
 			}
 			for _, m := range metricFamily.ListMetrics {
-				hostname, tags := k.hostnameAndTags(m.Labels, metricsToGet)
+				hostname, tags := k.hostnameAndTags(objType, m.Labels, metricsToGet)
 				sender.Gauge(formatMetricName(metricFamily.Name), m.Val, hostname, tags)
 			}
 		}
@@ -289,7 +290,7 @@ func (k *KSMCheck) processMetrics(sender aggregator.Sender, metrics map[string][
 }
 
 // hostnameAndTags returns the tags and the hostname for a metric based on the metric labels and the check configuration
-func (k *KSMCheck) hostnameAndTags(labels map[string]string, metricsToGet []ksmstore.DDMetricsFam) (string, []string) {
+func (k *KSMCheck) hostnameAndTags(objType string, labels map[string]string, metricsToGet []ksmstore.DDMetricsFam) (string, []string) {
 	hostname := ""
 	tags := []string{}
 
@@ -303,6 +304,9 @@ func (k *KSMCheck) hostnameAndTags(labels map[string]string, metricsToGet []ksms
 
 	// apply label joins
 	for _, mFamily := range metricsToGet {
+		if objType != objTypeFromMetricName(mFamily.Name) {
+			continue
+		}
 		config, found := k.instance.LabelJoins[mFamily.Name]
 		if !found {
 			continue
@@ -521,4 +525,9 @@ func isKnownMetric(name string) bool {
 	}
 	_, found := metricTransformers[name]
 	return found
+}
+
+func objTypeFromMetricName(metricName string) string {
+	parts := strings.SplitN(metricName, "_", 3)
+	return parts[1]
 }
