@@ -16,15 +16,17 @@ import (
 func TestEbpfBytesCorrect(t *testing.T) {
 	dir := "build"
 	for _, filename := range bindata.AssetNames() {
-		bs, err := ioutil.ReadFile(path.Join(dir, filename))
-		require.NoError(t, err)
+		t.Run(fmt.Sprintf("bytes correct: %s", filename), func(t *testing.T) {
+			bs, err := ioutil.ReadFile(path.Join(dir, filename))
+			require.NoError(t, err)
 
-		actualReader, err := GetReader(dir, filename)
-		require.NoError(t, err)
+			actualReader, err := GetReader(dir, filename)
+			require.NoError(t, err)
 
-		actual, err := ioutil.ReadAll(actualReader)
-		require.NoError(t, err)
+			actual, err := ioutil.ReadAll(actualReader)
+			require.NoError(t, err)
 
-		assert.Equal(t, bs, actual, fmt.Sprintf("on-disk file %s and bundled content are different", filename))
+			assert.Equal(t, bs, actual, fmt.Sprintf("on-disk file %s and bundled content are different", filename))
+		})
 	}
 }

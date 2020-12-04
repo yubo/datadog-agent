@@ -176,7 +176,13 @@ def build_in_docker(
 
 @task
 def test(
-    ctx, packages=TEST_PACKAGES, skip_object_files=False, only_check_bpf_bytes=False, bundle_ebpf=True, output_path=None
+    ctx,
+    packages=TEST_PACKAGES,
+    skip_object_files=False,
+    only_check_bpf_bytes=False,
+    bundle_ebpf=True,
+    output_path=None,
+    verbose=False,
 ):
     """
     Run tests on eBPF parts
@@ -212,6 +218,7 @@ def test(
         "bpf_tag": bpf_tag,
         "output_params": "-c -o " + output_path if output_path else "",
         "pkgs": packages,
+        "verbose": "-v" if verbose else "",
     }
 
     ctx.run(cmd.format(**args))
