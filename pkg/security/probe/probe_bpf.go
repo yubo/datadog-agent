@@ -10,6 +10,8 @@ package probe
 import (
 	"context"
 	"fmt"
+	"os"
+	"path"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -20,7 +22,6 @@ import (
 	"github.com/hashicorp/golang-lru/simplelru"
 	"github.com/pkg/errors"
 
-	"github.com/DataDog/datadog-agent/pkg/ebpf/bytecode"
 	"github.com/DataDog/datadog-agent/pkg/security/config"
 	"github.com/DataDog/datadog-agent/pkg/security/ebpf"
 	"github.com/DataDog/datadog-agent/pkg/security/ebpf/probes"
@@ -119,7 +120,8 @@ func (p *Probe) Init() error {
 		asset += "-syscall-wrapper"
 	}
 
-	bytecodeReader, err := bytecode.GetReader(p.config.BPFDir, asset+".o")
+	assetPath := path.Join(p.config.BPFDir, asset+".o")
+	bytecodeReader, err := os.Open(assetPath)
 	if err != nil {
 		return err
 	}

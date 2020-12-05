@@ -49,7 +49,7 @@ func TestTracerExpvar(t *testing.T) {
 	require.NoError(t, err)
 	pre410Kernel := currKernelVersion < kernel.VersionCode(4, 1, 0)
 
-	cfg := config.NewDefaultConfig()
+	cfg := newTestConfig()
 	// BPFDebug must be true for kretprobe/tcp_sendmsg to be included
 	cfg.BPFDebug = true
 	tr, err := NewTracer(cfg)
@@ -177,7 +177,7 @@ func TestTracerExpvar(t *testing.T) {
 
 func TestTCPSendAndReceive(t *testing.T) {
 	// Enable BPF-based system probe
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +263,7 @@ func TestPreexistingConnectionDirection(t *testing.T) {
 	}
 
 	// Enable BPF-based system probe
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	require.NoError(t, err)
 	defer tr.Stop()
 
@@ -294,7 +294,7 @@ func TestDNATIntraHostIntegration(t *testing.T) {
 	setupDNAT(t)
 	defer teardownDNAT(t)
 
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	require.NoError(t, err)
 	defer tr.Stop()
 
@@ -353,7 +353,7 @@ func TestDNATIntraHostIntegration(t *testing.T) {
 }
 
 func TestTCPRemoveEntries(t *testing.T) {
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 	config.TCPConnTimeout = 100 * time.Millisecond
 	tr, err := NewTracer(config)
 	require.NoError(t, err)
@@ -436,7 +436,7 @@ func TestTCPRemoveEntries(t *testing.T) {
 
 func TestTCPRetransmit(t *testing.T) {
 	// Enable BPF-based system probe
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -489,7 +489,7 @@ func TestTCPRetransmit(t *testing.T) {
 
 func TestTCPRetransmitSharedSocket(t *testing.T) {
 	// Enable BPF-based system probe
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	require.NoError(t, err)
 	defer tr.Stop()
 
@@ -552,7 +552,7 @@ func TestTCPRetransmitSharedSocket(t *testing.T) {
 
 func TestTCPRTT(t *testing.T) {
 	// Enable BPF-based system probe
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	require.NoError(t, err)
 	defer tr.Stop()
 
@@ -599,7 +599,7 @@ type AddrPair struct {
 
 func TestTCPShortlived(t *testing.T) {
 	// Enable BPF-based system probe
-	cfg := config.NewDefaultConfig()
+	cfg := newTestConfig()
 	cfg.TCPClosedTimeout = 10 * time.Millisecond
 	tr, err := NewTracer(cfg)
 	if err != nil {
@@ -665,7 +665,7 @@ func TestTCPShortlived(t *testing.T) {
 
 func TestTCPOverIPv6(t *testing.T) {
 	t.SkipNow()
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 	config.CollectIPv6Conns = true
 
 	tr, err := NewTracer(config)
@@ -726,7 +726,7 @@ func TestTCPOverIPv6(t *testing.T) {
 
 func TestTCPCollectionDisabled(t *testing.T) {
 	// Enable BPF-based system probe with TCP disabled
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 	config.CollectTCPConns = false
 
 	tr, err := NewTracer(config)
@@ -769,7 +769,7 @@ func TestTCPCollectionDisabled(t *testing.T) {
 
 func TestUDPSendAndReceive(t *testing.T) {
 	// Enable BPF-based system probe
-	cfg := config.NewDefaultConfig()
+	cfg := newTestConfig()
 	tr, err := NewTracer(cfg)
 	require.NoError(t, err)
 	defer tr.Stop()
@@ -812,7 +812,7 @@ func TestUDPSendAndReceive(t *testing.T) {
 
 func TestUDPDisabled(t *testing.T) {
 	// Enable BPF-based system probe with UDP disabled
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 	config.CollectUDPConns = false
 
 	tr, err := NewTracer(config)
@@ -854,7 +854,7 @@ func TestUDPDisabled(t *testing.T) {
 
 func TestLocalDNSCollectionDisabled(t *testing.T) {
 	// Enable BPF-based system probe with DNS disabled (by default)
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 
 	tr, err := NewTracer(config)
 	if err != nil {
@@ -882,7 +882,7 @@ func TestLocalDNSCollectionDisabled(t *testing.T) {
 
 func TestLocalDNSCollectionEnabled(t *testing.T) {
 	// Enable BPF-based system probe with DNS enabled
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 	config.CollectLocalDNS = true
 	config.CollectUDPConns = true
 
@@ -919,7 +919,7 @@ func isLocalDNS(c network.ConnectionStats) bool {
 
 func TestShouldSkipExcludedConnection(t *testing.T) {
 	// exclude connections from 127.0.0.1:80
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 	// exclude source SSH connections to make this pass in VM
 	config.ExcludedSourceConnections = map[string][]string{"127.0.0.1": {"80"}, "*": {"22"}}
 	config.ExcludedDestinationConnections = map[string][]string{"127.0.0.1": {"tcp 80"}}
@@ -950,7 +950,7 @@ func TestShouldSkipExcludedConnection(t *testing.T) {
 
 func TestTooSmallBPFMap(t *testing.T) {
 	// Enable BPF-based system probe with BPF maps size = 1
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 	config.MaxTrackedConnections = 1
 
 	tr, err := NewTracer(config)
@@ -1019,7 +1019,7 @@ func TestIsExpired(t *testing.T) {
 
 func TestTCPMiscount(t *testing.T) {
 	t.Skip("skipping because this test will pass/fail depending on host performance")
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	require.NoError(t, err)
 	defer tr.Stop()
 
@@ -1137,7 +1137,7 @@ func TestSkipConnectionDNS(t *testing.T) {
 
 func TestConnectionExpirationRegression(t *testing.T) {
 	t.SkipNow()
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	require.NoError(t, err)
 	defer tr.Stop()
 
@@ -1253,7 +1253,7 @@ func BenchmarkUDPEcho(b *testing.B) {
 	runBenchtests(b, payloadSizesUDP, "", benchEchoUDP)
 
 	// Enable BPF-based system probe
-	t, err := NewTracer(config.NewDefaultConfig())
+	t, err := NewTracer(newTestConfig())
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -1302,7 +1302,7 @@ func BenchmarkTCPEcho(b *testing.B) {
 	runBenchtests(b, payloadSizesTCP, "", benchEchoTCP)
 
 	// Enable BPF-based system probe
-	t, err := NewTracer(config.NewDefaultConfig())
+	t, err := NewTracer(newTestConfig())
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -1315,7 +1315,7 @@ func BenchmarkTCPSend(b *testing.B) {
 	runBenchtests(b, payloadSizesTCP, "", benchSendTCP)
 
 	// Enable BPF-based system probe
-	t, err := NewTracer(config.NewDefaultConfig())
+	t, err := NewTracer(newTestConfig())
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -1563,7 +1563,7 @@ func testDNSStats(t *testing.T, domain string, success int, failure int, timeout
 		return
 	}
 
-	config := config.NewDefaultConfig()
+	config := newTestConfig()
 	config.CollectDNSStats = true
 	config.DNSTimeout = 1 * time.Second
 	tr, err := NewTracer(config)
@@ -1628,7 +1628,7 @@ func TestConntrackExpiration(t *testing.T) {
 	setupDNAT(t)
 	defer teardownDNAT(t)
 
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	require.NoError(t, err)
 	defer tr.Stop()
 
@@ -1681,7 +1681,7 @@ func TestConntrackExpiration(t *testing.T) {
 
 func TestTCPEstablished(t *testing.T) {
 	// Ensure closed connections are flushed as soon as possible
-	cfg := config.NewDefaultConfig()
+	cfg := newTestConfig()
 	cfg.TCPClosedTimeout = 500 * time.Millisecond
 
 	tr, err := NewTracer(cfg)
@@ -1739,7 +1739,7 @@ func TestTCPEstablishedPreExistingConn(t *testing.T) {
 	laddr, raddr := c.LocalAddr(), c.RemoteAddr()
 
 	// Ensure closed connections are flushed as soon as possible
-	cfg := config.NewDefaultConfig()
+	cfg := newTestConfig()
 	cfg.TCPClosedTimeout = 500 * time.Millisecond
 
 	tr, err := NewTracer(cfg)
@@ -1762,7 +1762,7 @@ func TestTCPEstablishedPreExistingConn(t *testing.T) {
 }
 
 func TestUnconnectedUDPSendIPv4(t *testing.T) {
-	cfg := config.NewDefaultConfig()
+	cfg := newTestConfig()
 	tr, err := NewTracer(cfg)
 	require.NoError(t, err)
 	defer tr.Stop()
@@ -1787,7 +1787,7 @@ func TestUnconnectedUDPSendIPv4(t *testing.T) {
 }
 
 func TestConnectedUDPSendIPv6(t *testing.T) {
-	cfg := config.NewDefaultConfig()
+	cfg := newTestConfig()
 	cfg.CollectIPv6Conns = true
 	tr, err := NewTracer(cfg)
 	require.NoError(t, err)
@@ -1813,7 +1813,7 @@ func TestConnectedUDPSendIPv6(t *testing.T) {
 }
 
 func TestConnectionClobber(t *testing.T) {
-	tr, err := NewTracer(config.NewDefaultConfig())
+	tr, err := NewTracer(newTestConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1928,4 +1928,10 @@ func runCommands(t *testing.T, cmds []string) {
 			return
 		}
 	}
+}
+
+func newTestConfig() *config.Config {
+	cfg := config.NewDefaultConfig()
+	cfg.BPFDir = "../../ebpf/build"
+	return cfg
 }

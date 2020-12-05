@@ -53,7 +53,6 @@ def build(
     windows=False,
     arch="x64",
     embedded_path=DATADOG_AGENT_EMBEDDED_PATH,
-    bundle_ebpf=False,
 ):
     """
     Build the system_probe
@@ -61,7 +60,7 @@ def build(
 
     # Only build ebpf files on unix
     if not windows:
-        build_object_files(ctx, bundle_ebpf=bundle_ebpf)
+        build_object_files(ctx)
 
     ldflags, gcflags, env = get_build_flags(
         ctx, major_version=major_version, python_runtimes=python_runtimes, embedded_path=embedded_path
@@ -117,8 +116,6 @@ def build(
     ldflags += ' '.join(["-X '{name}={value}'".format(name=main + key, value=value) for key, value in ld_vars.items()])
 
     build_tags = get_default_build_tags(build="system-probe", arch=arch)
-    if bundle_ebpf:
-        build_tags.append("ebpf_bindata")
 
     if with_bcc:
         build_tags.append(BCC_TAG)
@@ -143,8 +140,7 @@ def build(
 
 @task
 def build_in_docker(
-    ctx, rebuild_ebpf_builder=False, race=False, incremental_build=False, major_version='7', bundle_ebpf=False
-):
+    ctx, rebuild_ebpf_builder=False, race=False, incremental_build=False, major_version='7'):
     """
     Build the system_probe using a container
     This can be used when the current OS don't have up to date linux headers
@@ -168,48 +164,35 @@ def build_in_docker(
         cmd += " --race"
     if incremental_build:
         cmd += " --incremental-build"
-    if bundle_ebpf:
-        cmd += " --bundle-ebpf"
 
     ctx.run(docker_cmd.format(cwd=os.getcwd(), builder=EBPF_BUILDER_IMAGE, cmd=cmd))
 
 
 @task
-def test(
-    ctx, packages=TEST_PACKAGES, skip_object_files=False, only_check_bpf_bytes=False, bundle_ebpf=True, output_path=None
-):
+def test(ctx, packages=TEST_PACKAGES, skip_object_files=False, output_path=None):
     """
     Run tests on eBPF parts
     If skip_object_files is set to True, this won't rebuild object files
-    If only_check_bpf_bytes is set to True this will only check that the assets bundled are
-    matching the currently generated object files
     If output_path is set, we run `go test` with the flags `-c -o output_path`, which *compiles* the test suite
     into a single binary. This artifact is meant to be used in conjunction with kitchen tests.
     """
 
     if not skip_object_files:
-        build_object_files(ctx, bundle_ebpf=bundle_ebpf)
+        build_object_files(ctx)
 
     cmd = 'go test -mod=vendor -v -tags {bpf_tag} {output_params} {pkgs}'
     if not is_root():
         cmd = 'sudo -E PATH={path} ' + cmd
 
-    bpf_tag = BPF_TAG
-    # temporary measure until we have a good default for BPFDir for testing
-    bpf_tag += ",ebpf_bindata"
-    if only_check_bpf_bytes:
-        # bpf_tag += ",ebpf_bindata"
-        cmd += " -run=TestEbpfBytesCorrect"
-    else:
-        if os.getenv("GOPATH") is None:
-            print(
-                "GOPATH is not set, if you are running tests with sudo, you may need to use the -E option to preserve your environment"
-            )
-            raise Exit(code=1)
+    if os.getenv("GOPATH") is None:
+        print(
+            "GOPATH is not set, if you are running tests with sudo, you may need to use the -E option to preserve your environment"
+        )
+        raise Exit(code=1)
 
     args = {
         "path": os.environ['PATH'],
-        "bpf_tag": bpf_tag,
+        "bpf_tag": BPF_TAG,
         "output_params": "-c -o " + output_path if output_path else "",
         "pkgs": packages,
     }
@@ -240,7 +223,6 @@ def kitchen_prepare(ctx):
     # test/kitchen/site-cookbooks/dd-system-probe-check/files/default/tests/pkg/network/testsuite
     # test/kitchen/site-cookbooks/dd-system-probe-check/files/default/tests/pkg/network/netlink/testsuite
     # test/kitchen/site-cookbooks/dd-system-probe-check/files/default/tests/pkg/ebpf/testsuite
-    # test/kitchen/site-cookbooks/dd-system-probe-check/files/default/tests/pkg/ebpf/bytecode/testsuite
     for i, pkg in enumerate(target_packages):
         relative_path = os.path.relpath(pkg)
         target_path = os.path.join(KITCHEN_ARTIFACT_DIR, relative_path)
@@ -249,8 +231,6 @@ def kitchen_prepare(ctx):
             ctx,
             packages=pkg,
             skip_object_files=(i != 0),
-            only_check_bpf_bytes=False,
-            bundle_ebpf=False,
             output_path=os.path.join(target_path, "testsuite"),
         )
 
@@ -277,9 +257,9 @@ def nettop(ctx, incremental_build=False, go_mod="vendor"):
     """
     Build and run the `nettop` utility for testing
     """
-    build_object_files(ctx, bundle_ebpf=False)
+    build_object_files(ctx)
 
-    cmd = 'go build -mod={go_mod} {build_type} -tags linux_bpf,ebpf_bindata -o {bin_path} {path}'
+    cmd = 'go build -mod={go_mod} {build_type} -tags linux_bpf -o {bin_path} {path}'
     bin_path = os.path.join(BIN_DIR, "nettop")
     # Build
     ctx.run(
@@ -332,14 +312,8 @@ def build_dev_docker_image(ctx, image_name, push=False):
 
 
 @task
-def object_files(ctx, bundle_ebpf=True):
-    """object_files builds the eBPF object files"""
-    build_object_files(ctx, bundle_ebpf=bundle_ebpf)
-
-
-def build_object_files(ctx, bundle_ebpf=False):
+def build_object_files(ctx):
     """build_object_files builds only the eBPF object
-    set bundle_ebpf to False to disable replacing the assets
     """
 
     # if clang is missing, subsequent calls to ctx.run("clang ...") will fail silently, and result in us not building a
@@ -358,7 +332,7 @@ def build_object_files(ctx, bundle_ebpf=False):
         ]
 
     bpf_dir = os.path.join(".", "pkg", "ebpf")
-    build_dir = os.path.join(bpf_dir, "bytecode", "build")
+    build_dir = os.path.join(bpf_dir, "build")
     c_dir = os.path.join(bpf_dir, "c")
 
     network_bpf_dir = os.path.join(".", "pkg", "network", "ebpf")
@@ -495,20 +469,6 @@ def build_object_files(ctx, bundle_ebpf=False):
 
     for cmd in commands:
         ctx.run(cmd)
-
-    if bundle_ebpf:
-        go_dir = os.path.join(bpf_dir, "bytecode", "bindata")
-        bundle_files(ctx, bindata_files, "pkg/.*/", go_dir)
-
-
-def bundle_files(ctx, bindata_files, dir_prefix, go_dir):
-    assets_cmd = (
-        "go run github.com/shuLhan/go-bindata/cmd/go-bindata -tags ebpf_bindata -split"
-        + " -pkg bindata -prefix '{dir_prefix}' -modtime 1 -o '{go_dir}' '{bindata_files}'"
-    )
-    ctx.run(assets_cmd.format(dir_prefix=dir_prefix, go_dir=go_dir, bindata_files="' '".join(bindata_files)))
-    ctx.run("gofmt -w -s {go_dir}".format(go_dir=go_dir))
-
 
 def build_ebpf_builder(ctx):
     """

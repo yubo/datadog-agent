@@ -390,14 +390,12 @@ tests_ebpf:
     - tar -xvf /tmp/clang.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
   after_script:
     - cd $SRC_PATH
-    - cp ./pkg/ebpf/bytecode/build/tracer.o $CI_PROJECT_DIR/.tmp/binary-ebpf/tracer.o
-    - cp ./pkg/ebpf/bytecode/build/tracer-debug.o $CI_PROJECT_DIR/.tmp/binary-ebpf/tracer-debug.o
-    - cp ./pkg/ebpf/bytecode/build/offset-guess.o $CI_PROJECT_DIR/.tmp/binary-ebpf/offset-guess.o
-    - cp ./pkg/ebpf/bytecode/build/offset-guess-debug.o $CI_PROJECT_DIR/.tmp/binary-ebpf/offset-guess-debug.o
+    - cp ./pkg/ebpf/build/tracer.o $CI_PROJECT_DIR/.tmp/binary-ebpf/tracer.o
+    - cp ./pkg/ebpf/build/tracer-debug.o $CI_PROJECT_DIR/.tmp/binary-ebpf/tracer-debug.o
+    - cp ./pkg/ebpf/build/offset-guess.o $CI_PROJECT_DIR/.tmp/binary-ebpf/offset-guess.o
+    - cp ./pkg/ebpf/build/offset-guess-debug.o $CI_PROJECT_DIR/.tmp/binary-ebpf/offset-guess-debug.o
   tags: [ "runner:main", "size:large" ]
   script:
-    # For now only check bpf bytes since we don't have a way to run eBPF tests without mounting a debugfs
-    - inv -e system-probe.test --only-check-bpf-bytes
     # Compile runtime security functional tests to be executed in kitchen tests
     - inv -e security-agent.functional-tests --output=$DD_AGENT_TESTING_DIR/site-cookbooks/dd-security-agent-check/files/testsuite
     - inv -e system-probe.kitchen-prepare
@@ -754,14 +752,13 @@ build_clang_arm64:
 
   script:
     - inv -e system-probe.build --go-version=$SYSTEM_PROBE_GO_VERSION --embedded-path=$DATADOG_AGENT_EMBEDDED_PATH
-    - inv -e system-probe.test --only-check-bpf-bytes
     - $S3_CP_CMD $SRC_PATH/$SYSTEM_PROBE_BINARIES_DIR/system-probe $S3_ARTIFACTS_URI/system-probe.$ARCH
-    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/bytecode/build/tracer.o $S3_ARTIFACTS_URI/tracer.o.$ARCH
-    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/bytecode/build/tracer-debug.o $S3_ARTIFACTS_URI/tracer-debug.o.$ARCH
-    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/bytecode/build/offset-guess.o $S3_ARTIFACTS_URI/offset-guess.o.$ARCH
-    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/bytecode/build/offset-guess-debug.o $S3_ARTIFACTS_URI/offset-guess-debug.o.$ARCH
-    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/bytecode/build/runtime-security.o $S3_ARTIFACTS_URI/runtime-security.o.$ARCH
-    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/bytecode/build/runtime-security-syscall-wrapper.o $S3_ARTIFACTS_URI/runtime-security-syscall-wrapper.o.$ARCH
+    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/build/tracer.o $S3_ARTIFACTS_URI/tracer.o.$ARCH
+    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/build/tracer-debug.o $S3_ARTIFACTS_URI/tracer-debug.o.$ARCH
+    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/build/offset-guess.o $S3_ARTIFACTS_URI/offset-guess.o.$ARCH
+    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/build/offset-guess-debug.o $S3_ARTIFACTS_URI/offset-guess-debug.o.$ARCH
+    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/build/runtime-security.o $S3_ARTIFACTS_URI/runtime-security.o.$ARCH
+    - $S3_CP_CMD $SRC_PATH/pkg/ebpf/build/runtime-security-syscall-wrapper.o $S3_ARTIFACTS_URI/runtime-security-syscall-wrapper.o.$ARCH
 
 build_system-probe-x64:
   stage: binary_build

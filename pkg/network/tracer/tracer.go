@@ -5,6 +5,7 @@ package tracer
 import (
 	"expvar"
 	"fmt"
+	"io"
 	"math"
 	"sync"
 	"sync/atomic"
@@ -12,7 +13,6 @@ import (
 	"unsafe"
 
 	ddebpf "github.com/DataDog/datadog-agent/pkg/ebpf"
-	"github.com/DataDog/datadog-agent/pkg/ebpf/bytecode"
 	"github.com/DataDog/datadog-agent/pkg/network"
 	"github.com/DataDog/datadog-agent/pkg/network/config"
 	netebpf "github.com/DataDog/datadog-agent/pkg/network/ebpf"
@@ -265,7 +265,7 @@ func NewTracer(config *config.Config) (*Tracer, error) {
 	return tr, nil
 }
 
-func runOffsetGuessing(config *config.Config, buf bytecode.AssetReader) ([]manager.ConstantEditor, error) {
+func runOffsetGuessing(config *config.Config, buf io.ReaderAt) ([]manager.ConstantEditor, error) {
 	// Enable kernel probes used for offset guessing.
 	offsetMgr := netebpf.NewOffsetManager()
 	offsetOptions := manager.Options{
