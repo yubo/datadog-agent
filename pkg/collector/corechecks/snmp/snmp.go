@@ -38,6 +38,7 @@ func (c *Check) Run() error {
 	// Create connection
 	err = c.session.Connect()
 	if err != nil {
+		// TODO: Test connection error
 		return fmt.Errorf("snmp connection error: %v", err)
 	}
 	defer c.session.Close() // TODO: handle error?
