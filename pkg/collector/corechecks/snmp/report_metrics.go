@@ -10,17 +10,9 @@ type metricSender struct {
 }
 
 func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metricTagConfig, values *snmpValues, tags []string) {
-	var newTags []string
+	newTags := ms.getGlobalTags(metricTags, values)
 	newTags = append(newTags, tags...)
 
-	for _, metricTag := range metricTags {
-		value, err := values.getScalarValues(metricTag.OID)
-		if err != nil {
-			log.Warnf("error getting scalar val: %v", err)
-			continue
-		}
-		newTags = append(newTags, metricTag.Tag+":"+value.toString())
-	}
 	// TODO: Move code to a better place, we should report `snmp.devices_monitored` even if calls fail
 	ms.sender.Gauge("snmp.devices_monitored", float64(1), "", newTags)
 	for _, metric := range metrics {
@@ -30,6 +22,20 @@ func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metr
 			ms.reportColumnMetrics(metric, values, newTags)
 		}
 	}
+}
+
+func (ms *metricSender) getGlobalTags(metricTags []metricTagConfig, values *snmpValues) []string {
+	var globalTags []string
+
+	for _, metricTag := range metricTags {
+		value, err := values.getScalarValues(metricTag.OID)
+		if err != nil {
+			log.Warnf("error getting scalar val: %v", err)
+			continue
+		}
+		globalTags = append(globalTags, metricTag.Tag+":"+value.toString())
+	}
+	return globalTags
 }
 
 func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *snmpValues, tags []string) {
