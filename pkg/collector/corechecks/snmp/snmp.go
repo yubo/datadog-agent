@@ -1,6 +1,7 @@
 package snmp
 
 import (
+	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
@@ -37,7 +38,7 @@ func (c *Check) Run() error {
 	// Create connection
 	err = c.session.Connect()
 	if err != nil {
-		log.Errorf("Connect() err: %v", err)
+		return fmt.Errorf("snmp connection error: %v", err)
 	}
 	defer c.session.Close() // TODO: handle error?
 
@@ -60,8 +61,7 @@ func (c *Check) Run() error {
 func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	scalarResults, err := fetchScalarOidsByBatch(c.session, c.config.OidConfig.scalarOids, c.config.OidBatchSize)
 	if err != nil {
-		log.Errorf("Get() err: %v", err)
-		return &snmpValues{}, err
+		return &snmpValues{}, fmt.Errorf("SNMPGET error: %v", err)
 	}
 
 	oids := make(map[string]string)
@@ -70,8 +70,7 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	}
 	columnResults, err := fetchColumnOids(c.session, oids, c.config.OidBatchSize)
 	if err != nil {
-		log.Errorf("GetBulk() err: %v", err)
-		return &snmpValues{}, err
+		return &snmpValues{}, fmt.Errorf("SNMPBULK error: %v", err)
 	}
 
 	return &snmpValues{scalarResults, columnResults}, nil
