@@ -49,7 +49,6 @@ func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int)
 func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize int) (map[string]map[string]snmpValue, error) {
 	// Get results
 	// TODO: Improve batching algorithm and make it more readable
-	//   -
 
 	if oidBatchSize == 0 {
 		// TODO: test me
@@ -75,7 +74,7 @@ func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize in
 			fetchOids[oid] = oids[oid]
 		}
 
-		results, err := fetchColumnOidsOne(session, fetchOids)
+		results, err := fetchColumnOidsOneBatch(session, fetchOids)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +91,7 @@ func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize in
 	return retValues, nil
 }
 
-func fetchColumnOidsOne(session sessionAPI, oids map[string]string) (map[string]map[string]snmpValue, error) {
+func fetchColumnOidsOneBatch(session sessionAPI, oids map[string]string) (map[string]map[string]snmpValue, error) {
 	// Returns map[columnOID]map[index]interface(float64 or string)
 	// GetBulk results
 	// TODO:
