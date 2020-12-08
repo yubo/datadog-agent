@@ -85,6 +85,7 @@ tags:
 
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
 	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("ServiceCheck", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("Commit").Return()
 
 	packet := gosnmp.SnmpPacket{
@@ -214,6 +215,7 @@ metrics:
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
 	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("ServiceCheck", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("Commit").Return()
 
 	packet := gosnmp.SnmpPacket{
@@ -274,6 +276,7 @@ profiles:
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
 	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("ServiceCheck", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("Commit").Return()
 
 	packet := gosnmp.SnmpPacket{
