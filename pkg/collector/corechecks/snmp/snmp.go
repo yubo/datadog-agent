@@ -79,6 +79,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	// Must be called before c.CommonConfigure
 	c.BuildID(rawInstance, rawInitConfig)
 
+	// TODO: test that instance tags are passed correctly to sender
 	err := c.CommonConfigure(rawInstance, source)
 	if err != nil {
 		return err
