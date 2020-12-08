@@ -60,7 +60,6 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 			rowTags = append(rowTags, metricConfig.getTags(fullIndex, values)...)
 			ms.sendMetric(symbol.Name, value, rowTags, metricConfig.ForcedType)
 		}
-		log.Infof("Table column %v - %v: %#v", symbol.Name, symbol.OID, values)
 	}
 }
 

@@ -33,8 +33,6 @@ func (c *Check) Run() error {
 
 	c.sender = metricSender{sender}
 
-	log.Infof("c.config.Metrics: %#v\n", c.config.Metrics) // TODO: remove me
-
 	// Create connection
 	err = c.session.Connect()
 	if err != nil {
@@ -47,9 +45,6 @@ func (c *Check) Run() error {
 	if err != nil {
 		return err
 	}
-
-	log.Infof("scalarValues: %#v\n", snmpValues.scalarValues) // TODO: remove me
-	log.Infof("columnValues: %#v\n", snmpValues.columnValues) // TODO: remove me
 
 	// Report metrics
 	c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
