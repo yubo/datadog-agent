@@ -7,10 +7,12 @@ package snmp
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator/mocksender"
+	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"sort"
 	"testing"
 )
 
@@ -168,6 +170,10 @@ metric_tags:
 	row1Tags = append(row1Tags, "if_index:1", "if_desc:desc1")
 	row2Tags = append(row2Tags, snmpTags...)
 	row2Tags = append(row2Tags, "if_index:2", "if_desc:desc2")
+
+	sort.Strings(snmpTags)
+	sort.Strings(row1Tags)
+	sort.Strings(row2Tags)
 
 	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
@@ -363,6 +369,10 @@ profiles:
 	row2Tags = append(row2Tags, snmpTags...)
 	row2Tags = append(row2Tags, "interface:nameRow2", "interface_alias:descRow2")
 
+	sort.Strings(snmpTags)
+	sort.Strings(row1Tags)
+	sort.Strings(row2Tags)
+
 	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
 	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(141), "", row1Tags)
@@ -370,4 +380,27 @@ profiles:
 	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
 	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
+}
+
+func TestCheckID(t *testing.T) {
+	check1 := snmpFactory()
+	check2 := snmpFactory()
+	// language=yaml
+	rawInstanceConfig1 := []byte(`
+ip_address: 1.1.1.1
+`)
+	// language=yaml
+	rawInstanceConfig2 := []byte(`
+ip_address: 2.2.2.2
+`)
+
+	err := check1.Configure(rawInstanceConfig1, []byte(``), "test")
+	assert.Nil(t, err)
+
+	err = check2.Configure(rawInstanceConfig2, []byte(``), "test")
+	assert.Nil(t, err)
+
+	assert.Equal(t, check.ID("snmp:efc9e7e750047b05"), check1.ID())
+	assert.Equal(t, check.ID("snmp:f22c3d8b3858f07d"), check2.ID())
+	assert.NotEqual(t, check1.ID(), check2.ID())
 }

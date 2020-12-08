@@ -6,7 +6,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
-	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 const (
@@ -84,6 +83,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 		return err
 	}
 
+	c.BuildID(rawInstance, rawInitConfig)
 	c.config = config
 	c.session.Configure(c.config)
 
