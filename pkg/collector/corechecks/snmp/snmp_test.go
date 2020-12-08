@@ -6,6 +6,7 @@
 package snmp
 
 import (
+	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/mocksender"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	"github.com/DataDog/datadog-agent/pkg/config"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sort"
 	"testing"
+	"time"
 )
 
 type mockSession struct {
@@ -44,6 +46,8 @@ func (s *mockSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err err
 func TestBasicSample(t *testing.T) {
 	session := &mockSession{}
 	check := Check{session: session}
+	aggregator.InitAggregatorWithFlushInterval(nil, "", 1*time.Hour)
+
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
@@ -72,6 +76,8 @@ metric_tags:
   - OID: 1.3.6.1.2.1.1.5.0
     symbol: sysName
     tag: snmp_host
+tags:
+  - "mytag:foo"
 `)
 
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")

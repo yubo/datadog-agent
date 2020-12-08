@@ -6,6 +6,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
+	"github.com/DataDog/datadog-agent/pkg/metrics"
 )
 
 const (
@@ -36,8 +37,10 @@ func (c *Check) Run() error {
 	err = c.session.Connect()
 	if err != nil {
 		// TODO: Test connection error
+		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", tags, err.Error())
 		return fmt.Errorf("snmp connection error: %v", err)
 	}
+	sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", tags, "")
 	defer c.session.Close() // TODO: handle error?
 
 	snmpValues, err := c.fetchValues(err)
@@ -73,6 +76,9 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 
 // Configure configures the snmp checks
 func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integration.Data, source string) error {
+	// Must be called before c.CommonConfigure
+	c.BuildID(rawInstance, rawInitConfig)
+
 	err := c.CommonConfigure(rawInstance, source)
 	if err != nil {
 		return err
@@ -83,7 +89,6 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 		return err
 	}
 
-	c.BuildID(rawInstance, rawInitConfig)
 	c.config = config
 	c.session.Configure(c.config)
 
