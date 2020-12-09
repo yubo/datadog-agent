@@ -179,6 +179,7 @@ func (l *SNMPListener) checkDevice(job snmpJob) {
 
 func (l *SNMPListener) checkDevices() {
 	subnets := []snmpSubnet{}
+	log.Debugf("l.config.Configs: %#v", l.config.Configs)
 	for _, config := range l.config.Configs {
 		ipAddr, ipNet, err := net.ParseCIDR(config.Network)
 		if err != nil {
@@ -215,6 +216,7 @@ func (l *SNMPListener) checkDevices() {
 
 		l.loadCache(&subnet)
 	}
+	log.Debugf("subnets: %#v", subnets)
 
 	if l.config.Workers == 0 {
 		l.config.Workers = defaultWorkers
