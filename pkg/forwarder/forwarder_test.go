@@ -503,58 +503,61 @@ func TestProcessLikePayloadResponseTimeout(t *testing.T) {
 }
 
 func TestHighPriorityTransaction(t *testing.T) {
-	var receivedRequests = make(map[string]struct{})
-	var mutex sync.Mutex
-	var requestChan = make(chan (string))
+	for i := 0; i < 10; i++ {
+		var receivedRequests = make(map[string]struct{})
+		var mutex sync.Mutex
+		var requestChan = make(chan (string))
+		idx := i
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mutex.Lock()
+			defer mutex.Unlock()
+			defer r.Body.Close()
+			body, err := ioutil.ReadAll(r.Body)
+			assert.NoError(t, err)
+			bodyStr := string(body)
+			t.Logf("%v %v", idx, string(body))
+			// Failed the first time for each request
+			if _, found := receivedRequests[bodyStr]; !found {
+				receivedRequests[bodyStr] = struct{}{}
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				requestChan <- bodyStr
+			}
+		}))
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mutex.Lock()
-		defer mutex.Unlock()
-		defer r.Body.Close()
-		body, err := ioutil.ReadAll(r.Body)
-		assert.NoError(t, err)
-		bodyStr := string(body)
+		config.Datadog.Set("forwarder_backoff_max", 0.5)
+		defer config.Datadog.Set("forwarder_backoff_max", nil)
 
-		// Failed the first time for each request
-		if _, found := receivedRequests[bodyStr]; !found {
-			receivedRequests[bodyStr] = struct{}{}
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusOK)
-			requestChan <- bodyStr
-		}
-	}))
+		config.Datadog.Set("forwarder_retry_queue_max_size", 1)
+		defer config.Datadog.Set("forwarder_retry_queue_max_size", nil)
 
-	config.Datadog.Set("forwarder_backoff_max", 0.5)
-	defer config.Datadog.Set("forwarder_backoff_max", nil)
+		oldFlushInterval := flushInterval
+		flushInterval = 500 * time.Millisecond
+		defer func() { flushInterval = oldFlushInterval }()
 
-	config.Datadog.Set("forwarder_retry_queue_max_size", 1)
-	defer config.Datadog.Set("forwarder_retry_queue_max_size", nil)
+		f := NewDefaultForwarder(NewOptions(map[string][]string{
+			ts.URL: {"api_key1"},
+		}))
 
-	oldFlushInterval := flushInterval
-	flushInterval = 500 * time.Millisecond
-	defer func() { flushInterval = oldFlushInterval }()
+		f.Start()
 
-	f := NewDefaultForwarder(NewOptions(map[string][]string{
-		ts.URL: {"api_key1"},
-	}))
+		data1 := []byte("data payload 1")
+		data2 := []byte("data payload 2")
+		dataHighPrio := []byte("data payload high Prio")
+		headers := http.Header{}
+		headers.Set("key", "value")
 
-	f.Start()
-	defer f.Stop()
+		assert.Nil(t, f.SubmitMetadata(Payloads{&data1}, headers, TransactionPriorityNormal))
+		assert.Nil(t, f.SubmitMetadata(Payloads{&dataHighPrio}, headers, TransactionPriorityHigh))
+		assert.Nil(t, f.SubmitMetadata(Payloads{&data2}, headers, TransactionPriorityNormal))
 
-	data1 := []byte("data payload 1")
-	data2 := []byte("data payload 2")
-	dataHighPrio := []byte("data payload high Prio")
-	headers := http.Header{}
-	headers.Set("key", "value")
-
-	assert.Nil(t, f.SubmitMetadata(Payloads{&data1}, headers, TransactionPriorityNormal))
-	assert.Nil(t, f.SubmitMetadata(Payloads{&dataHighPrio}, headers, TransactionPriorityHigh))
-	assert.Nil(t, f.SubmitMetadata(Payloads{&data2}, headers, TransactionPriorityNormal))
-
-	assert.Equal(t, string(dataHighPrio), <-requestChan)
-	assert.Equal(t, string(data2), <-requestChan)
-	assert.Equal(t, string(data1), <-requestChan)
+		assert.Equal(t, string(dataHighPrio), <-requestChan)
+		assert.Equal(t, string(data2), <-requestChan)
+		assert.Equal(t, string(data1), <-requestChan)
+		f.Stop()
+	}
+	assert.Fail(t, "")
 }
 
 func TestCustomCompletionHandler(t *testing.T) {
