@@ -274,6 +274,8 @@ func (l *SNMPListener) checkDevices() {
 func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, deviceIP string, writeCache bool) {
 	l.Lock()
 	defer l.Unlock()
+	log.Debugf("createService l.services: %#v", l.services)
+	log.Debugf("createService entityID: %#v", entityID)
 	if _, present := l.services[entityID]; present {
 		return
 	}
@@ -290,6 +292,7 @@ func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, device
 	if writeCache {
 		l.writeCache(subnet)
 	}
+	log.Debugf("createService svc: %#v", svc)
 	l.newService <- svc
 }
 
