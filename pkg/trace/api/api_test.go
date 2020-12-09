@@ -45,7 +45,8 @@ func newTestReceiverFromConfig(conf *config.AgentConfig) *HTTPReceiver {
 	dynConf := sampler.NewDynamicConfig("none")
 
 	rawTraceChan := make(chan *Payload, 5000)
-	receiver := NewHTTPReceiver(conf, dynConf, rawTraceChan)
+	rawTraceChanReservations := make(chan struct{}, 5000)
+	receiver := NewHTTPReceiver(conf, dynConf, rawTraceChan, rawTraceChanReservations)
 
 	return receiver
 }
@@ -791,7 +792,7 @@ func BenchmarkWatchdog(b *testing.B) {
 	now := time.Now()
 	conf := config.New()
 	conf.Endpoints[0].APIKey = "apikey_2"
-	r := NewHTTPReceiver(conf, nil, nil)
+	r := NewHTTPReceiver(conf, nil, nil, nil)
 
 	b.ResetTimer()
 	b.ReportAllocs()

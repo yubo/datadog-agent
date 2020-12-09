@@ -155,6 +155,19 @@ func (ps *rateLimiter) Permits(n int64) bool {
 	return keep
 }
 
+// ReportDroppedTraces reports traces that were dropped outside of the
+// rateLimiter logic to include them in the rateLimiter internal statistics
+func (ps *rateLimiter) ReportDroppedTraces(n int64) {
+	if n <= 0 {
+		return // no sensible value in n, disable rate limiting
+	}
+	ps.mu.Lock()
+	ps.stats.RecentTracesDropped += float64(n)
+	ps.stats.RecentPayloadsSeen++
+	ps.stats.RecentTracesSeen += float64(n)
+	ps.mu.Unlock()
+}
+
 // computeRateLimitingRate gives us the new rate at which requests need to be rate limited. It is computed
 // based on how much the [current] value surpasses the [max], and then combined with [rate]. The [current] and
 // [max] values may be any values which have an impact on the allowed traffic, for example: a maximum amount

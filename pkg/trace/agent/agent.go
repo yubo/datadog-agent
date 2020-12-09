@@ -51,7 +51,8 @@ type Agent struct {
 	obfuscator *obfuscate.Obfuscator
 
 	// In takes incoming payloads to be processed by the agent.
-	In chan *api.Payload
+	In             chan *api.Payload
+	InReservations chan struct{}
 
 	// config
 	conf *config.AgentConfig
@@ -64,11 +65,13 @@ type Agent struct {
 // which may be cancelled in order to gracefully stop the agent.
 func NewAgent(ctx context.Context, conf *config.AgentConfig) *Agent {
 	dynConf := sampler.NewDynamicConfig(conf.DefaultEnv)
-	in := make(chan *api.Payload, 1000)
+	const inSize = 1000
+	in := make(chan *api.Payload, inSize)
+	inReservations := make(chan struct{}, inSize)
 	statsChan := make(chan []stats.Bucket)
 
 	return &Agent{
-		Receiver:           api.NewHTTPReceiver(conf, dynConf, in),
+		Receiver:           api.NewHTTPReceiver(conf, dynConf, in, inReservations),
 		Concentrator:       stats.NewConcentrator(conf.BucketInterval.Nanoseconds(), statsChan),
 		Blacklister:        filters.NewBlacklister(conf.Ignore["resource"]),
 		Replacer:           filters.NewReplacer(conf.ReplaceTags),
@@ -81,6 +84,7 @@ func NewAgent(ctx context.Context, conf *config.AgentConfig) *Agent {
 		StatsWriter:        writer.NewStatsWriter(conf, statsChan),
 		obfuscator:         obfuscate.NewObfuscator(conf.Obfuscation),
 		In:                 in,
+		InReservations:     inReservations,
 		conf:               conf,
 		ctx:                ctx,
 	}
@@ -114,6 +118,7 @@ func (a *Agent) work() {
 	for {
 		select {
 		case p, ok := <-a.In:
+			<-a.InReservations
 			if !ok {
 				return
 			}

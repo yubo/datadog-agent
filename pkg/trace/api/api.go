@@ -64,28 +64,29 @@ type HTTPReceiver struct {
 	Stats       *info.ReceiverStats
 	RateLimiter *rateLimiter
 
-	out     chan *Payload
-	conf    *config.AgentConfig
-	dynConf *sampler.DynamicConfig
-	server  *http.Server
+	out            chan *Payload
+	outReservation chan struct{}
+	conf           *config.AgentConfig
+	dynConf        *sampler.DynamicConfig
+	server         *http.Server
 
 	debug               bool
 	rateLimiterResponse int // HTTP status code when refusing
 
-	wg   sync.WaitGroup // waits for all requests to be processed
 	exit chan struct{}
 }
 
 // NewHTTPReceiver returns a pointer to a new HTTPReceiver
-func NewHTTPReceiver(conf *config.AgentConfig, dynConf *sampler.DynamicConfig, out chan *Payload) *HTTPReceiver {
+func NewHTTPReceiver(conf *config.AgentConfig, dynConf *sampler.DynamicConfig, out chan *Payload, outReservations chan struct{}) *HTTPReceiver {
 	rateLimiterResponse := http.StatusOK
 	if config.HasFeature("429") {
 		rateLimiterResponse = http.StatusTooManyRequests
 	}
 	return &HTTPReceiver{
-		Stats:       info.NewReceiverStats(),
-		RateLimiter: newRateLimiter(),
-		out:         out,
+		Stats:          info.NewReceiverStats(),
+		RateLimiter:    newRateLimiter(),
+		out:            out,
+		outReservation: outReservations,
 
 		conf:    conf,
 		dynConf: dynConf,
@@ -266,7 +267,6 @@ func (r *HTTPReceiver) Stop() error {
 	if err := r.server.Shutdown(ctx); err != nil {
 		return err
 	}
-	r.wg.Wait()
 	close(r.out)
 	return nil
 }
@@ -390,16 +390,29 @@ func (r *HTTPReceiver) rateLimited(n int64) bool {
 	return !r.RateLimiter.Permits(n)
 }
 
+func (r *HTTPReceiver) replyRateLimited(v Version, w http.ResponseWriter, req *http.Request) {
+	ts := r.tagStats(v, req)
+	io.Copy(ioutil.Discard, req.Body)
+	w.WriteHeader(r.rateLimiterResponse)
+	r.replyOK(v, w)
+	atomic.AddInt64(&ts.PayloadRefused, 1)
+}
+
 // handleTraces knows how to handle a bunch of traces
 func (r *HTTPReceiver) handleTraces(v Version, w http.ResponseWriter, req *http.Request) {
 	ts := r.tagStats(v, req)
 	tracen, err := traceCount(req)
 	if err == nil && r.rateLimited(tracen) {
 		// this payload can not be accepted
-		io.Copy(ioutil.Discard, req.Body)
-		w.WriteHeader(r.rateLimiterResponse)
-		r.replyOK(v, w)
-		atomic.AddInt64(&ts.PayloadRefused, 1)
+		r.replyRateLimited(v, w, req)
+		return
+	}
+	select {
+	case r.outReservation <- struct{}{}:
+	default:
+		// we cannot make a reservation for this payload in the output channel so we don't accept it
+		r.RateLimiter.ReportDroppedTraces(tracen)
+		r.replyRateLimited(v, w, req)
 		return
 	}
 
@@ -433,21 +446,7 @@ func (r *HTTPReceiver) handleTraces(v Version, w http.ResponseWriter, req *http.
 		ContainerTags:          getContainerTags(req.Header.Get(headerContainerID)),
 		ClientComputedTopLevel: req.Header.Get(headerComputedTopLevel) != "",
 	}
-	select {
-	case r.out <- payload:
-		// ok
-	default:
-		// channel blocked, add a goroutine to ensure we never drop
-		r.wg.Add(1)
-		go func() {
-			metrics.Count("datadog.trace_agent.receiver.queued_send", 1, nil, 1)
-			defer func() {
-				r.wg.Done()
-				watchdog.LogOnPanic()
-			}()
-			r.out <- payload
-		}()
-	}
+	r.out <- payload
 }
 
 // Payload specifies information about a set of traces received by the API.
