@@ -65,7 +65,7 @@ type Agent struct {
 // which may be cancelled in order to gracefully stop the agent.
 func NewAgent(ctx context.Context, conf *config.AgentConfig) *Agent {
 	dynConf := sampler.NewDynamicConfig(conf.DefaultEnv)
-	const inSize = 1000
+	const inSize = 10
 	in := make(chan *api.Payload, inSize)
 	inReservations := make(chan struct{}, inSize)
 	statsChan := make(chan []stats.Bucket)
