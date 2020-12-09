@@ -172,6 +172,9 @@ func (l *SNMPListener) checkDevice(job snmpJob) {
 			l.deleteService(entityID, job.subnet)
 		} else {
 			log.Debugf("SNMP get to %s success: %v", deviceIP, value.Variables[0].Value)
+			log.Debugf("before checkDevice IP                    : %#v", deviceIP)
+			log.Debugf("before checkDevice entityID              : %#v", entityID)
+			log.Debugf("before checkDevice subnet config         : %#v", job.subnet.config)
 			l.createService(entityID, job.subnet, deviceIP, true)
 		}
 	}
@@ -272,10 +275,12 @@ func (l *SNMPListener) checkDevices() {
 }
 
 func (l *SNMPListener) createService(entityID string, subnet *snmpSubnet, deviceIP string, writeCache bool) {
+	log.Debugf("before lock createService l.services: %#v", l.services)
+	log.Debugf("before lock createService entityID: %#v", entityID)
 	l.Lock()
 	defer l.Unlock()
-	log.Debugf("createService l.services: %#v", l.services)
-	log.Debugf("createService entityID: %#v", entityID)
+	log.Debugf("after lock createService l.services: %#v", l.services)
+	log.Debugf("after lock createService entityID: %#v", entityID)
 	if _, present := l.services[entityID]; present {
 		return
 	}
