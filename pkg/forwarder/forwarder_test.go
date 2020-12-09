@@ -533,7 +533,7 @@ func TestHighPriorityTransaction(t *testing.T) {
 		defer config.Datadog.Set("forwarder_retry_queue_max_size", nil)
 
 		oldFlushInterval := flushInterval
-		flushInterval = 500 * time.Millisecond
+		flushInterval = 2 * time.Second
 		defer func() { flushInterval = oldFlushInterval }()
 
 		f := NewDefaultForwarder(NewOptions(map[string][]string{
