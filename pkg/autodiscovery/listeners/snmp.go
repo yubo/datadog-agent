@@ -152,10 +152,10 @@ func (l *SNMPListener) checkDevice(job snmpJob) {
 	log.Debugf("checkDevice entityID              : %#v", entityID)
 	log.Debugf("checkDevice subnet config         : %#v", job.subnet.config)
 	log.Debugf("checkDevice subnet cacheKey       : %#v", job.subnet.cacheKey)
-	log.Debugf("checkDevice subnet network        : %#v", job.subnet.network)
+	log.Debugf("checkDevice subnet network        : %#v", job.subnet.network.String())
 	log.Debugf("checkDevice subnet devices        : %#v", job.subnet.devices)
 	log.Debugf("checkDevice subnet deviceFailures : %#v", job.subnet.deviceFailures)
-	log.Debugf("checkDevice subnet startingIP     : %#v", job.subnet.startingIP)
+	log.Debugf("checkDevice subnet startingIP     : %#v", job.subnet.startingIP.String())
 	if err := params.Connect(); err != nil {
 		log.Debugf("SNMP connect to %s error: %v", deviceIP, err)
 		l.deleteService(entityID, job.subnet)
