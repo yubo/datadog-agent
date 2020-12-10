@@ -549,15 +549,18 @@ func TestHighPriorityTransaction(t *testing.T) {
 		headers.Set("key", "value")
 
 		assert.Nil(t, f.SubmitMetadata(Payloads{&data1}, headers, TransactionPriorityNormal))
+		// Wait to have a different value for GetCreatedAt
+		time.Sleep(10 * time.Millisecond)
 		assert.Nil(t, f.SubmitMetadata(Payloads{&dataHighPrio}, headers, TransactionPriorityHigh))
+		time.Sleep(10 * time.Millisecond)
 		assert.Nil(t, f.SubmitMetadata(Payloads{&data2}, headers, TransactionPriorityNormal))
 
 		assert.Equal(t, string(dataHighPrio), <-requestChan)
-		// assert.Equal(t, string(data2), <-requestChan)
-		// assert.Equal(t, string(data1), <-requestChan)
+		assert.Equal(t, string(data2), <-requestChan)
+		assert.Equal(t, string(data1), <-requestChan)
 		f.Stop()
 	}
-	assert.Fail(t, "")
+	assert.Fail(t, "This is a TEST")
 }
 
 func TestCustomCompletionHandler(t *testing.T) {
