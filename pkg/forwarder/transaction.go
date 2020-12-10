@@ -216,7 +216,7 @@ type Transaction interface {
 
 // NewHTTPTransaction returns a new HTTPTransaction.
 func NewHTTPTransaction() *HTTPTransaction {
-	return &HTTPTransaction{
+	t := &HTTPTransaction{
 		createdAt:         time.Now(),
 		ErrorCount:        0,
 		retryable:         true,
@@ -224,6 +224,8 @@ func NewHTTPTransaction() *HTTPTransaction {
 		attemptHandler:    defaultAttemptHandler,
 		completionHandler: defaultCompletionHandler,
 	}
+	fmt.Println(t.createdAt)
+	return t
 }
 
 // GetCreatedAt returns the creation time of the HTTPTransaction.
