@@ -405,8 +405,6 @@ tests_ebpf:
 
 # scan the dependencies for security vulnerabilities with snyk
 security_scan_test:
-  rules:
-    - <<: *if_master_branch
   stage: source_test
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/snyk:latest
   tags: ["runner:main", "size:large"]
