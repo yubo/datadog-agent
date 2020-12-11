@@ -36,7 +36,7 @@ if linux?
   # add libkrb5 for all integrations supporting kerberos auth with `requests-kerberos`
   dependency 'libkrb5'
   # needed for glusterfs
-  dependency 'gstatus'
+  dependency 'gstatus-py3'
 
   unless suse? || arm?
     dependency 'aerospike-py3'
