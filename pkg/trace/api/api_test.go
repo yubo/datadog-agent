@@ -599,10 +599,7 @@ func TestHandleStats(t *testing.T) {
 		defer rcv.Stop()
 
 		req, _ := http.NewRequest("POST", "http://127.0.0.1:8126/v0.5/stats", nil)
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
+		resp, _ := http.DefaultClient.Do(req)
 		if resp.StatusCode != 404 {
 			t.Fail()
 		}
