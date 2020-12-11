@@ -406,7 +406,7 @@ tests_ebpf:
 # scan the dependencies for security vulnerabilities with snyk
 security_scan_test:
   stage: source_test
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/snyk:latest
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/snyk:v3522990-7a3de06-agent
   tags: ["runner:main", "size:large"]
   needs: ["linux_x64_go_deps"]
   before_script:
