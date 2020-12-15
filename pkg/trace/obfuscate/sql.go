@@ -112,7 +112,7 @@ func (f *replaceFilter) Filter(token, lastToken TokenKind, buffer []byte) (token
 	case Table:
 		if f.normalizeTables {
 			panic("code does not reach here")
-			return token, f.replaceDigits(buffer), nil
+			// return token, f.replaceDigits(buffer), nil
 		}
 		fallthrough
 	default:
