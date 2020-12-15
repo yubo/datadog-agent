@@ -111,6 +111,7 @@ func (f *replaceFilter) Filter(token, lastToken TokenKind, buffer []byte) (token
 		return FilteredGroupable, []byte("?"), nil
 	case Table:
 		if f.normalizeTables {
+			panic("code does not reach here")
 			return token, f.replaceDigits(buffer), nil
 		}
 		fallthrough
