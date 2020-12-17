@@ -7,7 +7,8 @@ import (
 )
 
 type metricSender struct {
-	sender aggregator.Sender
+	sender           aggregator.Sender
+	submittedMetrics int
 }
 
 func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metricTagConfig, values *snmpValues, tags []string) {
@@ -96,4 +97,6 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []st
 			ms.sender.Gauge(metricFullName, floatValue, "", tags)
 		}
 	}
+
+	ms.submittedMetrics++
 }

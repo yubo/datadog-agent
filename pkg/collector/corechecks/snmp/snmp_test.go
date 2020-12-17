@@ -85,6 +85,7 @@ tags:
 
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
 	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("ServiceCheck", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("Commit").Return()
 
@@ -170,7 +171,7 @@ tags:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	snmpTags := []string{"snmp_device:1.2.3.4", "snmp_host:foo_sys_name"}
+	snmpTags := []string{"snmp_device:1.2.3.4", "snmp_host:foo_sys_name", "loader:core"}
 
 	var row1Tags, row2Tags []string
 	row1Tags = append(row1Tags, snmpTags...)
@@ -248,7 +249,7 @@ metrics:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	tags := []string{"snmp_device:1.2.3.4"}
+	tags := []string{"loader:core", "snmp_device:1.2.3.4"}
 	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
 	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", tags)
 	sender.AssertCalled(t, "Gauge", "snmp.SomeGaugeMetric", float64(30), "", tags)
@@ -275,6 +276,7 @@ profiles:
 
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
 	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("ServiceCheck", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sender.On("Commit").Return()
@@ -370,7 +372,7 @@ profiles:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	snmpTags := []string{"snmp_device:1.2.3.4", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
 
 	var row1Tags, row2Tags []string
 	row1Tags = append(row1Tags, snmpTags...)

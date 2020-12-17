@@ -7,6 +7,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"time"
 )
 
 const (
@@ -31,7 +32,12 @@ func (c *Check) Run() error {
 	tags := []string{"snmp_device:" + c.config.IPAddress}
 	tags = append(tags, c.config.Tags...)
 
-	c.sender = metricSender{sender}
+	// TODO: Remove Telemetry
+	tags = append(tags, "loader:core")
+	sender.Rate("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
+	start := time.Now()
+
+	c.sender = metricSender{sender: sender}
 
 	// Create connection
 	err = c.session.Connect()
@@ -50,6 +56,10 @@ func (c *Check) Run() error {
 
 	// Report metrics
 	c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
+
+	// TODO: Remove Telemetry
+	sender.Gauge("snmp.check_duration", float64(time.Since(start))/1e9, "", tags)
+	sender.Gauge("snmp.submitted_metrics", float64(c.sender.submittedMetrics), "", tags)
 
 	// Commit
 	sender.Commit()

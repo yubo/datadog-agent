@@ -99,7 +99,7 @@ func TestSendMetric(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.caseName, func(t *testing.T) {
 			mockSender := mocksender.NewMockSender("foo")
-			metricSender := metricSender{mockSender}
+			metricSender := metricSender{sender: mockSender}
 			mockSender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 			mockSender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 			mockSender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
