@@ -34,7 +34,7 @@ func (c *Check) Run() error {
 
 	// TODO: Remove Telemetry
 	tags = append(tags, "loader:core")
-	sender.Rate("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
+	sender.MonotonicCount("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
 	start := time.Now()
 
 	c.sender = metricSender{sender: sender}
