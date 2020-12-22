@@ -171,25 +171,31 @@ tags:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	snmpTags := []string{"snmp_device:1.2.3.4", "snmp_host:foo_sys_name", "loader:core"}
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
+	snmpGlobalTags := []string{"snmp_host:foo_sys_name"}
+	snmpGlobalTags = append(snmpGlobalTags, snmpTags...)
 
 	var row1Tags, row2Tags []string
-	row1Tags = append(row1Tags, snmpTags...)
+	row1Tags = append(row1Tags, snmpGlobalTags...)
 	row1Tags = append(row1Tags, "if_index:1", "if_desc:desc1")
-	row2Tags = append(row2Tags, snmpTags...)
+	row2Tags = append(row2Tags, snmpGlobalTags...)
 	row2Tags = append(row2Tags, "if_index:2", "if_desc:desc2")
 
-	sort.Strings(snmpTags)
+	sort.Strings(snmpGlobalTags)
 	sort.Strings(row1Tags)
 	sort.Strings(row2Tags)
 
-	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
-	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifNumber", float64(30), "", snmpTags)
+	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpGlobalTags)
+	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpGlobalTags)
+	sender.AssertCalled(t, "Gauge", "snmp.ifNumber", float64(30), "", snmpGlobalTags)
 	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", row1Tags)
 	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", row2Tags)
 	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(201), "", row1Tags)
 	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(202), "", row2Tags)
+
+	sender.AssertMetricTaggedWith(t, "MonotonicCount", "snmp.check_interval", snmpTags)
+	sender.AssertMetricTaggedWith(t, "Gauge", "snmp.check_duration", snmpGlobalTags)
+	sender.AssertMetricTaggedWith(t, "Gauge", "snmp.submitted_metrics", snmpGlobalTags)
 }
 
 func TestSupportedMetricTypes(t *testing.T) {

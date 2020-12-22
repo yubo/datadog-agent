@@ -12,16 +12,13 @@ type metricSender struct {
 }
 
 func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metricTagConfig, values *snmpValues, tags []string) {
-	newTags := ms.getGlobalTags(metricTags, values)
-	newTags = append(newTags, tags...)
-
 	// TODO: Move code to a better place, we should report `snmp.devices_monitored` even if calls fail
-	ms.sender.Gauge("snmp.devices_monitored", float64(1), "", newTags)
+	ms.sender.Gauge("snmp.devices_monitored", float64(1), "", tags)
 	for _, metric := range metrics {
 		if metric.Symbol.OID != "" {
-			ms.reportScalarMetrics(metric, values, newTags)
+			ms.reportScalarMetrics(metric, values, tags)
 		} else if metric.Table.OID != "" {
-			ms.reportColumnMetrics(metric, values, newTags)
+			ms.reportColumnMetrics(metric, values, tags)
 		}
 	}
 }
