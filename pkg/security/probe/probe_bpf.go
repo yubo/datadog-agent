@@ -438,11 +438,6 @@ func (p *Probe) handleEvent(data []byte) {
 		return
 	}
 
-	// resolve event context
-	if eventType != ExitEventType {
-		event.ResolveProcessCacheEntry()
-	}
-
 	if logLevel, err := log.GetLogLevel(); err != nil || logLevel == seelog.TraceLvl {
 		prettyEvent := event.String()
 		log.Tracef("Dispatching event %s\n", prettyEvent)
