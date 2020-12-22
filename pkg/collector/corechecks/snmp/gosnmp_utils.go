@@ -70,6 +70,8 @@ func resultToColumnValues(columnOids []string, result *gosnmp.SnmpPacket) (map[s
 	return returnValues, nextOidsMap
 }
 
+// gosnmpTypeToSimpleType converts gosnmp.Asn1BER type to valueType.
+// The simple type is used to know what type to use when submitting metrics.
 func gosnmpTypeToSimpleType(gosnmpType gosnmp.Asn1BER) valueType {
 	switch gosnmpType {
 	case gosnmp.Counter32, gosnmp.Counter64:
