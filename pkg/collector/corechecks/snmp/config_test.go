@@ -21,6 +21,8 @@ func TestBasicConfiguration(t *testing.T) {
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
 port: 1161
+timeout: 7
+retries: 5
 metrics:
 - symbol:
     OID: 1.3.6.1.2.1.2.1
@@ -54,6 +56,8 @@ profile: f5-big-ip
 	assert.Nil(t, err)
 	assert.Equal(t, "1.2.3.4", check.config.IPAddress)
 	assert.Equal(t, uint16(1161), check.config.Port)
+	assert.Equal(t, 7, check.config.Timeout)
+	assert.Equal(t, 5, check.config.Retries)
 	metrics := []metricsConfig{
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
 		{
