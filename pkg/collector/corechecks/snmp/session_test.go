@@ -18,6 +18,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		expectedRetries            int
 		expectedCommunity          string
 		expectedMsgFlags           gosnmp.SnmpV3MsgFlags
+		expectedContextName        string
 		expectedSecurityParameters gosnmp.SnmpV3SecurityParameters
 	}{
 		{
@@ -45,18 +46,20 @@ func Test_snmpSession_Configure(t *testing.T) {
 				SnmpVersion:  gosnmp.Version3,
 				Timeout:      4,
 				Retries:      3,
+				ContextName:  "myContext",
 				User:         "myUser",
 				AuthKey:      "myAuthKey",
 				AuthProtocol: "md5",
 				PrivKey:      "myPrivKey",
 				PrivProtocol: "aes",
 			},
-			expectedVersion:   gosnmp.Version3,
-			expectedError:     nil,
-			expectedTimeout:   time.Duration(4) * time.Second,
-			expectedRetries:   3,
-			expectedCommunity: "",
-			expectedMsgFlags:  gosnmp.AuthPriv,
+			expectedVersion:     gosnmp.Version3,
+			expectedError:       nil,
+			expectedTimeout:     time.Duration(4) * time.Second,
+			expectedRetries:     3,
+			expectedCommunity:   "",
+			expectedMsgFlags:    gosnmp.AuthPriv,
+			expectedContextName: "myContext",
 			expectedSecurityParameters: &gosnmp.UsmSecurityParameters{
 				UserName:                 "myUser",
 				AuthenticationProtocol:   gosnmp.MD5,
@@ -135,6 +138,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 			assert.Equal(t, tt.expectedRetries, s.gosnmpInst.Retries)
 			assert.Equal(t, tt.expectedTimeout, s.gosnmpInst.Timeout)
 			assert.Equal(t, tt.expectedCommunity, s.gosnmpInst.Community)
+			assert.Equal(t, tt.expectedContextName, s.gosnmpInst.ContextName)
 			assert.Equal(t, tt.expectedMsgFlags, s.gosnmpInst.MsgFlags)
 			assert.Equal(t, tt.expectedSecurityParameters, s.gosnmpInst.SecurityParameters)
 		})

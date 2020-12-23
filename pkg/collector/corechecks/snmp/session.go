@@ -47,6 +47,7 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 		}
 
 		gosnmpInst.MsgFlags = msgFlags
+		gosnmpInst.ContextName = config.ContextName
 		gosnmpInst.SecurityParameters = &gosnmp.UsmSecurityParameters{
 			UserName:                 config.User,
 			AuthenticationProtocol:   authProtocol,
