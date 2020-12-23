@@ -8,6 +8,8 @@ import (
 )
 
 var defaultOidBatchSize = 10
+var defaultRetries = 3
+var defaultTimeout = 2
 
 type snmpInitConfig struct {
 	OidBatchSize             int            `yaml:"oid_batch_size"`
@@ -108,8 +110,18 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	} else {
 		c.Port = instance.Port
 	}
-	c.Retries = instance.Retries
-	c.Timeout = instance.Timeout
+
+	if instance.Retries == 0 {
+		c.Retries = defaultRetries
+	} else {
+		c.Retries = instance.Retries
+	}
+
+	if instance.Timeout == 0 {
+		c.Timeout = defaultTimeout
+	} else {
+		c.Timeout = instance.Timeout
+	}
 
 	c.CommunityString = instance.CommunityString
 	c.Metrics = instance.Metrics

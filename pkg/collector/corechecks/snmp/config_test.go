@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBasicConfiguration(t *testing.T) {
+func TestConfigurations(t *testing.T) {
 	config.Datadog.Set("confd_path", "./test/conf.d")
 
 	check := Check{session: &snmpSession{}}
@@ -98,6 +98,35 @@ profiles:
 	assert.Equal(t, metrics, check.config.Metrics)
 	assert.Equal(t, metricsTags, check.config.MetricTags)
 	assert.Equal(t, 1, len(check.config.Profiles))
+}
+
+
+func TestDefaultConfigurations(t *testing.T) {
+	config.Datadog.Set("confd_path", "./test/conf.d")
+
+	check := Check{session: &snmpSession{}}
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+`)
+	// language=yaml
+	rawInitConfig := []byte(``)
+	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
+
+	assert.Nil(t, err)
+	assert.Equal(t, "1.2.3.4", check.config.IPAddress)
+	assert.Equal(t, uint16(161), check.config.Port)
+	assert.Equal(t, 2, check.config.Timeout)
+	assert.Equal(t, 3, check.config.Retries)
+	metrics := []metricsConfig{
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
+	}
+
+	var metricsTags []metricTagConfig
+
+	assert.Equal(t, metrics, check.config.Metrics)
+	assert.Equal(t, metricsTags, check.config.MetricTags)
+	assert.Equal(t, 0, len(check.config.Profiles))
 }
 
 func TestPortConfiguration(t *testing.T) {
