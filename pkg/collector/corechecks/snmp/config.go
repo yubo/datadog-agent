@@ -7,15 +7,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var defaultOidBatchSize = 10
+var defaultOidBatchSize = 64
+var defaultPort = uint16(161)
 var defaultRetries = 3
 var defaultTimeout = 2
 
 type snmpInitConfig struct {
-	OidBatchSize             int             `yaml:"oid_batch_size"`
-	RefreshOidsCacheInterval int             `yaml:"refresh_oids_cache_interval"`
-	Profiles                 profilesConfig  `yaml:"profiles"`
-	GlobalMetrics            []metricsConfig `yaml:"global_metrics"`
+	Profiles      profilesConfig  `yaml:"profiles"`
+	GlobalMetrics []metricsConfig `yaml:"global_metrics"`
 }
 
 type snmpInstanceConfig struct {
@@ -100,10 +99,19 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	}
 
 	c := snmpConfig{}
+
+	snmpVersion, err := parseVersion(instance.SnmpVersion)
+	if err != nil {
+		return snmpConfig{}, err
+	}
+	c.SnmpVersion = snmpVersion
+
+	// SNMP common connection configs
 	c.IPAddress = instance.IPAddress
 	c.Port = instance.Port
+
 	if instance.Port == 0 {
-		c.Port = 161
+		c.Port = defaultPort
 	} else {
 		c.Port = instance.Port
 	}
@@ -120,31 +128,22 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		c.Timeout = instance.Timeout
 	}
 
+	// SNMP v2 connection configs
 	c.CommunityString = instance.CommunityString
 	c.Metrics = instance.Metrics
 
+	// Metrics Configs
 	c.Metrics = append(c.Metrics, getUptimeMetricConfig())
 	if instance.UseGlobalMetrics {
 		c.Metrics = append(c.Metrics, initConfig.GlobalMetrics...)
 	}
-
 	c.MetricTags = instance.MetricTags
-
-	snmpVersion, err := parseVersion(instance.SnmpVersion)
-	if err != nil {
-		return snmpConfig{}, err
-	}
-	c.SnmpVersion = snmpVersion
 
 	// TODO: test me
 	c.OidConfig.scalarOids = parseScalarOids(c.Metrics, c.MetricTags)
 	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
 
-	if initConfig.OidBatchSize == 0 {
-		c.OidBatchSize = defaultOidBatchSize
-	} else {
-		c.OidBatchSize = initConfig.OidBatchSize
-	}
+	c.OidBatchSize = defaultOidBatchSize
 
 	profiles, err := loadProfiles(initConfig.Profiles)
 	if err != nil {
