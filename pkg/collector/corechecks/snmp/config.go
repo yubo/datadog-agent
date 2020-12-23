@@ -13,7 +13,6 @@ type snmpInitConfig struct {
 	OidBatchSize             int            `yaml:"oid_batch_size"`
 	RefreshOidsCacheInterval int            `yaml:"refresh_oids_cache_interval"`
 	Profiles                 profilesConfig `yaml:"profiles"`
-	Profile                  string         `yaml:"profile"`
 
 	// TODO: To implement:
 	// - global_metrics
@@ -37,6 +36,9 @@ type snmpInstanceConfig struct {
 	// Related parse metric code: https://github.com/DataDog/integrations-core/blob/86e9dc09f5a1829a8e8bf1b404c4fb73a392e0e5/snmp/datadog_checks/snmp/parsing/metrics.py#L94-L150
 	Metrics    []metricsConfig   `yaml:"metrics"`
 	MetricTags []metricTagConfig `yaml:"metric_tags"`
+
+	// Profile configs
+	Profile string `yaml:"profile"`
 
 	// TODO: To implement:
 	//   - context_engine_id: Investigate if we can remove this configuration.
@@ -136,7 +138,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		return snmpConfig{}, err
 	}
 	c.Profiles = profiles
-	profile := initConfig.Profile
+	profile := instance.Profile
 
 	if profile != "" {
 		if _, ok := c.Profiles[profile]; !ok {

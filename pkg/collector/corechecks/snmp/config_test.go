@@ -46,13 +46,13 @@ metric_tags:
   - OID: 1.2.3
     symbol: mySymbol
     tag: my_symbol
+profile: f5-big-ip
 `)
 	// language=yaml
 	rawInitConfig := []byte(`
 profiles:
   f5-big-ip:
     definition_file: f5-big-ip.yaml
-profile: f5-big-ip
 `)
 	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
 
