@@ -10,8 +10,11 @@ import (
 var defaultOidBatchSize = 10
 
 type snmpInitConfig struct {
-	OidBatchSize             int `yaml:"oid_batch_size"`
-	RefreshOidsCacheInterval int `yaml:"refresh_oids_cache_interval"`
+	OidBatchSize             int            `yaml:"oid_batch_size"`
+	RefreshOidsCacheInterval int            `yaml:"refresh_oids_cache_interval"`
+	Profiles                 profilesConfig `yaml:"profiles"`
+	Profile                  string         `yaml:"profile"`
+
 	// TODO: To implement:
 	// - global_metrics
 	// - profiles
@@ -34,9 +37,6 @@ type snmpInstanceConfig struct {
 	// Related parse metric code: https://github.com/DataDog/integrations-core/blob/86e9dc09f5a1829a8e8bf1b404c4fb73a392e0e5/snmp/datadog_checks/snmp/parsing/metrics.py#L94-L150
 	Metrics    []metricsConfig   `yaml:"metrics"`
 	MetricTags []metricTagConfig `yaml:"metric_tags"`
-
-	Profiles profilesConfig `yaml:"profiles"`
-	Profile  string         `yaml:"profile"`
 
 	// TODO: To implement:
 	//   - context_engine_id: Investigate if we can remove this configuration.
@@ -86,9 +86,9 @@ func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
 
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
 	instance := snmpInstanceConfig{}
-	init := snmpInitConfig{}
+	initConfig := snmpInitConfig{}
 
-	err := yaml.Unmarshal(rawInitConfig, &init)
+	err := yaml.Unmarshal(rawInitConfig, &initConfig)
 	if err != nil {
 		return snmpConfig{}, err
 	}
@@ -125,18 +125,18 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.OidConfig.scalarOids = parseScalarOids(c.Metrics, c.MetricTags)
 	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
 
-	if init.OidBatchSize == 0 {
+	if initConfig.OidBatchSize == 0 {
 		c.OidBatchSize = defaultOidBatchSize
 	} else {
-		c.OidBatchSize = init.OidBatchSize
+		c.OidBatchSize = initConfig.OidBatchSize
 	}
 
-	profiles, err := loadProfiles(instance.Profiles)
+	profiles, err := loadProfiles(initConfig.Profiles)
 	if err != nil {
 		return snmpConfig{}, err
 	}
 	c.Profiles = profiles
-	profile := instance.Profile
+	profile := initConfig.Profile
 
 	if profile != "" {
 		if _, ok := c.Profiles[profile]; !ok {

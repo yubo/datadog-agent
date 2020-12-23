@@ -272,13 +272,16 @@ func TestProfile(t *testing.T) {
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
-profile: f5-big-ip
+`)
+	// language=yaml
+	rawInitConfig := []byte(`
 profiles:
   f5-big-ip:
     definition_file: f5-big-ip.yaml
+profile: f5-big-ip
 `)
 
-	err := check.Configure(rawInstanceConfig, []byte(``), "test")
+	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
 	assert.Nil(t, err)
 
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
