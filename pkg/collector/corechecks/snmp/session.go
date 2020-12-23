@@ -23,11 +23,8 @@ func (s *snmpSession) Configure(config snmpConfig) {
 		Port:      config.Port,
 		Community: config.CommunityString,
 		Version:   config.SnmpVersion,
-		// TODO: implement following configs
-		Timeout:            time.Duration(2) * time.Second,
-		Retries:            3,
-		ExponentialTimeout: true,
-		MaxOids:            100,
+		Timeout:   time.Duration(config.Timeout) * time.Second,
+		Retries:   config.Retries,
 	}
 }
 

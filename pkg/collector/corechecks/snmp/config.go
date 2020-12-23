@@ -106,6 +106,8 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	} else {
 		c.Port = instance.Port
 	}
+	c.Retries = instance.Retries
+	c.Timeout = instance.Timeout
 
 	c.CommunityString = instance.CommunityString
 	c.Metrics = instance.Metrics
