@@ -100,7 +100,6 @@ profiles:
 	assert.Equal(t, 1, len(check.config.Profiles))
 }
 
-
 func TestDefaultConfigurations(t *testing.T) {
 	config.Datadog.Set("confd_path", "./test/conf.d")
 
