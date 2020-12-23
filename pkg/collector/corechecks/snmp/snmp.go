@@ -102,7 +102,10 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	}
 
 	c.config = config
-	c.session.Configure(c.config)
+	err = c.session.Configure(c.config)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

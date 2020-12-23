@@ -100,6 +100,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 
 	c := snmpConfig{}
 
+	// TODO: Move version parsing to session.go
 	snmpVersion, err := parseVersion(instance.SnmpVersion)
 	if err != nil {
 		return snmpConfig{}, err

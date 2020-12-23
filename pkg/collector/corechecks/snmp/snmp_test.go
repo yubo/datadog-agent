@@ -22,7 +22,8 @@ type mockSession struct {
 	mock.Mock
 }
 
-func (s *mockSession) Configure(config snmpConfig) {
+func (s *mockSession) Configure(config snmpConfig) error {
+	return nil
 }
 
 func (s *mockSession) Connect() error {
