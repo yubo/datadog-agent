@@ -12,13 +12,10 @@ var defaultRetries = 3
 var defaultTimeout = 2
 
 type snmpInitConfig struct {
-	OidBatchSize             int            `yaml:"oid_batch_size"`
-	RefreshOidsCacheInterval int            `yaml:"refresh_oids_cache_interval"`
-	Profiles                 profilesConfig `yaml:"profiles"`
-
-	// TODO: To implement:
-	// - global_metrics
-	// - profiles
+	OidBatchSize             int             `yaml:"oid_batch_size"`
+	RefreshOidsCacheInterval int             `yaml:"refresh_oids_cache_interval"`
+	Profiles                 profilesConfig  `yaml:"profiles"`
+	GlobalMetrics            []metricsConfig `yaml:"global_metrics"`
 }
 
 type snmpInstanceConfig struct {
@@ -39,15 +36,12 @@ type snmpInstanceConfig struct {
 	Metrics    []metricsConfig   `yaml:"metrics"`
 	MetricTags []metricTagConfig `yaml:"metric_tags"`
 
-	// Profile configs
-	Profile string `yaml:"profile"`
+	// Profile and Metrics configs
+	Profile          string `yaml:"profile"`
+	UseGlobalMetrics bool   `yaml:"use_global_metrics"`
 
 	// TODO: To implement:
 	//   - context_engine_id: Investigate if we can remove this configuration.
-	//   - use_global_metrics
-	//   - profile
-	//   - metrics
-	//   - metric_tags
 }
 
 type oidConfig struct {
@@ -92,6 +86,9 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	instance := snmpInstanceConfig{}
 	initConfig := snmpInitConfig{}
 
+	// Set default before parsing
+	instance.UseGlobalMetrics = true
+
 	err := yaml.Unmarshal(rawInitConfig, &initConfig)
 	if err != nil {
 		return snmpConfig{}, err
@@ -127,6 +124,10 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.Metrics = instance.Metrics
 
 	c.Metrics = append(c.Metrics, getUptimeMetricConfig())
+	if instance.UseGlobalMetrics {
+		c.Metrics = append(c.Metrics, initConfig.GlobalMetrics...)
+	}
+
 	c.MetricTags = instance.MetricTags
 
 	snmpVersion, err := parseVersion(instance.SnmpVersion)

@@ -53,6 +53,10 @@ profile: f5-big-ip
 profiles:
   f5-big-ip:
     definition_file: f5-big-ip.yaml
+global_metrics:
+- symbol:
+    OID: 1.2.3.4
+    name: aGlobalMetric
 `)
 	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
 
@@ -75,6 +79,7 @@ profiles:
 			},
 		},
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
+		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},
 		{Symbol: symbolConfig{OID: "1.3.6.1.4.1.3375.2.1.1.2.1.44.0", Name: "sysStatMemoryTotal"}, ForcedType: "gauge"},
 		{
 			Table:      symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
@@ -209,4 +214,64 @@ snmp_version: 4
 `)
 	err = check.Configure(rawInstanceConfig, []byte(``), "test")
 	assert.Error(t, err, "invalid snmp version `4`. Valid versions are: 1, 2, 2c, 3")
+}
+
+func TestGlobalMetricsConfigurations(t *testing.T) {
+	config.Datadog.Set("confd_path", "./test/conf.d")
+
+	check := Check{session: &snmpSession{}}
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+metrics:
+- symbol:
+    OID: 1.3.6.1.2.1.2.1
+    name: ifNumber
+`)
+	// language=yaml
+	rawInitConfig := []byte(`
+global_metrics:
+- symbol:
+    OID: 1.2.3.4
+    name: aGlobalMetric
+`)
+	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
+	assert.Nil(t, err)
+
+	metrics := []metricsConfig{
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
+		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},
+	}
+	assert.Equal(t, metrics, check.config.Metrics)
+}
+
+func TestUseGlobalMetricsFalse(t *testing.T) {
+	config.Datadog.Set("confd_path", "./test/conf.d")
+
+	check := Check{session: &snmpSession{}}
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+metrics:
+- symbol:
+    OID: 1.3.6.1.2.1.2.1
+    name: aInstanceMetric
+use_global_metrics: false
+`)
+	// language=yaml
+	rawInitConfig := []byte(`
+global_metrics:
+- symbol:
+    OID: 1.2.3.4
+    name: aGlobalMetric
+`)
+	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
+	assert.Nil(t, err)
+
+	metrics := []metricsConfig{
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "aInstanceMetric"}},
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
+	}
+	assert.Equal(t, metrics, check.config.Metrics)
 }
