@@ -9,6 +9,10 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/DataDog/datadog-agent/pkg/process/procutil"
+	"github.com/DataDog/gopsutil/cpu"
+	"github.com/DataDog/gopsutil/process"
+
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/docker"
 )
@@ -135,4 +139,62 @@ func WithAllProcs(procRoot string, fn func(int) error) error {
 	}
 
 	return nil
+}
+
+// ConvertCPUStat converts gopsutil TimeStat object to CPUTimesStat in procutil
+func ConvertCPUStat(s cpu.TimesStat) *procutil.CPUTimesStat {
+	return &procutil.CPUTimesStat{
+		User:      s.User,
+		System:    s.System,
+		Idle:      s.Idle,
+		Nice:      s.Nice,
+		Iowait:    s.Iowait,
+		Irq:       s.Irq,
+		Softirq:   s.Softirq,
+		Steal:     s.Steal,
+		Guest:     s.Guest,
+		GuestNice: s.GuestNice,
+		Stolen:    s.Stolen,
+		Timestamp: s.Timestamp,
+	}
+}
+
+// ConvertMemInfo converts gopsutil MemoryInfoStat object to MemoryInfoStat in procutil
+func ConvertMemInfo(s *process.MemoryInfoStat) *procutil.MemoryInfoStat {
+	return &procutil.MemoryInfoStat{
+		RSS:  s.RSS,
+		VMS:  s.VMS,
+		Swap: s.Swap,
+	}
+}
+
+// ConvertMemInfoEx converts gopsutil MemoryInfoExStat object to MemoryInfoExStat in procutil
+func ConvertMemInfoEx(s *process.MemoryInfoExStat) *procutil.MemoryInfoExStat {
+	return &procutil.MemoryInfoExStat{
+		RSS:    s.RSS,
+		VMS:    s.VMS,
+		Shared: s.Shared,
+		Text:   s.Text,
+		Lib:    s.Lib,
+		Data:   s.Data,
+		Dirty:  s.Dirty,
+	}
+}
+
+// ConvertIOStats converts gopsutil IOCounterStat object to IOCountersStat in procutil
+func ConvertIOStats(s *process.IOCountersStat) *procutil.IOCountersStat {
+	return &procutil.IOCountersStat{
+		ReadCount:  s.ReadCount,
+		WriteCount: s.WriteCount,
+		ReadBytes:  s.ReadBytes,
+		WriteBytes: s.WriteBytes,
+	}
+}
+
+// ConvertCtxSwitches converts gopsutil NumCtxSwitchesStat object to NumCtxSwitchesStat in procutil
+func ConvertCtxSwitches(s *process.NumCtxSwitchesStat) *procutil.NumCtxSwitchesStat {
+	return &procutil.NumCtxSwitchesStat{
+		Voluntary:   s.Voluntary,
+		Involuntary: s.Involuntary,
+	}
 }
