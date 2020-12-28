@@ -134,6 +134,8 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 
 	c.Metrics = instance.Metrics
 
+	c.OidBatchSize = defaultOidBatchSize
+
 	// Metrics Configs
 	c.Metrics = append(c.Metrics, getUptimeMetricConfig())
 	if instance.UseGlobalMetrics {
@@ -145,8 +147,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.OidConfig.scalarOids = parseScalarOids(c.Metrics, c.MetricTags)
 	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
 
-	c.OidBatchSize = defaultOidBatchSize
-
+	// Profile Configs
 	profiles, err := loadProfiles(initConfig.Profiles)
 	if err != nil {
 		return snmpConfig{}, err
