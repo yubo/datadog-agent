@@ -23,6 +23,12 @@ ip_address: 1.2.3.4
 port: 1161
 timeout: 7
 retries: 5
+user: my-user
+authProtocol: sha
+authKey: my-AuthKey
+privProtocol: aes
+privKey: my-PrivKey
+context_name: my-ContextName
 metrics:
 - symbol:
     OID: 1.3.6.1.2.1.2.1
@@ -65,6 +71,12 @@ global_metrics:
 	assert.Equal(t, uint16(1161), check.config.Port)
 	assert.Equal(t, 7, check.config.Timeout)
 	assert.Equal(t, 5, check.config.Retries)
+	assert.Equal(t, "my-user", check.config.User)
+	assert.Equal(t, "sha", check.config.AuthProtocol)
+	assert.Equal(t, "my-AuthKey", check.config.AuthKey)
+	assert.Equal(t, "aes", check.config.PrivProtocol)
+	assert.Equal(t, "my-PrivKey", check.config.PrivKey)
+	assert.Equal(t, "my-ContextName", check.config.ContextName)
 	metrics := []metricsConfig{
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
 		{

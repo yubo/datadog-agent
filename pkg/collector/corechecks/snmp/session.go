@@ -2,6 +2,7 @@ package snmp
 
 import (
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/soniah/gosnmp"
 	"time"
 )
@@ -54,6 +55,7 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 
 		gosnmpInst.MsgFlags = msgFlags
 		gosnmpInst.ContextName = config.ContextName
+		gosnmpInst.SecurityModel = gosnmp.UserSecurityModel
 		gosnmpInst.SecurityParameters = &gosnmp.UsmSecurityParameters{
 			UserName:                 config.User,
 			AuthenticationProtocol:   authProtocol,
@@ -63,6 +65,7 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 		}
 	}
 	s.gosnmpInst = gosnmpInst
+	log.Warnf("gosnmp Instance: %#v", s.gosnmpInst) // TODO: Remove me
 	return nil
 }
 

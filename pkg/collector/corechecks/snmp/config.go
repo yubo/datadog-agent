@@ -129,8 +129,15 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		c.Timeout = instance.Timeout
 	}
 
-	// SNMP v2 connection configs
+	// SNMP connection configs
 	c.CommunityString = instance.CommunityString
+	c.User = instance.User
+	c.AuthProtocol = instance.AuthProtocol
+	c.AuthKey = instance.AuthKey
+	c.PrivProtocol = instance.PrivProtocol
+	c.PrivKey = instance.PrivKey
+	c.ContextName = instance.ContextName
+
 	c.Metrics = instance.Metrics
 
 	// Metrics Configs
