@@ -88,8 +88,13 @@ func (m *metricsConfig) getTags(fullIndex string, values *snmpValues) []string {
 				log.Warnf("error getting column value: %v", err)
 				continue
 			}
-			tagValue := stringValues[fullIndex]
-			rowTags = append(rowTags, metricTag.Tag+":"+tagValue.toString())
+			tagValue, ok := stringValues[fullIndex]
+			if !ok {
+				// TODO: Test me
+				log.Debugf("index not found for column value: tag=%v, index=%v", metricTag.Tag, fullIndex)
+			} else {
+				rowTags = append(rowTags, metricTag.Tag+":"+tagValue.toString())
+			}
 		}
 	}
 	return rowTags
