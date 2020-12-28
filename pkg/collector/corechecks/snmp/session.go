@@ -24,15 +24,19 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 	if config.OidBatchSize > gosnmp.MaxOids {
 		return fmt.Errorf("config OidBatchSize (%d) cannot higher than gosnmp.MaxOids: %d", config.OidBatchSize, maxOids)
 	}
+	snmpVersion, err := parseVersion(config.SnmpVersion)
+	if err != nil {
+		return err
+	}
 	gosnmpInst := gosnmp.GoSNMP{
 		Target:  config.IPAddress,
 		Port:    config.Port,
-		Version: config.SnmpVersion,
+		Version: snmpVersion,
 		Timeout: time.Duration(config.Timeout) * time.Second,
 		Retries: config.Retries,
 		MaxOids: maxOids,
 	}
-	switch config.SnmpVersion {
+	switch snmpVersion {
 	case gosnmp.Version2c, gosnmp.Version1:
 		gosnmpInst.Community = config.CommunityString
 	case gosnmp.Version3:

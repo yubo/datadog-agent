@@ -3,7 +3,6 @@ package snmp
 import (
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
-	"github.com/soniah/gosnmp"
 	"gopkg.in/yaml.v2"
 )
 
@@ -52,7 +51,7 @@ type snmpConfig struct {
 	IPAddress       string
 	Port            uint16
 	CommunityString string
-	SnmpVersion     gosnmp.SnmpVersion
+	SnmpVersion     string
 	Timeout         int
 	Retries         int
 	User            string
@@ -100,12 +99,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 
 	c := snmpConfig{}
 
-	// TODO: Move version parsing to session.go
-	snmpVersion, err := parseVersion(instance.SnmpVersion)
-	if err != nil {
-		return snmpConfig{}, err
-	}
-	c.SnmpVersion = snmpVersion
+	c.SnmpVersion = instance.SnmpVersion
 
 	// SNMP common connection configs
 	c.IPAddress = instance.IPAddress
@@ -206,16 +200,4 @@ func parseColumnOids(metrics []metricsConfig) []string {
 		}
 	}
 	return oids
-}
-
-func parseVersion(rawVersion string) (gosnmp.SnmpVersion, error) {
-	switch rawVersion {
-	case "1":
-		return gosnmp.Version1, nil
-	case "", "2", "2c":
-		return gosnmp.Version2c, nil
-	case "3":
-		return gosnmp.Version3, nil
-	}
-	return 0, fmt.Errorf("invalid snmp version `%s`. Valid versions are: 1, 2, 2c, 3", rawVersion)
 }

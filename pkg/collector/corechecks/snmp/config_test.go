@@ -7,7 +7,6 @@ package snmp
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/config"
-	"github.com/soniah/gosnmp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,6 +22,7 @@ ip_address: 1.2.3.4
 port: 1161
 timeout: 7
 retries: 5
+snmp_version: 2c
 user: my-user
 authProtocol: sha
 authKey: my-AuthKey
@@ -71,6 +71,7 @@ global_metrics:
 	assert.Equal(t, uint16(1161), check.config.Port)
 	assert.Equal(t, 7, check.config.Timeout)
 	assert.Equal(t, 5, check.config.Retries)
+	assert.Equal(t, "2c", check.config.SnmpVersion)
 	assert.Equal(t, "my-user", check.config.User)
 	assert.Equal(t, "sha", check.config.AuthProtocol)
 	assert.Equal(t, "my-AuthKey", check.config.AuthKey)
@@ -166,66 +167,6 @@ port: 1234
 	err = check.Configure(rawInstanceConfig, []byte(``), "test")
 	assert.Nil(t, err)
 	assert.Equal(t, uint16(1234), check.config.Port)
-}
-
-func TestVersionConfiguration(t *testing.T) {
-	// TEST Empty case
-	check := Check{session: &snmpSession{}}
-	// language=yaml
-	rawInstanceConfig := []byte(`
-ip_address: 1.2.3.4
-`)
-	err := check.Configure(rawInstanceConfig, []byte(``), "test")
-	assert.Nil(t, err)
-	assert.Equal(t, gosnmp.Version2c, check.config.SnmpVersion)
-
-	// TEST Valid versions
-	cases := []struct {
-		rawInstanceConfig []byte
-		expectedVersion   gosnmp.SnmpVersion
-	}{
-		// language=yaml
-		{[]byte(`
-ip_address: 1.2.3.4
-snmp_version: 2
-`), gosnmp.Version2c},
-		// language=yaml
-		{[]byte(`
-ip_address: 1.2.3.4
-snmp_version: 1
-`), gosnmp.Version1},
-		// language=yaml
-		{[]byte(`
-ip_address: 1.2.3.4
-snmp_version: 2
-`), gosnmp.Version2c},
-		// language=yaml
-		{[]byte(`
-ip_address: 1.2.3.4
-snmp_version: 2c
-`), gosnmp.Version2c},
-		// language=yaml
-		{[]byte(`
-ip_address: 1.2.3.4
-snmp_version: 3
-`), gosnmp.Version3},
-	}
-	for _, tc := range cases {
-		check = Check{session: &snmpSession{}}
-		err = check.Configure(tc.rawInstanceConfig, []byte(``), "test")
-		assert.Nil(t, err)
-		assert.Equal(t, tc.expectedVersion, check.config.SnmpVersion)
-	}
-
-	// TEST Invalid version
-	check = Check{session: &snmpSession{}}
-	// language=yaml
-	rawInstanceConfig = []byte(`
-ip_address: 1.2.3.4
-snmp_version: 4
-`)
-	err = check.Configure(rawInstanceConfig, []byte(``), "test")
-	assert.Error(t, err, "invalid snmp version `4`. Valid versions are: 1, 2, 2c, 3")
 }
 
 func TestGlobalMetricsConfigurations(t *testing.T) {

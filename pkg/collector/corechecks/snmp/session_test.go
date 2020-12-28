@@ -22,11 +22,62 @@ func Test_snmpSession_Configure(t *testing.T) {
 		expectedSecurityParameters gosnmp.SnmpV3SecurityParameters
 	}{
 		{
+			name: "valid v1 config",
+			config: snmpConfig{
+				IPAddress:       "1.2.3.4",
+				Port:            uint16(1234),
+				SnmpVersion:     "1",
+				Timeout:         4,
+				Retries:         3,
+				CommunityString: "abc",
+			},
+			expectedVersion:   gosnmp.Version1,
+			expectedError:     nil,
+			expectedTimeout:   time.Duration(4) * time.Second,
+			expectedRetries:   3,
+			expectedCommunity: "abc",
+			expectedMsgFlags:  gosnmp.NoAuthNoPriv,
+		},
+		{
+			name: "valid default v2 config",
+			config: snmpConfig{
+				IPAddress:       "1.2.3.4",
+				Port:            uint16(1234),
+				SnmpVersion:     "",
+				Timeout:         4,
+				Retries:         3,
+				CommunityString: "abc",
+			},
+			expectedVersion:   gosnmp.Version2c,
+			expectedError:     nil,
+			expectedTimeout:   time.Duration(4) * time.Second,
+			expectedRetries:   3,
+			expectedCommunity: "abc",
+			expectedMsgFlags:  gosnmp.NoAuthNoPriv,
+		},
+		{
 			name: "valid v2 config",
 			config: snmpConfig{
 				IPAddress:       "1.2.3.4",
 				Port:            uint16(1234),
-				SnmpVersion:     gosnmp.Version2c,
+				SnmpVersion:     "2",
+				Timeout:         4,
+				Retries:         3,
+				CommunityString: "abc",
+			},
+			expectedVersion:   gosnmp.Version2c,
+			expectedError:     nil,
+			expectedTimeout:   time.Duration(4) * time.Second,
+			expectedRetries:   3,
+			expectedCommunity: "abc",
+			expectedMsgFlags:  gosnmp.NoAuthNoPriv,
+		},
+		{
+			name: "valid v2c config",
+			config: snmpConfig{
+				IPAddress:       "1.2.3.4",
+				Port:            uint16(1234),
+				SnmpVersion:     "2c",
 				Timeout:         4,
 				Retries:         3,
 				CommunityString: "abc",
@@ -43,7 +94,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 			config: snmpConfig{
 				IPAddress:    "1.2.3.4",
 				Port:         uint16(1234),
-				SnmpVersion:  gosnmp.Version3,
+				SnmpVersion:  "3",
 				Timeout:      4,
 				Retries:      3,
 				ContextName:  "myContext",
@@ -73,7 +124,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 			config: snmpConfig{
 				IPAddress:    "1.2.3.4",
 				Port:         uint16(1234),
-				SnmpVersion:  gosnmp.Version3,
+				SnmpVersion:  "3",
 				Timeout:      4,
 				Retries:      3,
 				User:         "myUser",
@@ -99,7 +150,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 			config: snmpConfig{
 				IPAddress:    "1.2.3.4",
 				Port:         uint16(1234),
-				SnmpVersion:  gosnmp.Version3,
+				SnmpVersion:  "3",
 				Timeout:      4,
 				Retries:      3,
 				User:         "myUser",
@@ -115,7 +166,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 			config: snmpConfig{
 				IPAddress:    "1.2.3.4",
 				Port:         uint16(1234),
-				SnmpVersion:  gosnmp.Version3,
+				SnmpVersion:  "3",
 				Timeout:      4,
 				Retries:      3,
 				User:         "myUser",
@@ -133,7 +184,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 			config: snmpConfig{
 				IPAddress:       "1.2.3.4",
 				Port:            uint16(1234),
-				SnmpVersion:     gosnmp.Version2c,
+				SnmpVersion:     "2",
 				Timeout:         4,
 				Retries:         3,
 				CommunityString: "abc",
