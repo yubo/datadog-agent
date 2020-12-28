@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var defaultOidBatchSize = 64
+var defaultOidBatchSize = 60
 var defaultPort = uint16(161)
 var defaultRetries = 3
 var defaultTimeout = 2

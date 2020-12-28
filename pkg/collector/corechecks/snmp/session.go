@@ -1,6 +1,7 @@
 package snmp
 
 import (
+	"fmt"
 	"github.com/soniah/gosnmp"
 	"time"
 )
@@ -18,12 +19,17 @@ type snmpSession struct {
 }
 
 func (s *snmpSession) Configure(config snmpConfig) error {
+	maxOids := gosnmp.MaxOids
+	if config.OidBatchSize > gosnmp.MaxOids {
+		return fmt.Errorf("config OidBatchSize (%d) cannot higher than gosnmp.MaxOids: %d", config.OidBatchSize, maxOids)
+	}
 	gosnmpInst := gosnmp.GoSNMP{
 		Target:  config.IPAddress,
 		Port:    config.Port,
 		Version: config.SnmpVersion,
 		Timeout: time.Duration(config.Timeout) * time.Second,
 		Retries: config.Retries,
+		MaxOids: maxOids,
 	}
 	switch config.SnmpVersion {
 	case gosnmp.Version2c, gosnmp.Version1:

@@ -128,6 +128,20 @@ func Test_snmpSession_Configure(t *testing.T) {
 			expectedError:              fmt.Errorf("unsupported privacy protocol: invalid"),
 			expectedSecurityParameters: nil, // default, not configured
 		},
+		{
+			name: "batch size too big",
+			config: snmpConfig{
+				IPAddress:       "1.2.3.4",
+				Port:            uint16(1234),
+				SnmpVersion:     gosnmp.Version2c,
+				Timeout:         4,
+				Retries:         3,
+				CommunityString: "abc",
+				OidBatchSize:    100,
+			},
+			expectedVersion: gosnmp.Version1,
+			expectedError:   fmt.Errorf("config OidBatchSize (100) cannot higher than gosnmp.MaxOids: 60"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
