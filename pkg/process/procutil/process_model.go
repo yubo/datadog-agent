@@ -1,5 +1,9 @@
 package procutil
 
+import (
+	"github.com/DataDog/gopsutil/cpu"
+)
+
 // Process holds all relevant metadata and metrics for a process
 type Process struct {
 	Pid   int32
@@ -92,4 +96,22 @@ type IOCountersStat struct {
 type NumCtxSwitchesStat struct {
 	Voluntary   int64
 	Involuntary int64
+}
+
+// ConvertCPUStat converts gopsutil TimeStat object to CPUTimesStat in procutil
+func ConvertCPUStat(s cpu.TimesStat) *CPUTimesStat {
+	return &CPUTimesStat{
+		User:      s.User,
+		System:    s.System,
+		Idle:      s.Idle,
+		Nice:      s.Nice,
+		Iowait:    s.Iowait,
+		Irq:       s.Irq,
+		Softirq:   s.Softirq,
+		Steal:     s.Steal,
+		Guest:     s.Guest,
+		GuestNice: s.GuestNice,
+		Stolen:    s.Stolen,
+		Timestamp: s.Timestamp,
+	}
 }

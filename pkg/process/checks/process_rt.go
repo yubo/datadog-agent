@@ -57,7 +57,7 @@ func (r *RTProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Me
 	if len(cpuTimes) == 0 {
 		return nil, errEmptyCPUTime
 	}
-	cpuTime := util.ConvertCPUStat(cpuTimes[0])
+	cpuTime := procutil.ConvertCPUStat(cpuTimes[0])
 
 	stats, err := r.probe.StatsForPIDs(r.processCheck.GetLastPIDs(), time.Now())
 	if err != nil {

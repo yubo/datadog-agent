@@ -91,7 +91,7 @@ func (p *ProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Mess
 	if len(cpuTimes) == 0 {
 		return nil, errEmptyCPUTime
 	}
-	cpuTime := util.ConvertCPUStat(cpuTimes[0])
+	cpuTime := procutil.ConvertCPUStat(cpuTimes[0])
 
 	procs, err := p.probe.ProcessesByPID(start)
 	if err != nil {
