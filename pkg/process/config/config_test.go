@@ -12,10 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
-	"github.com/DataDog/gopsutil/process"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 )
 
 var originalConfig = config.Datadog
@@ -144,7 +145,7 @@ func TestOnlyEnvConfigArgsScrubbingDisabled(t *testing.T) {
 	}
 
 	for i := range cases {
-		fp := &process.FilledProcess{Cmdline: cases[i].cmdline}
+		fp := &procutil.Process{Cmdline: cases[i].cmdline}
 		cases[i].cmdline = agentConfig.Scrubber.ScrubProcessCommand(fp)
 		assert.Equal(t, cases[i].parsedCmdline, cases[i].cmdline)
 	}
