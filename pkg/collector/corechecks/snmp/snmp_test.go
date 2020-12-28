@@ -51,6 +51,7 @@ func setConfdPath() {
 }
 
 func TestBasicSample(t *testing.T) {
+	setConfdPath()
 	session := &mockSession{}
 	check := Check{session: session}
 	aggregator.InitAggregatorWithFlushInterval(nil, "", 1*time.Hour)
@@ -206,6 +207,7 @@ tags:
 }
 
 func TestSupportedMetricTypes(t *testing.T) {
+	setConfdPath()
 	session := &mockSession{}
 	check := Check{session: session}
 	// language=yaml
@@ -272,8 +274,7 @@ metrics:
 }
 
 func TestProfile(t *testing.T) {
-	config.Datadog.Set("confd_path", "./test/conf.d")
-
+	setConfdPath()
 	session := &mockSession{}
 	check := Check{session: session}
 	// language=yaml
