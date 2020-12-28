@@ -13,6 +13,7 @@ import (
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"path/filepath"
 	"sort"
 	"testing"
 	"time"
@@ -42,6 +43,11 @@ func (s *mockSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) 
 func (s *mockSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error) {
 	args := s.Mock.Called(oids)
 	return args.Get(0).(*gosnmp.SnmpPacket), args.Error(1)
+}
+
+func setConfdPath() {
+	file, _ := filepath.Abs("./test/conf.d")
+	config.Datadog.Set("confd_path", file)
 }
 
 func TestBasicSample(t *testing.T) {
@@ -404,6 +410,7 @@ profiles:
 }
 
 func TestCheckID(t *testing.T) {
+	setConfdPath()
 	check1 := snmpFactory()
 	check2 := snmpFactory()
 	// language=yaml

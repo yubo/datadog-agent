@@ -148,7 +148,13 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
 
 	// Profile Configs
-	profiles, err := loadProfiles(initConfig.Profiles)
+	var pConfig profilesConfig
+	if len(initConfig.Profiles) > 0 {
+		pConfig = initConfig.Profiles
+	} else {
+		pConfig = getDefaultProfilesDefinitionFiles()
+	}
+	profiles, err := loadProfiles(pConfig)
 	if err != nil {
 		return snmpConfig{}, err
 	}

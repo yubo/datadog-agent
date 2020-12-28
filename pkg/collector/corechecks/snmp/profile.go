@@ -5,6 +5,9 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
+	"path/filepath"
+	"strings"
 )
 
 type profileDefinitionMap map[string]profileDefinition
@@ -18,6 +21,29 @@ type profileDefinition struct {
 	MetricTags []metricTagConfig `yaml:"metric_tags"`
 	Extends    []string          `yaml:"extends"`
 	Device     deviceMeta        `yaml:"device"`
+}
+
+func getDefaultProfilesDefinitionFiles() profilesConfig {
+	profilesRoot := getProfileConfdRoot()
+	files, err := ioutil.ReadDir(profilesRoot)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	profiles := make(profilesConfig)
+	for _, f := range files {
+		fName := f.Name()
+		// Skip partial profiles
+		if strings.HasPrefix(fName, "_") {
+			continue
+		}
+		// Skip non yaml profiles
+		if !strings.HasSuffix(fName, ".yaml") {
+			continue
+		}
+		profiles[fName[:len(fName)-5]] = profileConfig{filepath.Join(profilesRoot, fName)}
+	}
+	return profiles
 }
 
 func loadProfiles(pConfig profilesConfig) (profileDefinitionMap, error) {
@@ -60,11 +86,17 @@ func readProfileDefinition(definitionFile string) (*profileDefinition, error) {
 }
 
 func resolveProfileDefinitionPath(definitionFile string) string {
-	// TODO: Support profiles locations
 	// See https://github.com/DataDog/integrations-core/blob/d7f4d42a4721aea683056901cf2053395ff48173/snmp/datadog_checks/snmp/utils.py#L64-L73
+	// TODO: If definitionFile is abs file, return definitionFile
+	if filepath.IsAbs(definitionFile) {
+		return definitionFile
+	}
+	return filepath.Join(getProfileConfdRoot(), definitionFile)
+}
+
+func getProfileConfdRoot() string {
 	confdPath := config.Datadog.GetString("confd_path")
-	profilesPath := confdPath + "/snmp.d/profiles/"
-	return profilesPath + definitionFile
+	return filepath.Join(confdPath, "snmp.d", "profiles")
 }
 
 func recursivelyExpandBaseProfiles(definition *profileDefinition) error {
