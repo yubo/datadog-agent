@@ -11,25 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func f5Metrics() []metricsConfig {
-	return []metricsConfig{
-		{Symbol: symbolConfig{OID: "1.3.6.1.4.1.3375.2.1.1.2.1.44.0", Name: "sysStatMemoryTotal"}, ForcedType: "gauge"},
-		{
-			Table:      symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
-			ForcedType: "monotonic_count",
-			Symbols: []symbolConfig{
-				{OID: "1.3.6.1.2.1.2.2.1.14", Name: "ifInErrors"},
-				{OID: "1.3.6.1.2.1.2.2.1.13", Name: "ifInDiscards"},
-			},
-			MetricTags: []metricTagConfig{
-				{Tag: "interface", Column: symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.1", Name: "ifName"}},
-				{Tag: "interface_alias", Column: symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.18", Name: "ifAlias"}},
-			},
-		},
-		{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
-	}
-}
-
 func TestConfigurations(t *testing.T) {
 	setConfdPath()
 
@@ -112,7 +93,7 @@ global_metrics:
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
 		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},
 	}
-	metrics = append(metrics, f5Metrics()...)
+	metrics = append(metrics, mockProfilesDefinitions()["f5-big-ip"].Metrics...)
 
 	metricsTags := []metricTagConfig{
 		{Tag: "my_symbol", OID: "1.2.3", Name: "mySymbol"},
@@ -150,7 +131,7 @@ ip_address: 1.2.3.4
 	assert.Equal(t, metrics, check.config.Metrics)
 	assert.Equal(t, metricsTags, check.config.MetricTags)
 	assert.Equal(t, 1, len(check.config.Profiles))
-	assert.Equal(t, f5Metrics(), check.config.Profiles["f5-big-ip"].Metrics)
+	assert.Equal(t, mockProfilesDefinitions()["f5-big-ip"].Metrics, check.config.Profiles["f5-big-ip"].Metrics)
 }
 
 func TestPortConfiguration(t *testing.T) {

@@ -17,10 +17,11 @@ type deviceMeta struct {
 }
 
 type profileDefinition struct {
-	Metrics    []metricsConfig   `yaml:"metrics"`
-	MetricTags []metricTagConfig `yaml:"metric_tags"`
-	Extends    []string          `yaml:"extends"`
-	Device     deviceMeta        `yaml:"device"`
+	Metrics      []metricsConfig   `yaml:"metrics"`
+	MetricTags   []metricTagConfig `yaml:"metric_tags"`
+	Extends      []string          `yaml:"extends"`
+	Device       deviceMeta        `yaml:"device"`
+	SysObjectIds StringArray       `yaml:"sysobjectid"`
 }
 
 func getDefaultProfilesDefinitionFiles() profilesConfig {
