@@ -7,6 +7,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"time"
 )
 
@@ -100,6 +101,9 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	if err != nil {
 		return err
 	}
+
+	// TODO: Clean up sensitive info: community string, auth key, priv key
+	log.Debugf("Config: %#v", config)
 
 	c.config = config
 	err = c.session.Configure(c.config)
