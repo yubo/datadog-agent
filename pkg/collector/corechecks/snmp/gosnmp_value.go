@@ -13,6 +13,7 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 	//   - gosnmp.Opaque ?
 	//     Seems opaque type is never returned https://github.com/gosnmp/gosnmp/blob/dc320dac5b53d95a366733fd95fb5851f2099387/helper.go#L195-L205
 	//   - gosnmp.Boolean: seems not exist anymore and not handled by gosnmp
+	//   - gosnmp.EndOfMibView
 	switch pduVariable.Type {
 	case gosnmp.OctetString, gosnmp.BitString:
 		value = string(pduVariable.Value.([]byte))
@@ -22,6 +23,14 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 		value = float64(pduVariable.Value.(float32))
 	case gosnmp.OpaqueDouble:
 		value = pduVariable.Value.(float64)
+	//case gosnmp.IPAddress:
+	//	strValue, ok := pduVariable.Value.(string)
+	//	if ! ok {
+	//		return name, snmpValue{}, log.Errorf("invalid IP Address type: %s", pduVariable.Type.String())
+	//	}
+	//	value = strValue
+	//case gosnmp.ObjectIdentifier:
+	//	value = pduVariable.Value.(string)
 	default:
 		return name, snmpValue{}, log.Errorf("invalid type: %s", pduVariable.Type.String())
 	}
