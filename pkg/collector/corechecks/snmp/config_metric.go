@@ -76,9 +76,7 @@ func (m *metricsConfig) getTags(fullIndex string, values *snmpValues) []string {
 	var rowTags []string
 	indexes := strings.Split(fullIndex, ".")
 	for _, metricTag := range m.MetricTags {
-		if (metricTag.Index == 0) || (metricTag.Index > uint(len(indexes))) {
-			log.Warnf("invalid index %v, it must be between 1 and $v", metricTag.Index, len(indexes))
-		} else {
+		if (metricTag.Index > 0) && (metricTag.Index <= uint(len(indexes))) {
 			rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
 		}
 		if metricTag.Column.OID != "" {
