@@ -26,6 +26,7 @@ func f5Metrics() []metricsConfig {
 				{Tag: "interface_alias", Column: symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.18", Name: "ifAlias"}},
 			},
 		},
+		{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
 	}
 }
 

@@ -3,6 +3,7 @@ package snmp
 import (
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -166,6 +167,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 			return snmpConfig{}, fmt.Errorf("unknown profile '%s'", profile)
 		}
 		c.Tags = append(c.Tags, "snmp_profile:"+profile)
+		log.Debugf("Profile: %#v", c.Profiles[profile])
 		c.refreshWithProfile(c.Profiles[profile])
 	}
 

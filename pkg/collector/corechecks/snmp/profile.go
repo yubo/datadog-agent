@@ -60,7 +60,7 @@ func loadProfiles(pConfig profilesConfig) (profileDefinitionMap, error) {
 			return nil, err
 		}
 
-		err = recursivelyExpandBaseProfiles(profileDefinition)
+		err = recursivelyExpandBaseProfiles(profileDefinition, profileDefinition.Extends)
 		if err != nil {
 			return nil, err
 		}
@@ -99,15 +99,22 @@ func getProfileConfdRoot() string {
 	return filepath.Join(confdPath, "snmp.d", "profiles")
 }
 
-func recursivelyExpandBaseProfiles(definition *profileDefinition) error {
-	for _, basePath := range definition.Extends {
+func recursivelyExpandBaseProfiles(definition *profileDefinition, extends []string) error {
+	for _, basePath := range extends {
 		baseDefinition, err := readProfileDefinition(basePath)
 		if err != nil {
+			// TODO: Test me
 			return err
 		}
-
 		definition.Metrics = append(definition.Metrics, baseDefinition.Metrics...)
 		definition.MetricTags = append(definition.MetricTags, baseDefinition.MetricTags...)
+
+		// TODO: Protect against infinite extend loop
+		err = recursivelyExpandBaseProfiles(definition, baseDefinition.Extends)
+		if err != nil {
+			// TODO: Test me
+			return err
+		}
 	}
 	return nil
 }
