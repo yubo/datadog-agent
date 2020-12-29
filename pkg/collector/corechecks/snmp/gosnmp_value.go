@@ -43,11 +43,10 @@ func resultToScalarValues(result *gosnmp.SnmpPacket) (values map[string]snmpValu
 	return returnValues
 }
 
-func resultToColumnValues(columnOids []string, result *gosnmp.SnmpPacket) (map[string]map[string]snmpValue, map[string]string) {
-	// TODO: test me
+func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (map[string]map[string]snmpValue, map[string]string) {
 	returnValues := make(map[string]map[string]snmpValue)
 	nextOidsMap := make(map[string]string)
-	for i, pduVariable := range result.Variables {
+	for i, pduVariable := range snmpPacket.Variables {
 		oid, value, err := getValueFromPDU(pduVariable)
 		if err != nil {
 			log.Debugf("Cannot get value for variable `%v` with type `%v` and value `%v`", pduVariable.Name, pduVariable.Type, pduVariable.Value)
@@ -55,7 +54,7 @@ func resultToColumnValues(columnOids []string, result *gosnmp.SnmpPacket) (map[s
 		}
 		columnOid := columnOids[i%len(columnOids)]
 		if _, ok := returnValues[columnOid]; !ok {
-			returnValues[columnOids[i]] = make(map[string]snmpValue)
+			returnValues[columnOid] = make(map[string]snmpValue)
 		}
 		prefix := columnOid + "."
 		if strings.HasPrefix(oid, prefix) {

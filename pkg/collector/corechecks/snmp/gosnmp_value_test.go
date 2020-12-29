@@ -179,3 +179,146 @@ func Test_getValueFromPDU(t *testing.T) {
 		})
 	}
 }
+
+func Test_resultToColumnValues(t *testing.T) {
+	tests := []struct {
+		name                string
+		columnOids          []string
+		snmpPacket          *gosnmp.SnmpPacket
+		expectedValues      map[string]map[string]snmpValue
+		expectedNextOidsMap map[string]string
+	}{
+		{
+			"simple nominal case",
+			[]string{"1.3.6.1.2.1.2.2.1.14", "1.3.6.1.2.1.2.2.1.2", "1.3.6.1.2.1.2.2.1.20"},
+			&gosnmp.SnmpPacket{
+				Variables: []gosnmp.SnmpPDU{
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.1",
+						Type:  gosnmp.Integer,
+						Value: 141,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.2.1",
+						Type:  gosnmp.OctetString,
+						Value: []byte("desc1"),
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.20.1",
+						Type:  gosnmp.Integer,
+						Value: 201,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.2",
+						Type:  gosnmp.Integer,
+						Value: 142,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.2.2",
+						Type:  gosnmp.OctetString,
+						Value: []byte("desc2"),
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.20.2",
+						Type:  gosnmp.Integer,
+						Value: 202,
+					},
+				},
+			},
+			map[string]map[string]snmpValue{
+				"1.3.6.1.2.1.2.2.1.14": {
+					"1": snmpValue{
+						Other,
+						float64(141),
+					},
+					"2": snmpValue{
+						Other,
+						float64(142),
+					},
+				},
+				"1.3.6.1.2.1.2.2.1.2": {
+					"1": snmpValue{
+						Other,
+						"desc1",
+					},
+					"2": snmpValue{
+						Other,
+						"desc2",
+					},
+				},
+				"1.3.6.1.2.1.2.2.1.20": {
+					"1": snmpValue{
+						Other,
+						float64(201),
+					},
+					"2": snmpValue{
+						Other,
+						float64(202),
+					},
+				},
+			},
+			map[string]string{
+				"1.3.6.1.2.1.2.2.1.14": "1.3.6.1.2.1.2.2.1.14.2",
+				"1.3.6.1.2.1.2.2.1.2":  "1.3.6.1.2.1.2.2.1.2.2",
+				"1.3.6.1.2.1.2.2.1.20": "1.3.6.1.2.1.2.2.1.20.2",
+			},
+		},
+		{
+			"no such object error case",
+			[]string{"1.3.6.1.2.1.2.2.1.14", "1.3.6.1.2.1.2.2.1.2"},
+			&gosnmp.SnmpPacket{
+				Variables: []gosnmp.SnmpPDU{
+					{
+						Name: "1.3.6.1.2.1.2.2.1.14.1",
+						Type: gosnmp.NoSuchObject,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.2.1",
+						Type:  gosnmp.OctetString,
+						Value: []byte("desc1"),
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.2",
+						Type:  gosnmp.Integer,
+						Value: 142,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.2.2",
+						Type:  gosnmp.OctetString,
+						Value: []byte("desc2"),
+					},
+				},
+			},
+			map[string]map[string]snmpValue{
+				"1.3.6.1.2.1.2.2.1.14": {
+					// index 1 not fetched because of gosnmp.NoSuchObject error
+					"2": snmpValue{
+						Other,
+						float64(142),
+					},
+				},
+				"1.3.6.1.2.1.2.2.1.2": {
+					"1": snmpValue{
+						Other,
+						"desc1",
+					},
+					"2": snmpValue{
+						Other,
+						"desc2",
+					},
+				},
+			},
+			map[string]string{
+				"1.3.6.1.2.1.2.2.1.14": "1.3.6.1.2.1.2.2.1.14.2",
+				"1.3.6.1.2.1.2.2.1.2":  "1.3.6.1.2.1.2.2.1.2.2",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			values, nextOidsMap := resultToColumnValues(tt.columnOids, tt.snmpPacket)
+			assert.Equal(t, tt.expectedValues, values)
+			assert.Equal(t, tt.expectedNextOidsMap, nextOidsMap)
+		})
+	}
+}
