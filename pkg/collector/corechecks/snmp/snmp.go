@@ -50,8 +50,9 @@ func (c *Check) Run() error {
 	sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", tags, "")
 	defer c.session.Close() // TODO: handle error?
 
+	// If no OIDs, try to detect profile using device sysobjectid
 	if !c.config.OidConfig.hasOids() {
-		sysObjectID, err := c.fetchSysObjectID()
+		sysObjectID, err := fetchSysObjectID(c.session)
 		if err != nil {
 			return fmt.Errorf("failed to fetching sysobjectid: %s", err)
 		}
@@ -66,6 +67,7 @@ func (c *Check) Run() error {
 		tags = c.config.getInstanceTags()
 	}
 
+	// Fetch and report metrics
 	if c.config.OidConfig.hasOids() {
 		c.config.addUptimeMetric()
 
@@ -74,7 +76,6 @@ func (c *Check) Run() error {
 			return err
 		}
 
-		// Report metrics
 		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, snmpValues)...)
 		c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
 	}
@@ -106,13 +107,6 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	return &snmpValues{scalarResults, columnResults}, nil
 }
 
-func (c *Check) fetchSysObjectID() (string, error) {
-	result, err := c.session.Get([]string{"1.3.6.1.2.1.1.2.0"})
-	if err != nil {
-		return "", fmt.Errorf("cannot get sysobjectid: %s", err)
-	}
-	return result.Variables[0].Value.(string), nil
-}
 
 func (c *Check) getProfileForSysObjectID(sysObjectID string) (string, error) {
 	sysOidToProfile := map[string]string{}

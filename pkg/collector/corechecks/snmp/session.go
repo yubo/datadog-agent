@@ -91,3 +91,11 @@ func (s *snmpSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err err
 	}
 	return s.gosnmpInst.GetBulk(oids, 0, 10)
 }
+
+func fetchSysObjectID(session sessionAPI) (string, error) {
+	result, err := session.Get([]string{"1.3.6.1.2.1.1.2.0"})
+	if err != nil {
+		return "", fmt.Errorf("cannot get sysobjectid: %s", err)
+	}
+	return result.Variables[0].Value.(string), nil
+}
