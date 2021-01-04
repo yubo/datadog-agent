@@ -101,6 +101,15 @@ func (c *snmpConfig) addUptimeMetric() {
 	c.uptimeMetricAdded = true
 }
 
+func (c *snmpConfig) getGlobalTags() []string {
+	tags := []string{"snmp_device:" + c.IPAddress}
+	tags = append(tags, c.Tags...)
+
+	// TODO: Remove Telemetry
+	tags = append(tags, "loader:core")
+	return tags
+}
+
 func (oc *oidConfig) hasOids() bool {
 	return len(oc.columnOids) != 0 || len(oc.scalarOids) != 0
 }

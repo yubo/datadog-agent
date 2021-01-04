@@ -31,7 +31,7 @@ func (c *Check) Run() error {
 		return err
 	}
 
-	tags := c.getGlobalTags()
+	tags := c.config.getGlobalTags()
 
 	sender.MonotonicCount("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
 	start := time.Now()
@@ -63,7 +63,7 @@ func (c *Check) Run() error {
 		if err != nil {
 			return fmt.Errorf("failed to refresh with profile: %s", err)
 		}
-		tags = c.getGlobalTags()
+		tags = c.config.getGlobalTags()
 	}
 
 	if c.config.OidConfig.hasOids() {
@@ -86,15 +86,6 @@ func (c *Check) Run() error {
 	// Commit
 	sender.Commit()
 	return nil
-}
-
-func (c *Check) getGlobalTags() []string {
-	tags := []string{"snmp_device:" + c.config.IPAddress}
-	tags = append(tags, c.config.Tags...)
-
-	// TODO: Remove Telemetry
-	tags = append(tags, "loader:core")
-	return tags
 }
 
 func (c *Check) fetchValues(err error) (*snmpValues, error) {
