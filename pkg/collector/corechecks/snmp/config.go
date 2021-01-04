@@ -6,6 +6,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"gopkg.in/yaml.v2"
 	"path/filepath"
+	"strings"
 )
 
 var defaultOidBatchSize = 60
@@ -246,10 +247,12 @@ func parseColumnOids(metrics []metricsConfig) []string {
 	return oids
 }
 
-
 func getProfileForSysObjectID(profiles profileDefinitionMap, sysObjectID string) (string, error) {
 	sysOidToProfile := map[string]string{}
 	var matchedOids []string
+
+	// TODO: Test me
+	sysObjectID = strings.TrimLeft(sysObjectID, ".")
 
 	// TODO: Test me
 	for profile, definition := range profiles {
@@ -270,7 +273,7 @@ func getProfileForSysObjectID(profiles profileDefinitionMap, sysObjectID string)
 	}
 	oid, err := getMostSpecificOid(matchedOids)
 	if err != nil {
-		return "", fmt.Errorf("failed to get most specific oid, for matched oids %v: %s", matchedOids, err)
+		return "", fmt.Errorf("failed to get most specific profile for sysObjectID `%s`, for matched oids %v: %s", sysObjectID, matchedOids, err)
 	}
 	return sysOidToProfile[oid], nil
 }
