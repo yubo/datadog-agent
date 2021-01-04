@@ -8,6 +8,7 @@ import (
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"path/filepath"
 	"time"
 )
 
@@ -30,11 +31,8 @@ func (c *Check) Run() error {
 		return err
 	}
 
-	tags := []string{"snmp_device:" + c.config.IPAddress}
-	tags = append(tags, c.config.Tags...)
+	tags := c.getGlobalTags()
 
-	// TODO: Remove Telemetry
-	tags = append(tags, "loader:core")
 	sender.MonotonicCount("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
 	start := time.Now()
 
@@ -45,19 +43,41 @@ func (c *Check) Run() error {
 	if err != nil {
 		// TODO: Test connection error
 		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", tags, err.Error())
-		return fmt.Errorf("snmp connection error: %v", err)
+		return fmt.Errorf("snmp connection error: %s", err)
 	}
+	// TODO: Handle service check tags like
+	//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L401-L449
 	sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", tags, "")
 	defer c.session.Close() // TODO: handle error?
 
-	snmpValues, err := c.fetchValues(err)
-	if err != nil {
-		return err
+	if !c.config.OidConfig.hasOids() {
+		sysObjectID, err := c.fetchSysObjectID()
+		if err != nil {
+			return fmt.Errorf("failed to fetching sysobjectid: %s", err)
+		}
+		profile, err := c.getProfileForSysObjectID(sysObjectID)
+		if err != nil {
+			return fmt.Errorf("failed to get profile sys object id for `%s`: %s", sysObjectID, err)
+		}
+		err = c.config.refreshWithProfile(profile)
+		if err != nil {
+			return fmt.Errorf("failed to refresh with profile: %s", err)
+		}
+		tags = c.getGlobalTags()
 	}
 
-	// Report metrics
-	tags = append(tags, c.sender.getGlobalTags(c.config.MetricTags, snmpValues)...)
-	c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
+	if c.config.OidConfig.hasOids() {
+		c.config.addUptimeMetric()
+
+		snmpValues, err := c.fetchValues(err)
+		if err != nil {
+			return err
+		}
+
+		// Report metrics
+		tags = append(tags, c.sender.getGlobalTags(c.config.MetricTags, snmpValues)...)
+		c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
+	}
 
 	// TODO: Remove Telemetry
 	sender.Gauge("snmp.check_duration", float64(time.Since(start))/1e9, "", tags)
@@ -66,6 +86,15 @@ func (c *Check) Run() error {
 	// Commit
 	sender.Commit()
 	return nil
+}
+
+func (c *Check) getGlobalTags() []string {
+	tags := []string{"snmp_device:" + c.config.IPAddress}
+	tags = append(tags, c.config.Tags...)
+
+	// TODO: Remove Telemetry
+	tags = append(tags, "loader:core")
+	return tags
 }
 
 func (c *Check) fetchValues(err error) (*snmpValues, error) {
@@ -84,6 +113,42 @@ func (c *Check) fetchValues(err error) (*snmpValues, error) {
 	}
 
 	return &snmpValues{scalarResults, columnResults}, nil
+}
+
+func (c *Check) fetchSysObjectID() (string, error) {
+	result, err := c.session.Get([]string{"1.3.6.1.2.1.1.2.0"})
+	if err != nil {
+		return "", fmt.Errorf("cannot get sysobjectid: %s", err)
+	}
+	return result.Variables[0].Value.(string), nil
+}
+
+func (c *Check) getProfileForSysObjectID(sysObjectID string) (string, error) {
+	sysOidToProfile := map[string]string{}
+	var matchedOids []string
+
+	// TODO: Test me
+	for profile, definition := range c.config.Profiles {
+		// TODO: Check for duplicate profile sysobjectid
+		//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L142-L144
+		for _, oidPattern := range definition.SysObjectIds {
+
+			found, err := filepath.Match(oidPattern, sysObjectID)
+			if err != nil {
+				log.Debugf("pattern error: %s", err)
+				continue
+			}
+			if found {
+				sysOidToProfile[oidPattern] = profile
+				matchedOids = append(matchedOids, oidPattern)
+			}
+		}
+	}
+	oid, err := getMostSpecificOid(matchedOids)
+	if err != nil {
+		return "", fmt.Errorf("failed to get most specific oid, for matched oids %v: %s", matchedOids, err)
+	}
+	return sysOidToProfile[oid], nil
 }
 
 // Configure configures the snmp checks

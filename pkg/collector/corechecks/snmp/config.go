@@ -43,33 +43,42 @@ type snmpInstanceConfig struct {
 	//   - context_engine_id: Investigate if we can remove this configuration.
 }
 
+// TODO: Move to config_oid.go file
 type oidConfig struct {
 	scalarOids []string
 	columnOids []string
 }
 
 type snmpConfig struct {
-	IPAddress       string
-	Port            uint16
-	CommunityString string
-	SnmpVersion     string
-	Timeout         int
-	Retries         int
-	User            string
-	AuthProtocol    string
-	AuthKey         string
-	PrivProtocol    string
-	PrivKey         string
-	ContextName     string
-	OidConfig       oidConfig
-	Metrics         []metricsConfig
-	MetricTags      []metricTagConfig
-	OidBatchSize    int
-	Profiles        profileDefinitionMap
-	Tags            []string
+	IPAddress         string
+	Port              uint16
+	CommunityString   string
+	SnmpVersion       string
+	Timeout           int
+	Retries           int
+	User              string
+	AuthProtocol      string
+	AuthKey           string
+	PrivProtocol      string
+	PrivKey           string
+	ContextName       string
+	OidConfig         oidConfig
+	Metrics           []metricsConfig
+	MetricTags        []metricTagConfig
+	OidBatchSize      int
+	Profiles          profileDefinitionMap
+	Tags              []string
+	uptimeMetricAdded bool
 }
 
-func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
+func (c *snmpConfig) refreshWithProfile(profile string) error {
+	if _, ok := c.Profiles[profile]; !ok {
+		return fmt.Errorf("unknown profile '%s'", profile)
+	}
+	log.Debugf("Refreshing with profile `%s` with content: %#v", profile, c.Profiles[profile])
+	c.Tags = append(c.Tags, "snmp_profile:"+profile)
+	definition := c.Profiles[profile]
+
 	// https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py#L181-L200
 	c.Metrics = append(c.Metrics, definition.Metrics...)
 	c.MetricTags = append(c.MetricTags, definition.MetricTags...)
@@ -79,6 +88,21 @@ func (c *snmpConfig) refreshWithProfile(definition profileDefinition) {
 	if definition.Device.Vendor != "" {
 		c.Tags = append(c.Tags, "device_vendor:"+definition.Device.Vendor)
 	}
+	return nil
+}
+
+func (c *snmpConfig) addUptimeMetric() {
+	if c.uptimeMetricAdded {
+		return
+	}
+	metricConfig := getUptimeMetricConfig()
+	c.Metrics = append(c.Metrics, metricConfig)
+	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, metricConfig.Symbol.OID)
+	c.uptimeMetricAdded = true
+}
+
+func (oc *oidConfig) hasOids() bool {
+	return len(oc.columnOids) != 0 || len(oc.scalarOids) != 0
 }
 
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
@@ -138,7 +162,6 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.OidBatchSize = defaultOidBatchSize
 
 	// Metrics Configs
-	c.Metrics = append(c.Metrics, getUptimeMetricConfig())
 	if instance.UseGlobalMetrics {
 		c.Metrics = append(c.Metrics, initConfig.GlobalMetrics...)
 	}
@@ -157,18 +180,17 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	}
 	profiles, err := loadProfiles(pConfig)
 	if err != nil {
-		return snmpConfig{}, err
+		return snmpConfig{}, fmt.Errorf("failed to load profiles: %s", err)
 	}
 	c.Profiles = profiles
 	profile := instance.Profile
 
 	if profile != "" {
-		if _, ok := c.Profiles[profile]; !ok {
-			return snmpConfig{}, fmt.Errorf("unknown profile '%s'", profile)
+		err = c.refreshWithProfile(profile)
+		if err != nil {
+			// TODO: test me
+			return snmpConfig{}, fmt.Errorf("failed to refresh with profile: %s", err)
 		}
-		c.Tags = append(c.Tags, "snmp_profile:"+profile)
-		log.Debugf("Profile: %#v", c.Profiles[profile])
-		c.refreshWithProfile(c.Profiles[profile])
 	}
 
 	// TODO: Add missing error handling by looking at

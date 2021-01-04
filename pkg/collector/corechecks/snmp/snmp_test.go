@@ -301,6 +301,152 @@ profiles:
 	packet := gosnmp.SnmpPacket{
 		Variables: []gosnmp.SnmpPDU{
 			{
+				Name:  "1.3.6.1.2.1.1.5.0",
+				Type:  gosnmp.OctetString,
+				Value: []byte("foo_sys_name"),
+			},
+			{
+				Name:  "1.3.6.1.4.1.3375.2.1.1.2.1.44.0",
+				Type:  gosnmp.Integer,
+				Value: 30,
+			},
+			{
+				Name:  "1.3.6.1.2.1.1.3.0",
+				Type:  gosnmp.TimeTicks,
+				Value: 20,
+			},
+		},
+	}
+
+	bulkPacket := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.13.1",
+				Type:  gosnmp.Integer,
+				Value: 131,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.14.1",
+				Type:  gosnmp.Integer,
+				Value: 141,
+			},
+			{
+				Name:  "1.3.6.1.2.1.31.1.1.1.1.1",
+				Type:  gosnmp.OctetString,
+				Value: []byte("nameRow1"),
+			},
+			{
+				Name:  "1.3.6.1.2.1.31.1.1.1.18.1",
+				Type:  gosnmp.OctetString,
+				Value: []byte("descRow1"),
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.13.2",
+				Type:  gosnmp.Integer,
+				Value: 132,
+			},
+			{
+				Name:  "1.3.6.1.2.1.2.2.1.14.2",
+				Type:  gosnmp.Integer,
+				Value: 142,
+			},
+			{
+				Name:  "1.3.6.1.2.1.31.1.1.1.1.2",
+				Type:  gosnmp.OctetString,
+				Value: []byte("nameRow2"),
+			},
+			{
+				Name:  "1.3.6.1.2.1.31.1.1.1.18.2",
+				Type:  gosnmp.OctetString,
+				Value: []byte("descRow2"),
+			},
+			{
+				Name:  "9", // exit table
+				Type:  gosnmp.Integer,
+				Value: 999,
+			},
+			{
+				Name:  "9", // exit table
+				Type:  gosnmp.Integer,
+				Value: 999,
+			},
+			{
+				Name:  "9", // exit table
+				Type:  gosnmp.Integer,
+				Value: 999,
+			},
+			{
+				Name:  "9", // exit table
+				Type:  gosnmp.Integer,
+				Value: 999,
+			},
+		},
+	}
+
+	session.On("Get", []string{"1.3.6.1.4.1.3375.2.1.1.2.1.44.0", "1.2.3.4.5", "1.3.6.1.2.1.1.5.0", "1.3.6.1.2.1.1.3.0"}).Return(&packet, nil)
+	session.On("GetBulk", []string{"1.3.6.1.2.1.2.2.1.13", "1.3.6.1.2.1.2.2.1.14", "1.3.6.1.2.1.31.1.1.1.1", "1.3.6.1.2.1.31.1.1.1.18"}).Return(&bulkPacket, nil)
+
+	err = check.Run()
+	assert.Nil(t, err)
+
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
+
+	var row1Tags, row2Tags []string
+	row1Tags = append(row1Tags, snmpTags...)
+	row1Tags = append(row1Tags, "interface:nameRow1", "interface_alias:descRow1")
+	row2Tags = append(row2Tags, snmpTags...)
+	row2Tags = append(row2Tags, "interface:nameRow2", "interface_alias:descRow2")
+
+	sort.Strings(snmpTags)
+	sort.Strings(row1Tags)
+	sort.Strings(row2Tags)
+
+	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
+	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
+	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(141), "", row1Tags)
+	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(142), "", row2Tags)
+	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
+	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
+	sender.AssertCalled(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
+}
+
+func TestProfileWithSysObjectIdDetection(t *testing.T) {
+	setConfdPath()
+	session := &mockSession{}
+	check := Check{session: session}
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+`)
+	// language=yaml
+	rawInitConfig := []byte(`
+profiles:
+  f5-big-ip:
+    definition_file: f5-big-ip.yaml
+`)
+
+	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
+	assert.Nil(t, err)
+
+	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
+	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("ServiceCheck", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("Commit").Return()
+
+	sysObjectIDPacket := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.1.2.0",
+				Type:  gosnmp.ObjectIdentifier,
+				Value: "1.3.6.1.4.1.3375.2.1.3.4.1",
+			},
+		},
+	}
+
+	packet := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
 				Name:  "1.3.6.1.2.1.1.3.0",
 				Type:  gosnmp.TimeTicks,
 				Value: 20,
@@ -383,7 +529,8 @@ profiles:
 		},
 	}
 
-	session.On("Get", []string{"1.3.6.1.2.1.1.3.0", "1.3.6.1.4.1.3375.2.1.1.2.1.44.0", "1.2.3.4.5", "1.3.6.1.2.1.1.5.0"}).Return(&packet, nil)
+	session.On("Get", []string{"1.3.6.1.2.1.1.2.0"}).Return(&sysObjectIDPacket, nil)
+	session.On("Get", []string{"1.3.6.1.4.1.3375.2.1.1.2.1.44.0", "1.2.3.4.5", "1.3.6.1.2.1.1.5.0", "1.3.6.1.2.1.1.3.0"}).Return(&packet, nil)
 	session.On("GetBulk", []string{"1.3.6.1.2.1.2.2.1.13", "1.3.6.1.2.1.2.2.1.14", "1.3.6.1.2.1.31.1.1.1.1", "1.3.6.1.2.1.31.1.1.1.18"}).Return(&bulkPacket, nil)
 
 	err = check.Run()

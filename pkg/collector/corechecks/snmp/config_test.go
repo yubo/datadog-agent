@@ -90,7 +90,6 @@ global_metrics:
 				{Tag: "if_desc", Column: symbolConfig{OID: "1.3.6.1.2.1.2.2.1.2", Name: "ifDescr"}},
 			},
 		},
-		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
 		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},
 	}
 	metrics = append(metrics, mockProfilesDefinitions()["f5-big-ip"].Metrics...)
@@ -122,9 +121,7 @@ ip_address: 1.2.3.4
 	assert.Equal(t, uint16(161), check.config.Port)
 	assert.Equal(t, 2, check.config.Timeout)
 	assert.Equal(t, 3, check.config.Retries)
-	metrics := []metricsConfig{
-		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
-	}
+	var metrics []metricsConfig
 
 	var metricsTags []metricTagConfig
 
@@ -181,7 +178,6 @@ global_metrics:
 
 	metrics := []metricsConfig{
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
-		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
 		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},
 	}
 	assert.Equal(t, metrics, check.config.Metrics)
@@ -212,7 +208,50 @@ global_metrics:
 
 	metrics := []metricsConfig{
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "aInstanceMetric"}},
-		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.1.3.0", Name: "sysUpTimeInstance"}},
 	}
 	assert.Equal(t, metrics, check.config.Metrics)
+}
+
+func Test_oidConfig_hasOids(t *testing.T) {
+	tests := []struct {
+		name            string
+		scalarOids      []string
+		columnOids      []string
+		expectedHasOids bool
+	}{
+		{
+			"has scalar oids",
+			[]string{"1.2.3"},
+			[]string{},
+			true,
+		},
+		{
+			"has scalar and column oids",
+			[]string{"1.2.3"},
+			[]string{"1.2.4"},
+			true,
+		},
+		{
+			"has no oids",
+			[]string{},
+			[]string{},
+			false,
+		},
+		{
+			"has no oids nil",
+			nil,
+			nil,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oc := &oidConfig{
+				scalarOids: tt.scalarOids,
+				columnOids: tt.columnOids,
+			}
+			hasOids := oc.hasOids()
+			assert.Equal(t, tt.expectedHasOids, hasOids)
+		})
+	}
 }
