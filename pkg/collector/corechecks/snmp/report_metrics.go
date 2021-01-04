@@ -70,19 +70,19 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []st
 
 	sort.Strings(tags)
 
-	// TODO: test all cases
 	if forcedType != "" {
 		switch forcedType {
 		case "gauge":
 			ms.sender.Gauge(metricFullName, floatValue, "", tags)
 		case "counter":
 			ms.sender.Rate(metricFullName, floatValue, "", tags)
+		case "percent":
+			ms.sender.Rate(metricFullName, floatValue*100, "", tags)
 		case "monotonic_count":
 			ms.sender.MonotonicCount(metricFullName, floatValue, "", tags)
 		case "monotonic_count_and_rate":
 			ms.sender.MonotonicCount(metricFullName, floatValue, "", tags)
 			ms.sender.Rate(metricFullName+".rate", floatValue, "", tags)
-		//case "percent": // TODO: Implement me
 		default:
 			log.Warnf("Unsupported forcedType: %s", forcedType)
 		}

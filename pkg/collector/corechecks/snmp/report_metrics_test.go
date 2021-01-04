@@ -95,6 +95,17 @@ func TestSendMetric(t *testing.T) {
 			float64(10),
 			[]string{},
 		},
+		{
+			"Forced percent metric case: Rate called",
+			"rate.metric",
+			snmpValue{valType: Other, val: 0.5},
+			[]string{},
+			"percent",
+			"Rate",
+			"snmp.rate.metric",
+			50.0,
+			[]string{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.caseName, func(t *testing.T) {
