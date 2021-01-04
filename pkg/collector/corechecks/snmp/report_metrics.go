@@ -43,7 +43,7 @@ func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *snmpVa
 		log.Warnf("error getting scalar val: %v", err)
 		return
 	}
-	ms.sendMetric(metric.Symbol.Name, value, tags, metric.ForcedType)
+	ms.sendMetric(metric.Symbol.Name, value, tags, metric.ForcedType, metric.Options)
 }
 
 func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
@@ -57,41 +57,47 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 			var rowTags []string
 			rowTags = append(rowTags, tags...)
 			rowTags = append(rowTags, metricConfig.getTags(fullIndex, values)...)
-			ms.sendMetric(symbol.Name, value, rowTags, metricConfig.ForcedType)
+			ms.sendMetric(symbol.Name, value, rowTags, metricConfig.ForcedType, metricConfig.Options)
 		}
 	}
 }
 
-func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []string, forcedType string) {
+func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []string, forcedType string, options metricsConfigOption) {
 	// TODO: Submit using the right type
 	//   See https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L34-L48
 	metricFullName := "snmp." + metricName
-	floatValue := value.toFloat64()
 
 	sort.Strings(tags)
 
 	if forcedType != "" {
 		switch forcedType {
 		case "gauge":
-			ms.sender.Gauge(metricFullName, floatValue, "", tags)
+			ms.sender.Gauge(metricFullName, value.toFloat64(), "", tags)
 		case "counter":
-			ms.sender.Rate(metricFullName, floatValue, "", tags)
+			ms.sender.Rate(metricFullName, value.toFloat64(), "", tags)
 		case "percent":
-			ms.sender.Rate(metricFullName, floatValue*100, "", tags)
+			ms.sender.Rate(metricFullName, value.toFloat64()*100, "", tags)
 		case "monotonic_count":
-			ms.sender.MonotonicCount(metricFullName, floatValue, "", tags)
+			ms.sender.MonotonicCount(metricFullName, value.toFloat64(), "", tags)
 		case "monotonic_count_and_rate":
-			ms.sender.MonotonicCount(metricFullName, floatValue, "", tags)
-			ms.sender.Rate(metricFullName+".rate", floatValue, "", tags)
+			ms.sender.MonotonicCount(metricFullName, value.toFloat64(), "", tags)
+			ms.sender.Rate(metricFullName+".rate", value.toFloat64(), "", tags)
+		case "flag_stream":
+			index := options.Placement - 1
+			floatValue := 0.0
+			if value.toString()[index] == '1' {
+				floatValue = 1.0
+			}
+			ms.sender.Gauge(metricFullName+"."+options.MetricSuffix, floatValue, "", tags)
 		default:
 			log.Warnf("Unsupported forcedType: %s", forcedType)
 		}
 	} else {
 		switch value.valType {
 		case Counter:
-			ms.sender.Rate(metricFullName, floatValue, "", tags)
+			ms.sender.Rate(metricFullName, value.toFloat64(), "", tags)
 		default:
-			ms.sender.Gauge(metricFullName, floatValue, "", tags)
+			ms.sender.Gauge(metricFullName, value.toFloat64(), "", tags)
 		}
 	}
 

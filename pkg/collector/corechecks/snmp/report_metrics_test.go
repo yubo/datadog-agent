@@ -13,6 +13,7 @@ func TestSendMetric(t *testing.T) {
 		value              snmpValue
 		tags               []string
 		forcedType         string
+		options            metricsConfigOption
 		expectedMethod     string
 		expectedMetricName string
 		expectedValue      float64
@@ -24,6 +25,7 @@ func TestSendMetric(t *testing.T) {
 			snmpValue{valType: Other, val: float64(10)},
 			[]string{},
 			"",
+			metricsConfigOption{},
 			"Gauge",
 			"snmp.gauge.metric",
 			float64(10),
@@ -35,6 +37,7 @@ func TestSendMetric(t *testing.T) {
 			snmpValue{valType: Counter, val: float64(10)},
 			[]string{},
 			"",
+			metricsConfigOption{},
 			"Rate",
 			"snmp.counter.metric",
 			float64(10),
@@ -46,6 +49,7 @@ func TestSendMetric(t *testing.T) {
 			snmpValue{valType: Counter, val: float64(10)},
 			[]string{},
 			"gauge",
+			metricsConfigOption{},
 			"Gauge",
 			"snmp.my.metric",
 			float64(10),
@@ -57,6 +61,7 @@ func TestSendMetric(t *testing.T) {
 			snmpValue{valType: Counter, val: float64(10)},
 			[]string{},
 			"counter",
+			metricsConfigOption{},
 			"Rate",
 			"snmp.my.metric",
 			float64(10),
@@ -68,6 +73,7 @@ func TestSendMetric(t *testing.T) {
 			snmpValue{valType: Counter, val: float64(10)},
 			[]string{},
 			"monotonic_count",
+			metricsConfigOption{},
 			"MonotonicCount",
 			"snmp.my.metric",
 			float64(10),
@@ -79,6 +85,7 @@ func TestSendMetric(t *testing.T) {
 			snmpValue{valType: Counter, val: float64(10)},
 			[]string{},
 			"monotonic_count_and_rate",
+			metricsConfigOption{},
 			"MonotonicCount",
 			"snmp.my.metric",
 			float64(10),
@@ -90,6 +97,7 @@ func TestSendMetric(t *testing.T) {
 			snmpValue{valType: Counter, val: float64(10)},
 			[]string{},
 			"monotonic_count_and_rate",
+			metricsConfigOption{},
 			"Rate",
 			"snmp.my.metric.rate",
 			float64(10),
@@ -101,9 +109,34 @@ func TestSendMetric(t *testing.T) {
 			snmpValue{valType: Other, val: 0.5},
 			[]string{},
 			"percent",
+			metricsConfigOption{},
 			"Rate",
 			"snmp.rate.metric",
 			50.0,
+			[]string{},
+		},
+		{
+			"Forced flag_stream case 1",
+			"metric",
+			snmpValue{valType: Other, val: "1010"},
+			[]string{},
+			"flag_stream",
+			metricsConfigOption{Placement: 1, MetricSuffix: "foo"},
+			"Gauge",
+			"snmp.metric.foo",
+			1.0,
+			[]string{},
+		},
+		{
+			"Forced flag_stream case 2",
+			"metric",
+			snmpValue{valType: Other, val: "1010"},
+			[]string{},
+			"flag_stream",
+			metricsConfigOption{Placement: 2, MetricSuffix: "foo"},
+			"Gauge",
+			"snmp.metric.foo",
+			0.0,
 			[]string{},
 		},
 	}
@@ -115,7 +148,7 @@ func TestSendMetric(t *testing.T) {
 			mockSender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 			mockSender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 
-			metricSender.sendMetric(tt.metricName, tt.value, tt.tags, tt.forcedType)
+			metricSender.sendMetric(tt.metricName, tt.value, tt.tags, tt.forcedType, tt.options)
 			mockSender.AssertCalled(t, tt.expectedMethod, tt.expectedMetricName, tt.expectedValue, "", tt.expectedTags)
 		})
 	}
