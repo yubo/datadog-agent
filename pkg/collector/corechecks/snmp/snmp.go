@@ -75,7 +75,7 @@ func (c *Check) Run() error {
 		}
 
 		// Report metrics
-		tags = append(tags, c.sender.getGlobalTags(c.config.MetricTags, snmpValues)...)
+		tags = append(tags, c.sender.getGlobalMetricTags(c.config.MetricTags, snmpValues)...)
 		c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
 	}
 

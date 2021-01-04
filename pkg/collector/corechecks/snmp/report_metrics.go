@@ -23,7 +23,7 @@ func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metr
 	}
 }
 
-func (ms *metricSender) getGlobalTags(metricTags []metricTagConfig, values *snmpValues) []string {
+func (ms *metricSender) getGlobalMetricTags(metricTags []metricTagConfig, values *snmpValues) []string {
 	var globalTags []string
 
 	for _, metricTag := range metricTags {
