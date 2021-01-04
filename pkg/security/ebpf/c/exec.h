@@ -93,6 +93,13 @@ int __attribute__((always_inline)) handle_exec_event(struct pt_regs *ctx, struct
     };
     bpf_get_current_comm(&entry.comm, sizeof(entry.comm));
 
+    // cache dentry
+    resolve_dentry(syscall->open.dentry, syscall->open.path_key, 0);
+
+    u32 cookie = bpf_get_prandom_u32();
+    // insert new proc cache entry
+    bpf_map_update_elem(&proc_cache, &cookie, &entry, BPF_ANY);
+
     // select the previous cookie entry in cache of the current process
     // (this entry was created by the fork of the current process)
     struct pid_cache_t *fork_entry = (struct pid_cache_t *) bpf_map_lookup_elem(&pid_cache, &tgid);
@@ -104,17 +111,7 @@ int __attribute__((always_inline)) handle_exec_event(struct pt_regs *ctx, struct
             // inherit the parent container context
             fill_container_context(parent_entry, &entry.container);
         }
-    }
-
-    // cache dentry
-    resolve_dentry(syscall->open.dentry, syscall->open.path_key, 0);
-
-    // insert new proc cache entry
-    u32 cookie = bpf_get_prandom_u32();
-    bpf_map_update_elem(&proc_cache, &cookie, &entry, BPF_ANY);
-
-    // update pid <-> cookie mapping
-    if (fork_entry) {
+        // update pid <-> cookie mapping
         fork_entry->cookie = cookie;
     } else {
         struct pid_cache_t new_pid_entry = {
@@ -128,8 +125,63 @@ int __attribute__((always_inline)) handle_exec_event(struct pt_regs *ctx, struct
     return 0;
 }
 
+#define DO_FORK_STRUCT_INPUT 1
+
+int __attribute__((always_inline)) handle_do_fork(struct pt_regs *ctx) {
+    u64 input;
+    LOAD_CONSTANT("do_fork_input", input);
+
+    if (input == DO_FORK_STRUCT_INPUT) {
+        void *args = (void *)PT_REGS_PARM1(ctx);
+        int exit_signal;
+        bpf_probe_read(&exit_signal, sizeof(int), (void *)args + 32);
+
+        // Only insert an entry if this is a thread
+        if (exit_signal == SIGCHLD) {
+            return 0;
+        }
+    } else {
+        u64 flags = (u64)PT_REGS_PARM1(ctx);
+
+        if ((flags & SIGCHLD) == SIGCHLD) {
+            return 0;
+        }
+    }
+
+    struct syscall_cache_t syscall = {
+        .type = SYSCALL_FORK,
+        .clone = {
+            .is_thread = 1,
+        }
+    };
+    cache_syscall(&syscall, EVENT_FORK);
+
+    return 0;
+}
+
+SEC("kprobe/kernel_clone")
+int kprobe_kernel_clone(struct pt_regs *ctx) {
+    return handle_do_fork(ctx);
+}
+
+SEC("kprobe/do_fork")
+int krpobe_do_fork(struct pt_regs *ctx) {
+    return handle_do_fork(ctx);
+}
+
+SEC("kprobe/_do_fork")
+int kprobe__do_fork(struct pt_regs *ctx) {
+    return handle_do_fork(ctx);
+}
+
 SEC("tracepoint/sched/sched_process_fork")
 int sched_process_fork(struct _tracepoint_sched_process_fork *args) {
+    // check if this is a thread first
+    struct syscall_cache_t *syscall = pop_syscall(SYSCALL_FORK);
+    if (syscall) {
+        return 0;
+    }
+
     u32 pid = 0;
     u32 ppid = 0;
     bpf_probe_read(&pid, sizeof(pid), &args->child_pid);
@@ -204,12 +256,14 @@ int kprobe_do_exit(struct pt_regs *ctx) {
         // send the entry to maintain userspace cache
         struct exit_event_t event = {
             .event.type = EVENT_EXIT,
+            .event.timestamp = bpf_ktime_get_ns(),
         };
         struct proc_cache_t *cache_entry = fill_process_context(&event.process);
         fill_container_context(cache_entry, &event.container);
 
         send_process_events(ctx, event);
     }
+
     return 0;
 }
 
