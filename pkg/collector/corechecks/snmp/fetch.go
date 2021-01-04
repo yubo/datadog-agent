@@ -6,6 +6,24 @@ import (
 	"sort"
 )
 
+func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
+	scalarResults, err := fetchScalarOidsByBatch(session, config.OidConfig.scalarOids, config.OidBatchSize)
+	if err != nil {
+		return &snmpValues{}, fmt.Errorf("SNMPGET error: %v", err)
+	}
+
+	oids := make(map[string]string)
+	for _, value := range config.OidConfig.columnOids {
+		oids[value] = value
+	}
+	columnResults, err := fetchColumnOids(session, oids, config.OidBatchSize)
+	if err != nil {
+		return &snmpValues{}, fmt.Errorf("SNMPBULK error: %v", err)
+	}
+
+	return &snmpValues{scalarResults, columnResults}, nil
+}
+
 func fetchScalarOidsOne(session sessionAPI, oids []string) (map[string]snmpValue, error) {
 	// Get results
 	log.Debugf("fetchScalarOidsByBatch() oids: %v", oids)

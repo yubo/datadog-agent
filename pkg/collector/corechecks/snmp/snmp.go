@@ -71,7 +71,7 @@ func (c *Check) Run() error {
 	if c.config.OidConfig.hasOids() {
 		c.config.addUptimeMetric()
 
-		snmpValues, err := c.fetchValues(err)
+		snmpValues, err := fetchValues(c.session, c.config)
 		if err != nil {
 			return err
 		}
@@ -88,25 +88,6 @@ func (c *Check) Run() error {
 	sender.Commit()
 	return nil
 }
-
-func (c *Check) fetchValues(err error) (*snmpValues, error) {
-	scalarResults, err := fetchScalarOidsByBatch(c.session, c.config.OidConfig.scalarOids, c.config.OidBatchSize)
-	if err != nil {
-		return &snmpValues{}, fmt.Errorf("SNMPGET error: %v", err)
-	}
-
-	oids := make(map[string]string)
-	for _, value := range c.config.OidConfig.columnOids {
-		oids[value] = value
-	}
-	columnResults, err := fetchColumnOids(c.session, oids, c.config.OidBatchSize)
-	if err != nil {
-		return &snmpValues{}, fmt.Errorf("SNMPBULK error: %v", err)
-	}
-
-	return &snmpValues{scalarResults, columnResults}, nil
-}
-
 
 func (c *Check) getProfileForSysObjectID(sysObjectID string) (string, error) {
 	sysOidToProfile := map[string]string{}
