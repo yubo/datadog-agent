@@ -171,6 +171,9 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		c.refreshWithProfile(c.Profiles[profile])
 	}
 
+	// TODO: Add missing error handling by looking at
+	//   https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py
+
 	return c, err
 }
 
