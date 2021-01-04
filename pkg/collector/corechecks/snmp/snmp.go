@@ -31,7 +31,7 @@ func (c *Check) Run() error {
 		return err
 	}
 
-	tags := c.config.getGlobalTags()
+	tags := c.config.getInstanceTags()
 
 	sender.MonotonicCount("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
 	start := time.Now()
@@ -63,7 +63,7 @@ func (c *Check) Run() error {
 		if err != nil {
 			return fmt.Errorf("failed to refresh with profile: %s", err)
 		}
-		tags = c.config.getGlobalTags()
+		tags = c.config.getInstanceTags()
 	}
 
 	if c.config.OidConfig.hasOids() {
@@ -75,7 +75,7 @@ func (c *Check) Run() error {
 		}
 
 		// Report metrics
-		tags = append(tags, c.sender.getGlobalMetricTags(c.config.MetricTags, snmpValues)...)
+		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, snmpValues)...)
 		c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
 	}
 

@@ -101,7 +101,7 @@ func (c *snmpConfig) addUptimeMetric() {
 	c.uptimeMetricAdded = true
 }
 
-func (c *snmpConfig) getGlobalTags() []string {
+func (c *snmpConfig) getInstanceTags() []string {
 	tags := []string{"snmp_device:" + c.IPAddress}
 	tags = append(tags, c.Tags...)
 
