@@ -5,6 +5,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"gopkg.in/yaml.v2"
+	"path/filepath"
 )
 
 var defaultOidBatchSize = 60
@@ -243,4 +244,33 @@ func parseColumnOids(metrics []metricsConfig) []string {
 		}
 	}
 	return oids
+}
+
+
+func getProfileForSysObjectID(profiles profileDefinitionMap, sysObjectID string) (string, error) {
+	sysOidToProfile := map[string]string{}
+	var matchedOids []string
+
+	// TODO: Test me
+	for profile, definition := range profiles {
+		// TODO: Check for duplicate profile sysobjectid
+		//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L142-L144
+		for _, oidPattern := range definition.SysObjectIds {
+
+			found, err := filepath.Match(oidPattern, sysObjectID)
+			if err != nil {
+				log.Debugf("pattern error: %s", err)
+				continue
+			}
+			if found {
+				sysOidToProfile[oidPattern] = profile
+				matchedOids = append(matchedOids, oidPattern)
+			}
+		}
+	}
+	oid, err := getMostSpecificOid(matchedOids)
+	if err != nil {
+		return "", fmt.Errorf("failed to get most specific oid, for matched oids %v: %s", matchedOids, err)
+	}
+	return sysOidToProfile[oid], nil
 }

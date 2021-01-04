@@ -8,7 +8,6 @@ import (
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"path/filepath"
 	"time"
 )
 
@@ -56,7 +55,7 @@ func (c *Check) Run() error {
 		if err != nil {
 			return fmt.Errorf("failed to fetching sysobjectid: %s", err)
 		}
-		profile, err := c.getProfileForSysObjectID(sysObjectID)
+		profile, err := getProfileForSysObjectID(c.config.Profiles, sysObjectID)
 		if err != nil {
 			return fmt.Errorf("failed to get profile sys object id for `%s`: %s", sysObjectID, err)
 		}
@@ -87,34 +86,6 @@ func (c *Check) Run() error {
 	// Commit
 	sender.Commit()
 	return nil
-}
-
-func (c *Check) getProfileForSysObjectID(sysObjectID string) (string, error) {
-	sysOidToProfile := map[string]string{}
-	var matchedOids []string
-
-	// TODO: Test me
-	for profile, definition := range c.config.Profiles {
-		// TODO: Check for duplicate profile sysobjectid
-		//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L142-L144
-		for _, oidPattern := range definition.SysObjectIds {
-
-			found, err := filepath.Match(oidPattern, sysObjectID)
-			if err != nil {
-				log.Debugf("pattern error: %s", err)
-				continue
-			}
-			if found {
-				sysOidToProfile[oidPattern] = profile
-				matchedOids = append(matchedOids, oidPattern)
-			}
-		}
-	}
-	oid, err := getMostSpecificOid(matchedOids)
-	if err != nil {
-		return "", fmt.Errorf("failed to get most specific oid, for matched oids %v: %s", matchedOids, err)
-	}
-	return sysOidToProfile[oid], nil
 }
 
 // Configure configures the snmp checks
