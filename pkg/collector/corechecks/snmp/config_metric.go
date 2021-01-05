@@ -55,6 +55,8 @@ type metricTagConfig struct {
 	// Symbol config
 	OID  string `yaml:"OID"`
 	Name string `yaml:"symbol"`
+
+	IndexTransform []metricIndexTransform `yaml:"index_transform"`
 }
 
 type metricIndexTransform struct {
@@ -80,18 +82,19 @@ type metricsConfig struct {
 	ForcedType string              `yaml:"forced_type"`
 	Options    metricsConfigOption `yaml:"options"`
 
-	IndexTransform []metricIndexTransform `yaml:"index_transform"`
-
 	// TODO: Validate Symbol and Table are not both used
 }
 
+// getTags retrieve tags using the metric config and values
 func (m *metricsConfig) getTags(fullIndex string, values *snmpValues) []string {
 	var rowTags []string
 	indexes := strings.Split(fullIndex, ".")
 	for _, metricTag := range m.MetricTags {
+		// get tag using `index` field
 		if (metricTag.Index > 0) && (metricTag.Index <= uint(len(indexes))) {
 			rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
 		}
+		// get tag using another column value
 		if metricTag.Column.OID != "" {
 			//tagValueOid := metricTag.Column.OID + "." + fullIndex
 			stringValues, err := values.getColumnValues(metricTag.Column.OID)
@@ -99,14 +102,38 @@ func (m *metricsConfig) getTags(fullIndex string, values *snmpValues) []string {
 				log.Warnf("error getting column value: %v", err)
 				continue
 			}
-			tagValue, ok := stringValues[fullIndex]
+
+			// TODO: Test me (index transform code in getTags)
+			var newIndexes []string
+			if len(metricTag.IndexTransform) > 0 {
+				newIndexes = transformIndex(indexes, metricTag.IndexTransform)
+			} else {
+				newIndexes = indexes
+			}
+			newFullIndex := strings.Join(newIndexes, ".")
+
+			tagValue, ok := stringValues[newFullIndex]
 			if !ok {
 				// TODO: Test me
-				log.Debugf("index not found for column value: tag=%v, index=%v", metricTag.Tag, fullIndex)
+				log.Debugf("index not found for column value: tag=%v, index=%v", metricTag.Tag, newFullIndex)
 			} else {
 				rowTags = append(rowTags, metricTag.Tag+":"+tagValue.toString())
 			}
 		}
 	}
 	return rowTags
+}
+
+func transformIndex(indexes []string, transformRules []metricIndexTransform) []string {
+	var newIndex []string
+
+	for _, rule := range transformRules {
+		start := rule.Start
+		end := rule.End + 1
+		if end > uint(len(indexes)) {
+			return nil
+		}
+		newIndex = append(newIndex, indexes[start:end]...)
+	}
+	return newIndex
 }
