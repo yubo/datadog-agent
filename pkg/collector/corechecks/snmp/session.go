@@ -35,6 +35,8 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 		Timeout: time.Duration(config.Timeout) * time.Second,
 		Retries: config.Retries,
 		MaxOids: maxOids,
+		// Uncomment following line for debugging
+		//Logger:  defaultLog.New(os.Stdout, "", 0),
 	}
 	switch snmpVersion {
 	case gosnmp.Version2c, gosnmp.Version1:

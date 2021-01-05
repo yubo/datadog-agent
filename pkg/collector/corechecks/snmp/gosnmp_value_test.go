@@ -27,7 +27,7 @@ func Test_getValueFromPDU(t *testing.T) {
 			nil,
 		},
 		{
-			"OctetString",
+			"Integer",
 			gosnmp.SnmpPDU{
 				Name:  ".1.2.3",
 				Type:  gosnmp.Integer,
@@ -48,6 +48,18 @@ func Test_getValueFromPDU(t *testing.T) {
 			snmpValue{valType: Other, val: "myVal"},
 			nil,
 		},
+		// Not supported for now
+		//{
+		//	"OctetString hexify",
+		//	gosnmp.SnmpPDU{
+		//		Name:  ".1.2.3",
+		//		Type:  gosnmp.OctetString,
+		//		Value: []uint8{0x0, 0x24, 0x9b, 0x35, 0x3, 0xf6},
+		//	},
+		//	"1.2.3",
+		//	snmpValue{valType: Other, val: "0x00249b3503f6"},
+		//	nil,
+		//},
 		{
 			"BitString",
 			gosnmp.SnmpPDU{

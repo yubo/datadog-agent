@@ -16,6 +16,11 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 	//   - gosnmp.EndOfMibView
 	switch pduVariable.Type {
 	case gosnmp.OctetString, gosnmp.BitString:
+		// We don't hexify like Python/pysnmp impl if the value contain non ascii letters:
+		// https://github.com/etingof/pyasn1/blob/db8f1a7930c6b5826357646746337dafc983f953/pyasn1/type/univ.py#L950-L953
+		// hexifying like pysnmp prettyPrint might lead to unpredictable results since `[]byte` might or might not have
+		// elements outside of 32-126 range
+		// An alternative solution is to force the conversion of specific values using profile config.
 		value = string(pduVariable.Value.([]byte))
 	case gosnmp.Integer, gosnmp.Counter32, gosnmp.Gauge32, gosnmp.TimeTicks, gosnmp.Counter64, gosnmp.Uinteger32:
 		value = float64(gosnmp.ToBigInt(pduVariable.Value).Int64())
