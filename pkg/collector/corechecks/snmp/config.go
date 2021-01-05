@@ -207,6 +207,12 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	// TODO: Add missing error handling by looking at
 	//   https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py
 
+	// TODO: Validate metrics
+	//  - Metrics
+	//  - MetricTags
+	//  Cases:
+	//   - index transform:
+	//     https://github.com/DataDog/integrations-core/blob/d31d3532e16cf8418a8b112f47359f14be5ecae1/snmp/datadog_checks/snmp/parsing/metrics.py#L523-L537
 	return c, err
 }
 
