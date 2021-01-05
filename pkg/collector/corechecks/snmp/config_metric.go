@@ -57,6 +57,11 @@ type metricTagConfig struct {
 	Name string `yaml:"symbol"`
 }
 
+type metricIndexTransform struct {
+	Start uint `yaml:"start"`
+	End   uint `yaml:"end"`
+}
+
 type metricsConfigOption struct {
 	Placement    uint   `yaml:"placement"`
 	MetricSuffix string `yaml:"metric_suffix"`
@@ -74,6 +79,8 @@ type metricsConfig struct {
 
 	ForcedType string              `yaml:"forced_type"`
 	Options    metricsConfigOption `yaml:"options"`
+
+	IndexTransform []metricIndexTransform `yaml:"index_transform"`
 
 	// TODO: Validate Symbol and Table are not both used
 }

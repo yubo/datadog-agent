@@ -47,6 +47,11 @@ metrics:
     name: ifInErrors
   - OID: 1.3.6.1.2.1.2.2.1.20
     name: ifOutErrors
+  index_transform:
+    - start: 1
+      end: 3
+    - start: 4
+      end: 6
   metric_tags:
   - tag: if_index
     index: 1
@@ -96,6 +101,16 @@ global_metrics:
 			MetricTags: []metricTagConfig{
 				{Tag: "if_index", Index: 1},
 				{Tag: "if_desc", Column: symbolConfig{OID: "1.3.6.1.2.1.2.2.1.2", Name: "ifDescr"}},
+			},
+			IndexTransform: []metricIndexTransform{
+				{
+					Start: 1,
+					End:   3,
+				},
+				{
+					Start: 4,
+					End:   6,
+				},
 			},
 		},
 		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},
