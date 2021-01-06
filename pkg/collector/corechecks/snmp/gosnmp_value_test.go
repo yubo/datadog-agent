@@ -93,6 +93,28 @@ func Test_getValueFromPDU(t *testing.T) {
 			nil,
 		},
 		{
+			"IPAddress",
+			gosnmp.SnmpPDU{
+				Name:  ".1.2.3",
+				Type:  gosnmp.IPAddress,
+				Value: "1.2.3.4",
+			},
+			"1.2.3",
+			snmpValue{valType: Other, val: "1.2.3.4"},
+			nil,
+		},
+		{
+			"IPAddress invalid value",
+			gosnmp.SnmpPDU{
+				Name:  ".1.2.3",
+				Type:  gosnmp.IPAddress,
+				Value: nil,
+			},
+			"1.2.3",
+			snmpValue{},
+			fmt.Errorf("oid .1.2.3: invalid IP Address with value <nil>"),
+		},
+		{
 			"Null",
 			gosnmp.SnmpPDU{
 				Name:  ".1.2.3",
@@ -101,7 +123,7 @@ func Test_getValueFromPDU(t *testing.T) {
 			},
 			"1.2.3",
 			snmpValue{},
-			fmt.Errorf("invalid type: Null"),
+			fmt.Errorf("oid .1.2.3: invalid type: Null"),
 		},
 		{
 			"Counter32",
@@ -189,7 +211,7 @@ func Test_getValueFromPDU(t *testing.T) {
 			},
 			"1.2.3",
 			snmpValue{},
-			fmt.Errorf("invalid type: NoSuchObject"),
+			fmt.Errorf("oid .1.2.3: invalid type: NoSuchObject"),
 		},
 		{
 			"NoSuchInstance",
@@ -200,7 +222,7 @@ func Test_getValueFromPDU(t *testing.T) {
 			},
 			"1.2.3",
 			snmpValue{},
-			fmt.Errorf("invalid type: NoSuchInstance"),
+			fmt.Errorf("oid .1.2.3: invalid type: NoSuchInstance"),
 		},
 	}
 	for _, tt := range tests {

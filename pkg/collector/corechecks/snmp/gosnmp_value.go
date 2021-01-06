@@ -39,16 +39,16 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 		value = float64(pduVariable.Value.(float32))
 	case gosnmp.OpaqueDouble:
 		value = pduVariable.Value.(float64)
-	//case gosnmp.IPAddress:
-	//	strValue, ok := pduVariable.Value.(string)
-	//	if ! ok {
-	//		return name, snmpValue{}, log.Errorf("invalid IP Address type: %s", pduVariable.Type.String())
-	//	}
-	//	value = strValue
+	case gosnmp.IPAddress:
+		strValue, ok := pduVariable.Value.(string)
+		if !ok {
+			return name, snmpValue{}, fmt.Errorf("oid %s: invalid IP Address with value %v", pduVariable.Name, pduVariable.Value)
+		}
+		value = strValue
 	case gosnmp.ObjectIdentifier:
 		value = strings.TrimLeft(pduVariable.Value.(string), ".")
 	default:
-		return name, snmpValue{}, fmt.Errorf("invalid type: %s", pduVariable.Type.String())
+		return name, snmpValue{}, fmt.Errorf("oid %s: invalid type: %s", pduVariable.Name, pduVariable.Type.String())
 	}
 	valueType := gosnmpTypeToSimpleType(pduVariable.Type)
 	return name, snmpValue{valType: valueType, val: value}, nil
