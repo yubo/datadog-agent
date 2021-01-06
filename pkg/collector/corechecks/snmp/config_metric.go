@@ -57,6 +57,8 @@ type metricTagConfig struct {
 	Name string `yaml:"symbol"`
 
 	IndexTransform []metricIndexTransform `yaml:"index_transform"`
+
+	Mapping map[string]string `yaml:"mapping"`
 }
 
 type metricIndexTransform struct {
@@ -92,14 +94,30 @@ func (m *metricsConfig) getTags(fullIndex string, values *snmpValues) []string {
 	for _, metricTag := range m.MetricTags {
 		// get tag using `index` field
 		if (metricTag.Index > 0) && (metricTag.Index <= uint(len(indexes))) {
-			rowTags = append(rowTags, metricTag.Tag+":"+indexes[metricTag.Index-1])
+			index := metricTag.Index - 1 // `index` metric config is 1-based
+			if index >= uint(len(indexes)) {
+				log.Debugf("error getting tags. index `%d` not found in indexes `%v`", metricTag.Index, indexes)
+				continue
+			}
+			var tagValue string
+			if len(metricTag.Mapping) > 0 {
+				mappedValue, ok := metricTag.Mapping[indexes[index]]
+				if !ok {
+					log.Debugf("error getting tags. mapping for `%s` does not exist. mapping=`%v`, indexes=`%v`", indexes[index], metricTag.Mapping, indexes)
+					continue
+				}
+				tagValue = mappedValue
+			} else {
+				tagValue = indexes[index]
+			}
+			rowTags = append(rowTags, metricTag.Tag+":"+tagValue)
 		}
 		// get tag using another column value
 		if metricTag.Column.OID != "" {
 			//tagValueOid := metricTag.Column.OID + "." + fullIndex
 			stringValues, err := values.getColumnValues(metricTag.Column.OID)
 			if err != nil {
-				log.Warnf("error getting column value: %v", err)
+				log.Debugf("error getting column value: %v", err)
 				continue
 			}
 

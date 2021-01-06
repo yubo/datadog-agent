@@ -59,6 +59,15 @@ metrics:
         end: 3
       - start: 4
         end: 6
+  - index: 1
+    tag: ipversion
+    mapping:
+      0: unknown
+      1: ipv4
+      2: ipv6
+      3: ipv4z
+      4: ipv6z
+      16: dns
 metric_tags:
   - OID: 1.2.3
     symbol: mySymbol
@@ -112,6 +121,14 @@ global_metrics:
 						},
 					},
 				},
+				{Tag: "ipversion", Index: 1, Mapping: map[string]string{
+					"0":  "unknown",
+					"1":  "ipv4",
+					"2":  "ipv6",
+					"3":  "ipv4z",
+					"4":  "ipv6z",
+					"16": "dns",
+				}},
 			},
 		},
 		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},

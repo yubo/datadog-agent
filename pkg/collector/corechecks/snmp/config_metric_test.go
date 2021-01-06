@@ -102,6 +102,30 @@ metric_tags:
 			},
 			[]string{"pdu_name:myval"},
 		},
+		{
+			"index mapping",
+			[]byte(`
+table:
+  OID: 1.3.6.1.2.1.4.31.3
+  name: ipIfStatsTable
+symbols:
+  - OID: 1.3.6.1.2.1.4.31.3.1.6
+    name: ipIfStatsHCInOctets
+metric_tags:
+  - index: 1
+    tag: ipversion
+    mapping:
+      0: unknown
+      1: ipv4
+      2: ipv6
+      3: ipv4z
+      4: ipv6z
+      16: dns
+`),
+			"3",
+			&snmpValues{},
+			[]string{"ipversion:ipv4z"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
