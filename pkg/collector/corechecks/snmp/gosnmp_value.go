@@ -1,11 +1,14 @@
 package snmp
 
 import (
+	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/soniah/gosnmp"
 	"strings"
 )
 
+// getValueFromPDU converts gosnmp.SnmpPDU to snmpValue
+// See possible types here: https://github.com/gosnmp/gosnmp/blob/master/helper.go#L59-L271
 func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 	var value interface{}
 	name := strings.TrimLeft(pduVariable.Name, ".") // remove leading dot
@@ -14,14 +17,22 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 	//     Seems opaque type is never returned https://github.com/gosnmp/gosnmp/blob/dc320dac5b53d95a366733fd95fb5851f2099387/helper.go#L195-L205
 	//   - gosnmp.Boolean: seems not exist anymore and not handled by gosnmp
 	//   - gosnmp.EndOfMibView
+
+	// TODO: Handle error if pduVariable.Value has a wrong type for each switch case
 	switch pduVariable.Type {
 	case gosnmp.OctetString, gosnmp.BitString:
-		// We don't hexify like Python/pysnmp impl if the value contain non ascii letters:
-		// https://github.com/etingof/pyasn1/blob/db8f1a7930c6b5826357646746337dafc983f953/pyasn1/type/univ.py#L950-L953
-		// hexifying like pysnmp prettyPrint might lead to unpredictable results since `[]byte` might or might not have
-		// elements outside of 32-126 range
-		// An alternative solution is to force the conversion of specific values using profile config.
-		value = string(pduVariable.Value.([]byte))
+		// TODO: Might need better impl.
+		//   We hexify like Python/pysnmp impl (keep compatibility) if the value contains non ascii letters:
+		//   https://github.com/etingof/pyasn1/blob/db8f1a7930c6b5826357646746337dafc983f953/pyasn1/type/univ.py#L950-L953
+		//   hexifying like pysnmp prettyPrint might lead to unpredictable results since `[]byte` might or might not have
+		//   elements outside of 32-126 range
+		//   An alternative solution is to explicitly force the conversion to specific type using profile config.
+		bytesValue := pduVariable.Value.([]byte)
+		if hasNonPrintableByte(bytesValue) {
+			value = fmt.Sprintf("%#x", bytesValue)
+		} else {
+			value = string(bytesValue)
+		}
 	case gosnmp.Integer, gosnmp.Counter32, gosnmp.Gauge32, gosnmp.TimeTicks, gosnmp.Counter64, gosnmp.Uinteger32:
 		value = float64(gosnmp.ToBigInt(pduVariable.Value).Int64())
 	case gosnmp.OpaqueFloat:
@@ -37,10 +48,21 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 	//case gosnmp.ObjectIdentifier:
 	//	value = pduVariable.Value.(string)
 	default:
-		return name, snmpValue{}, log.Errorf("invalid type: %s", pduVariable.Type.String())
+		return name, snmpValue{}, fmt.Errorf("invalid type: %s", pduVariable.Type.String())
 	}
 	valueType := gosnmpTypeToSimpleType(pduVariable.Type)
 	return name, snmpValue{valType: valueType, val: value}, nil
+}
+
+func hasNonPrintableByte(bytesValue []byte) bool {
+	hasNonPrintable := false
+
+	for _, bit := range bytesValue {
+		if bit < 32 || bit > 126 {
+			hasNonPrintable = true
+		}
+	}
+	return hasNonPrintable
 }
 
 func resultToScalarValues(result *gosnmp.SnmpPacket) (values map[string]snmpValue) {

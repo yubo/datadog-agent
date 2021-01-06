@@ -1,7 +1,7 @@
 package snmp
 
 import (
-	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"fmt"
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -48,18 +48,17 @@ func Test_getValueFromPDU(t *testing.T) {
 			snmpValue{valType: Other, val: "myVal"},
 			nil,
 		},
-		// Not supported for now
-		//{
-		//	"OctetString hexify",
-		//	gosnmp.SnmpPDU{
-		//		Name:  ".1.2.3",
-		//		Type:  gosnmp.OctetString,
-		//		Value: []uint8{0x0, 0x24, 0x9b, 0x35, 0x3, 0xf6},
-		//	},
-		//	"1.2.3",
-		//	snmpValue{valType: Other, val: "0x00249b3503f6"},
-		//	nil,
-		//},
+		{
+			"OctetString hexify",
+			gosnmp.SnmpPDU{
+				Name:  ".1.2.3",
+				Type:  gosnmp.OctetString,
+				Value: []uint8{0x0, 0x24, 0x9b, 0x35, 0x3, 0xf6},
+			},
+			"1.2.3",
+			snmpValue{valType: Other, val: "0x00249b3503f6"},
+			nil,
+		},
 		{
 			"BitString",
 			gosnmp.SnmpPDU{
@@ -80,7 +79,7 @@ func Test_getValueFromPDU(t *testing.T) {
 			},
 			"1.2.3",
 			snmpValue{},
-			log.Errorf("invalid type: Null"),
+			fmt.Errorf("invalid type: Null"),
 		},
 		{
 			"Counter32",
@@ -168,7 +167,7 @@ func Test_getValueFromPDU(t *testing.T) {
 			},
 			"1.2.3",
 			snmpValue{},
-			log.Errorf("invalid type: NoSuchObject"),
+			fmt.Errorf("invalid type: NoSuchObject"),
 		},
 		{
 			"NoSuchInstance",
@@ -179,7 +178,7 @@ func Test_getValueFromPDU(t *testing.T) {
 			},
 			"1.2.3",
 			snmpValue{},
-			log.Errorf("invalid type: NoSuchInstance"),
+			fmt.Errorf("invalid type: NoSuchInstance"),
 		},
 	}
 	for _, tt := range tests {
