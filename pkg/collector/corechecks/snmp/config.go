@@ -176,7 +176,11 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	if instance.UseGlobalMetrics {
 		c.Metrics = append(c.Metrics, initConfig.GlobalMetrics...)
 	}
+	// TODO: Validate c.Metrics
+	normalizeMetrics(c.Metrics)
+
 	c.MetricTags = instance.MetricTags
+	// TODO: Validate c.MetricTags
 
 	// TODO: test me
 	c.OidConfig.scalarOids = parseScalarOids(c.Metrics, c.MetricTags)

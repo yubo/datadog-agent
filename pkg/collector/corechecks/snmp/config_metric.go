@@ -75,6 +75,10 @@ type metricsConfig struct {
 	// Symbol configs
 	Symbol symbolConfig `yaml:"symbol"`
 
+	// Legacy Symbol configs syntax
+	OID  string `yaml:"OID"`
+	Name string `yaml:"name"`
+
 	// Table configs
 	Table   symbolConfig   `yaml:"table"`
 	Symbols []symbolConfig `yaml:"symbols"`
@@ -154,4 +158,16 @@ func transformIndex(indexes []string, transformRules []metricIndexTransform) []s
 		newIndex = append(newIndex, indexes[start:end]...)
 	}
 	return newIndex
+}
+
+func normalizeMetrics(metrics []metricsConfig) {
+	for i := range metrics {
+		metric := &metrics[i]
+		if metric.Symbol.Name == "" && metric.Symbol.OID == "" && metric.Name != "" && metric.OID != "" {
+			metric.Symbol.Name = metric.Name
+			metric.Symbol.OID = metric.OID
+			metric.Name = ""
+			metric.OID = ""
+		}
+	}
 }
