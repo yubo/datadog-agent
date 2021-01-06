@@ -45,8 +45,8 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 	//		return name, snmpValue{}, log.Errorf("invalid IP Address type: %s", pduVariable.Type.String())
 	//	}
 	//	value = strValue
-	//case gosnmp.ObjectIdentifier:
-	//	value = pduVariable.Value.(string)
+	case gosnmp.ObjectIdentifier:
+		value = strings.TrimLeft(pduVariable.Value.(string), ".")
 	default:
 		return name, snmpValue{}, fmt.Errorf("invalid type: %s", pduVariable.Type.String())
 	}

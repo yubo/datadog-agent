@@ -71,6 +71,28 @@ func Test_getValueFromPDU(t *testing.T) {
 			nil,
 		},
 		{
+			"ObjectIdentifier",
+			gosnmp.SnmpPDU{
+				Name:  ".1.2.3",
+				Type:  gosnmp.ObjectIdentifier,
+				Value: "1.2.2",
+			},
+			"1.2.3",
+			snmpValue{valType: Other, val: "1.2.2"},
+			nil,
+		},
+		{
+			"ObjectIdentifier need trim",
+			gosnmp.SnmpPDU{
+				Name:  ".1.2.3",
+				Type:  gosnmp.ObjectIdentifier,
+				Value: ".1.2.2",
+			},
+			"1.2.3",
+			snmpValue{valType: Other, val: "1.2.2"},
+			nil,
+		},
+		{
 			"Null",
 			gosnmp.SnmpPDU{
 				Name:  ".1.2.3",

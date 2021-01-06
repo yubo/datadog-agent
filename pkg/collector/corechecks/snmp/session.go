@@ -99,5 +99,9 @@ func fetchSysObjectID(session sessionAPI) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("cannot get sysobjectid: %s", err)
 	}
-	return result.Variables[0].Value.(string), nil
+	_, value, err := getValueFromPDU(result.Variables[0])
+	if err != nil {
+		return "", fmt.Errorf("error getting value from pdu: %s", err)
+	}
+	return value.toString(), err
 }
