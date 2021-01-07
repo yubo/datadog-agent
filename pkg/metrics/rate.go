@@ -20,6 +20,7 @@ type Rate struct {
 }
 
 func (r *Rate) addSample(sample *MetricSample, timestamp float64) {
+	log.Infof("sample.Name: %v, sample.Value: %v, sample.RawValue: %v", sample.Name, sample.Value, sample.RawValue)
 	if r.timestamp != 0 {
 		r.previousSample, r.previousTimestamp = r.sample, r.timestamp
 	}
