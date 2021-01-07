@@ -23,7 +23,7 @@ import "C"
 
 // SubmitMetric is the method exposed to Python scripts to submit metrics
 //export SubmitMetric
-func SubmitMetric(checkID *C.char, metricType C.metric_type_t, metricName *C.char, value C.double, tags **C.char, hostname *C.char, flushFirstValue C.bool) {
+func SubmitMetric(checkID *C.char, metricType C.metric_type_t, metricName *C.char, value C.double, tags **C.char, hostname *C.char) {
 	goCheckID := C.GoString(checkID)
 
 	sender, err := aggregator.GetSender(chk.ID(goCheckID))
@@ -36,7 +36,6 @@ func SubmitMetric(checkID *C.char, metricType C.metric_type_t, metricName *C.cha
 	_value := float64(value)
 	_hostname := C.GoString(hostname)
 	_tags := cStringArrayToSlice(tags)
-	_flushFirstValue := bool(flushFirstValue)
 
 	switch metricType {
 	case C.DATADOG_AGENT_RTLOADER_GAUGE:
@@ -46,7 +45,7 @@ func SubmitMetric(checkID *C.char, metricType C.metric_type_t, metricName *C.cha
 	case C.DATADOG_AGENT_RTLOADER_COUNT:
 		sender.Count(_name, _value, _hostname, _tags)
 	case C.DATADOG_AGENT_RTLOADER_MONOTONIC_COUNT:
-		sender.MonotonicCountWithFlushFirstValue(_name, _value, _hostname, _tags, _flushFirstValue)
+		sender.MonotonicCount(_name, _value, _hostname, _tags)
 	case C.DATADOG_AGENT_RTLOADER_COUNTER:
 		sender.Counter(_name, _value, _hostname, _tags)
 	case C.DATADOG_AGENT_RTLOADER_HISTOGRAM:
