@@ -197,6 +197,10 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	if err != nil {
 		return snmpConfig{}, fmt.Errorf("failed to load profiles: %s", err)
 	}
+	for _, profileDef := range profiles {
+		normalizeMetrics(profileDef.Metrics)
+	}
+
 	c.Profiles = profiles
 	profile := instance.Profile
 
