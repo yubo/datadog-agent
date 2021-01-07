@@ -20,7 +20,7 @@ type Rate struct {
 }
 
 func (r *Rate) addSample(sample *MetricSample, timestamp float64) {
-	log.Infof("sample.Name: %v, sample.Value: %v, sample.RawValue: %v", sample.Name, sample.Value, sample.RawValue)
+	log.Infof("Rate add: sample.Name: %v, sample.Value: %v, sample.RawValue: %v", sample.Name, sample.Value, sample.RawValue)
 	if r.timestamp != 0 {
 		r.previousSample, r.previousTimestamp = r.sample, r.timestamp
 	}
@@ -37,9 +37,9 @@ func (r *Rate) flush(timestamp float64) ([]*Serie, error) {
 		return []*Serie{}, fmt.Errorf("Rate was sampled twice at the same timestamp, can't compute a rate")
 	}
 
-	log.Infof("r.sample: %v, r.previousSample: %v, r.timestamp: %v, r.previousTimestamp: %v", r.sample, r.previousSample, r.timestamp, r.previousTimestamp)
+	log.Infof("Rate flush: r.sample: %v, r.previousSample: %v, r.timestamp: %v, r.previousTimestamp: %v", r.sample, r.previousSample, r.timestamp, r.previousTimestamp)
 	value, ts := (r.sample-r.previousSample)/(r.timestamp-r.previousTimestamp), r.timestamp
-	log.Infof("value: %v, ts: %v", value, ts)
+	log.Infof("Rate flush: value: %v, ts: %v", value, ts)
 	r.previousSample, r.previousTimestamp = r.sample, r.timestamp
 	r.sample, r.timestamp = 0., 0.
 

@@ -5,6 +5,10 @@
 
 package metrics
 
+import (
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+)
+
 // Gauge tracks the value of a metric
 type Gauge struct {
 	gauge   float64
@@ -12,12 +16,14 @@ type Gauge struct {
 }
 
 func (g *Gauge) addSample(sample *MetricSample, timestamp float64) {
+	log.Infof("Gauge add: sample.Name: %v, sample.Value: %v, sample.RawValue: %v", sample.Name, sample.Value, sample.RawValue)
 	g.gauge = sample.Value
 	g.sampled = true
 }
 
 func (g *Gauge) flush(timestamp float64) ([]*Serie, error) {
 	value, sampled := g.gauge, g.sampled
+	log.Infof("Gauge flush: value: %v, sampled: %v", value, sampled)
 	g.gauge, g.sampled = 0, false
 
 	if !sampled {
