@@ -7,6 +7,8 @@ package metrics
 
 import (
 	"fmt"
+
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 // Rate tracks the rate of a metric over 2 successive flushes
@@ -34,7 +36,9 @@ func (r *Rate) flush(timestamp float64) ([]*Serie, error) {
 		return []*Serie{}, fmt.Errorf("Rate was sampled twice at the same timestamp, can't compute a rate")
 	}
 
+	log.Infof("r.sample: %v, r.previousSample: %v, r.timestamp: %v, r.previousTimestamp: %v", r.sample, r.previousSample, r.timestamp, r.previousTimestamp)
 	value, ts := (r.sample-r.previousSample)/(r.timestamp-r.previousTimestamp), r.timestamp
+	log.Infof("value: %v, ts: %v", value, ts)
 	r.previousSample, r.previousTimestamp = r.sample, r.timestamp
 	r.sample, r.timestamp = 0., 0.
 
