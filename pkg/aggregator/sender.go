@@ -257,11 +257,13 @@ func (s *checkSender) sendMetricSample(metric string, value float64, hostname st
 
 // Gauge should be used to send a simple gauge value to the aggregator. Only the last value sampled is kept at commit time.
 func (s *checkSender) Gauge(metric string, value float64, hostname string, tags []string) {
+	log.Infof("CheckSender Gauge: name: {}, value: {}, type: {}, typestring: {}", metric, value, metrics.GaugeType, metrics.GaugeType.String())
 	s.sendMetricSample(metric, value, hostname, tags, metrics.GaugeType, false)
 }
 
 // Rate should be used to track the rate of a metric over each check run
 func (s *checkSender) Rate(metric string, value float64, hostname string, tags []string) {
+	log.Infof("CheckSender Rate: name: {}, value: {}, type: {}, typestring: {}", metric, value, metrics.RateType, metrics.RateType.String())
 	s.sendMetricSample(metric, value, hostname, tags, metrics.RateType, false)
 }
 
