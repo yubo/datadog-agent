@@ -369,3 +369,50 @@ func Test_resultToColumnValues(t *testing.T) {
 		})
 	}
 }
+
+func Test_resultToScalarValues(t *testing.T) {
+	tests := []struct {
+		name       string
+		snmpPacket *gosnmp.SnmpPacket
+		expectedValues       scalarResultValuesType
+	}{
+		{
+			"simple case",
+			&gosnmp.SnmpPacket{
+				Variables: []gosnmp.SnmpPDU{
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.1",
+						Type:  gosnmp.Integer,
+						Value: 142,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.2",
+						Type:  gosnmp.Counter32,
+						Value: 142,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.3",
+						Type:  gosnmp.NoSuchInstance,
+						Value: 142,
+					},
+				},
+			},
+			scalarResultValuesType{
+				"1.3.6.1.2.1.2.2.1.14.1": {
+					submissionType: metrics.GaugeType,
+					val: float64(142),
+				},
+				"1.3.6.1.2.1.2.2.1.14.2": {
+					submissionType: metrics.RateType,
+					val: float64(142),
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			values := resultToScalarValues(tt.snmpPacket)
+			assert.Equal(t, tt.expectedValues, values)
+		})
+	}
+}

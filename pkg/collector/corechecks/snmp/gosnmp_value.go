@@ -64,12 +64,12 @@ func hasNonPrintableByte(bytesValue []byte) bool {
 }
 
 func resultToScalarValues(result *gosnmp.SnmpPacket) scalarResultValuesType {
-	// TODO: test me
 	returnValues := make(map[string]snmpValue)
 	for _, pduVariable := range result.Variables {
+		// TODO: Skip in valid types like NoSuchObject NoSuchInstance EndOfMibView ?
 		name, value, err := getValueFromPDU(pduVariable)
 		if err != nil {
-			log.Debugf("Cannot get value for variable `%v` with type `%v` and value `%v`", pduVariable.Name, pduVariable.Type, pduVariable.Value)
+			log.Debugf("cannot get value for variable `%v` with type `%v` and value `%v`", pduVariable.Name, pduVariable.Type, pduVariable.Value)
 			continue
 		}
 		returnValues[name] = value
@@ -84,6 +84,7 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (c
 	returnValues := make(columnResultValuesType)
 	nextOidsMap := make(map[string]string)
 	for i, pduVariable := range snmpPacket.Variables {
+		// TODO: Skip in valid types like NoSuchObject NoSuchInstance EndOfMibView ?
 		oid, value, err := getValueFromPDU(pduVariable)
 		if err != nil {
 			log.Debugf("Cannot get value for variable `%v` with type `%v` and value `%v`", pduVariable.Name, pduVariable.Type, pduVariable.Value)
@@ -95,6 +96,7 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (c
 		if _, ok := returnValues[columnOid]; !ok {
 			returnValues[columnOid] = make(map[string]snmpValue)
 		}
+
 		prefix := columnOid + "."
 		if strings.HasPrefix(oid, prefix) {
 			returnValues[columnOid][oid[len(prefix):]] = value
