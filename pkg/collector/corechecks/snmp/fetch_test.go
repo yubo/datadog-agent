@@ -73,7 +73,7 @@ func Test_fetchColumnOids(t *testing.T) {
 
 	oids := map[string]string{"1.1.1": "1.1.1", "1.1.2": "1.1.2"}
 
-	columnValues, err := fetchColumnOids(session, oids, 100)
+	columnValues, err := fetchColumnOidsWithBatching(session, oids, 100)
 	assert.Nil(t, err)
 
 	expectedColumnValues := map[string]map[string]snmpValue{
@@ -185,7 +185,7 @@ func Test_fetchColumnOidsBatch(t *testing.T) {
 
 	oids := map[string]string{"1.1.1": "1.1.1", "1.1.2": "1.1.2"}
 
-	columnValues, err := fetchColumnOids(session, oids, 2)
+	columnValues, err := fetchColumnOidsWithBatching(session, oids, 2)
 	assert.Nil(t, err)
 
 	expectedColumnValues := map[string]map[string]snmpValue{
@@ -258,7 +258,7 @@ func Test_fetchOidBatchSize(t *testing.T) {
 
 	oids := []string{"1.1.1.1.0", "1.1.1.2.0", "1.1.1.3.0", "1.1.1.4.0", "1.1.1.5.0", "1.1.1.6.0"}
 
-	columnValues, err := fetchScalarOidsByBatch(session, oids, 2)
+	columnValues, err := fetchScalarOidsWithBatching(session, oids, 2)
 	assert.Nil(t, err)
 
 	expectedColumnValues := map[string]snmpValue{
@@ -276,7 +276,7 @@ func Test_fetchOidBatchSize_zeroSizeError(t *testing.T) {
 	session := &mockSession{}
 
 	oids := []string{"1.1.1.1.0", "1.1.1.2.0", "1.1.1.3.0", "1.1.1.4.0", "1.1.1.5.0", "1.1.1.6.0"}
-	columnValues, err := fetchScalarOidsByBatch(session, oids, 0)
+	columnValues, err := fetchScalarOidsWithBatching(session, oids, 0)
 
 	assert.EqualError(t, err, "failed to create oid batches: batch size must be positive. invalid size: 0")
 	assert.Nil(t, columnValues)
@@ -288,7 +288,7 @@ func Test_fetchOidBatchSize_fetchError(t *testing.T) {
 	session.On("Get", []string{"1.1.1.1.0", "1.1.1.2.0"}).Return(&gosnmp.SnmpPacket{}, fmt.Errorf("my error"))
 
 	oids := []string{"1.1.1.1.0", "1.1.1.2.0", "1.1.1.3.0", "1.1.1.4.0", "1.1.1.5.0", "1.1.1.6.0"}
-	columnValues, err := fetchScalarOidsByBatch(session, oids, 2)
+	columnValues, err := fetchScalarOidsWithBatching(session, oids, 2)
 
 	assert.EqualError(t, err, "failed to fetch scalar oids: error getting oids: my error")
 	assert.Nil(t, columnValues)

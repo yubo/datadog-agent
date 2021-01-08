@@ -7,7 +7,7 @@ import (
 )
 
 func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
-	scalarResults, err := fetchScalarOidsByBatch(session, config.OidConfig.scalarOids, config.OidBatchSize)
+	scalarResults, err := fetchScalarOidsWithBatching(session, config.OidConfig.scalarOids, config.OidBatchSize)
 	if err != nil {
 		return &snmpValues{}, fmt.Errorf("SNMPGET error: %v", err)
 	}
@@ -16,7 +16,7 @@ func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
 	for _, value := range config.OidConfig.columnOids {
 		oids[value] = value
 	}
-	columnResults, err := fetchColumnOids(session, oids, config.OidBatchSize)
+	columnResults, err := fetchColumnOidsWithBatching(session, oids, config.OidBatchSize)
 	if err != nil {
 		return &snmpValues{}, fmt.Errorf("SNMPBULK error: %v", err)
 	}
@@ -26,16 +26,16 @@ func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
 
 func fetchScalarOids(session sessionAPI, oids []string) (map[string]snmpValue, error) {
 	// Get results
-	log.Debugf("fetchScalarOidsByBatch() oids: %v", oids)
+	log.Debugf("fetchScalarOidsWithBatching() oids: %v", oids)
 	results, err := session.Get(oids)
-	log.Debugf("fetchColumnOids() results: %v", results)
+	log.Debugf("fetchColumnOidsWithBatching() results: %v", results)
 	if err != nil {
 		return nil, fmt.Errorf("error getting oids: %s", err.Error())
 	}
 	return resultToScalarValues(results), nil
 }
 
-func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int) (map[string]snmpValue, error) {
+func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize int) (map[string]snmpValue, error) {
 	// Get results
 	// TODO: Improve batching algorithm and make it more readable
 	retValues := make(map[string]snmpValue)
@@ -58,7 +58,7 @@ func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int)
 	return retValues, nil
 }
 
-func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize int) (map[string]map[string]snmpValue, error) {
+func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oidBatchSize int) (map[string]map[string]snmpValue, error) {
 	// Get results
 	// TODO: Improve batching algorithm and make it more readable
 
@@ -82,7 +82,7 @@ func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize in
 			oidsToFetch[oid] = oids[oid]
 		}
 
-		results, err := fetchColumnOidsOneBatch(session, oidsToFetch)
+		results, err := fetchColumnOids(session, oidsToFetch)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch column oids: %s", err)
 		}
@@ -100,10 +100,10 @@ func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize in
 	return retValues, nil
 }
 
-// fetchColumnOidsOneBatch has an `oids` argument representing a `map[string]string`,
+// fetchColumnOids has an `oids` argument representing a `map[string]string`,
 // the key of the map is the column oid, and the value is the oid used to fetch the next value for the column.
 // The value oid might be equal to column oid or a row oid of the same column.
-func fetchColumnOidsOneBatch(session sessionAPI, oids map[string]string) (map[string]map[string]snmpValue, error) {
+func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map[string]snmpValue, error) {
 	// Returns map[columnOID]map[index]interface(float64 or string)
 	// GetBulk results
 	// TODO:
@@ -112,7 +112,7 @@ func fetchColumnOidsOneBatch(session sessionAPI, oids map[string]string) (map[st
 	returnValues := make(map[string]map[string]snmpValue)
 	curOids := oids
 	for {
-		log.Debugf("fetchColumnOids() curOids  : %v", curOids)
+		log.Debugf("fetchColumnOidsWithBatching() curOids  : %v", curOids)
 		if len(curOids) == 0 {
 			break
 		}
@@ -125,7 +125,7 @@ func fetchColumnOidsOneBatch(session sessionAPI, oids map[string]string) (map[st
 		sort.Strings(columnOids)
 		sort.Strings(bulkOids)
 		results, err := session.GetBulk(bulkOids)
-		log.Debugf("fetchColumnOids() results: %v", results)
+		log.Debugf("fetchColumnOidsWithBatching() results: %v", results)
 		if err != nil {
 			return nil, fmt.Errorf("GetBulk failed: %s", err)
 		}
