@@ -66,7 +66,7 @@ func hasNonPrintableByte(bytesValue []byte) bool {
 	return hasNonPrintable
 }
 
-func resultToScalarValues(result *gosnmp.SnmpPacket) (values map[string]snmpValue) {
+func resultToScalarValues(result *gosnmp.SnmpPacket) scalarResultValuesType {
 	// TODO: test me
 	returnValues := make(map[string]snmpValue)
 	for _, pduVariable := range result.Variables {
@@ -80,8 +80,8 @@ func resultToScalarValues(result *gosnmp.SnmpPacket) (values map[string]snmpValu
 	return returnValues
 }
 
-func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (map[string]map[string]snmpValue, map[string]string) {
-	returnValues := make(map[string]map[string]snmpValue)
+func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (columnResultValuesType, map[string]string) {
+	returnValues := make(columnResultValuesType)
 	nextOidsMap := make(map[string]string)
 	for i, pduVariable := range snmpPacket.Variables {
 		oid, value, err := getValueFromPDU(pduVariable)
@@ -109,7 +109,6 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (m
 // getSubmissionType converts gosnmp.Asn1BER type to submission type
 func getSubmissionType(gosnmpType gosnmp.Asn1BER) metrics.MetricType {
 	switch gosnmpType {
-
 	// Counter Types:
 	// From the snmp doc: The Counter32 type represents a non-negative integer which monotonically increases until it reaches a maximum
 	// value of 2^32-1 (4294967295 decimal), when it wraps around and starts increasing again from zero.

@@ -72,13 +72,13 @@ func fetchColumnOids(session sessionAPI, oids map[string]string) (columnResultVa
 	return returnValues, nil
 }
 
-func updateColumnResultValues(values columnResultValuesType, extraValues columnResultValuesType) {
+func updateColumnResultValues(valuesToUpdate columnResultValuesType, extraValues columnResultValuesType) {
 	for columnOid, columnValues := range extraValues {
 		for oid, value := range columnValues {
-			if _, ok := values[columnOid]; !ok {
-				values[columnOid] = make(map[string]snmpValue)
+			if _, ok := valuesToUpdate[columnOid]; !ok {
+				valuesToUpdate[columnOid] = make(map[string]snmpValue)
 			}
-			values[columnOid][oid] = value
+			valuesToUpdate[columnOid][oid] = value
 		}
 	}
 }
