@@ -278,7 +278,7 @@ func Test_fetchOidBatchSize_zeroSizeError(t *testing.T) {
 	oids := []string{"1.1.1.1.0", "1.1.1.2.0", "1.1.1.3.0", "1.1.1.4.0", "1.1.1.5.0", "1.1.1.6.0"}
 	columnValues, err := fetchScalarOidsByBatch(session, oids, 0)
 
-	assert.EqualError(t, err, "oidBatchSize cannot be 0")
+	assert.EqualError(t, err, "failed to create oid batches: batch size must be positive. invalid size: 0")
 	assert.Nil(t, columnValues)
 }
 

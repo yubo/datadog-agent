@@ -40,20 +40,14 @@ func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int)
 	// TODO: Improve batching algorithm and make it more readable
 	retValues := make(map[string]snmpValue)
 
-	if oidBatchSize == 0 {
-		// TODO: test me
-		return nil, fmt.Errorf("oidBatchSize cannot be 0")
+	// Create batches of column oids
+	batches, err := makeStringBatches(oids, oidBatchSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create oid batches: %s", err)
 	}
 
-	// Make batches
-	for i := 0; i < len(oids); i += oidBatchSize {
-		j := i + oidBatchSize
-		if j > len(oids) {
-			j = len(oids)
-		}
-		fetchOids := oids[i:j]
-
-		results, err := fetchScalarOids(session, fetchOids)
+	for _, batchOids := range batches {
+		results, err := fetchScalarOids(session, batchOids)
 		if err != nil {
 			return nil, fmt.Errorf("fetching scalar oids: %s", err.Error())
 		}
@@ -68,41 +62,38 @@ func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize in
 	// Get results
 	// TODO: Improve batching algorithm and make it more readable
 
-	if oidBatchSize == 0 {
-		// TODO: test me
-		return nil, fmt.Errorf("oidBatchSize cannot be 0")
-	}
-
 	retValues := make(map[string]map[string]snmpValue)
-	columnOids := make([]string, 0, len(oids))
 
+	// Create list of column oids from keys
+	columnOids := make([]string, 0, len(oids))
 	for k := range oids {
 		columnOids = append(columnOids, k)
 	}
 
-	// Make batches
-	for i := 0; i < len(oids); i += oidBatchSize {
-		j := i + oidBatchSize
-		if j > len(oids) {
-			j = len(oids)
-		}
-		batchColumnOids := columnOids[i:j]
-		fetchOids := make(map[string]string)
+	// Create batches of column oids
+	batches, err := makeStringBatches(columnOids, oidBatchSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create column oid batches: %s", err)
+	}
+
+	for _, batchColumnOids := range batches {
+		oidsToFetch := make(map[string]string)
 		for _, oid := range batchColumnOids {
-			fetchOids[oid] = oids[oid]
+			oidsToFetch[oid] = oids[oid]
 		}
 
-		results, err := fetchColumnOidsOneBatch(session, fetchOids)
+		results, err := fetchColumnOidsOneBatch(session, oidsToFetch)
 		if err != nil {
 			return nil, err
 		}
+
 		for columnOid, instanceOids := range results {
-			if _, ok := retValues[columnOid]; ok {
-				for oid, value := range instanceOids {
-					retValues[columnOid][oid] = value
-				}
-			} else {
+			if _, ok := retValues[columnOid]; !ok {
 				retValues[columnOid] = instanceOids
+				continue
+			}
+			for oid, value := range instanceOids {
+				retValues[columnOid][oid] = value
 			}
 		}
 	}
