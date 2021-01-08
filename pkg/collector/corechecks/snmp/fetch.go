@@ -110,12 +110,12 @@ func fetchColumnOidsOneBatch(session sessionAPI, oids map[string]string) (map[st
 	//   - make batches
 	//   - GetBulk loop to get all rows
 	returnValues := make(map[string]map[string]snmpValue)
-	if len(oids) == 0 {
-		return returnValues, nil
-	}
 	curOids := oids
 	for {
 		log.Debugf("fetchColumnOids() curOids  : %v", curOids)
+		if len(curOids) == 0 {
+			break
+		}
 		var columnOids, bulkOids []string
 		for k, v := range curOids {
 			columnOids = append(columnOids, k)
@@ -137,9 +137,6 @@ func fetchColumnOidsOneBatch(session sessionAPI, oids map[string]string) (map[st
 				}
 				returnValues[columnOid][oid] = value
 			}
-		}
-		if len(nextOids) == 0 {
-			break
 		}
 		curOids = nextOids
 	}
