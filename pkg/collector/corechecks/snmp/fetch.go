@@ -9,7 +9,7 @@ import (
 func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
 	scalarResults, err := fetchScalarOidsWithBatching(session, config.OidConfig.scalarOids, config.OidBatchSize)
 	if err != nil {
-		return &snmpValues{}, fmt.Errorf("SNMPGET error: %v", err)
+		return &snmpValues{}, fmt.Errorf("failed to fetch scalar oids with batching: %v", err)
 	}
 
 	oids := make(map[string]string)
@@ -18,30 +18,16 @@ func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
 	}
 	columnResults, err := fetchColumnOidsWithBatching(session, oids, config.OidBatchSize)
 	if err != nil {
-		return &snmpValues{}, fmt.Errorf("SNMPBULK error: %v", err)
+		return &snmpValues{}, fmt.Errorf("failed to fetch oids with batching: %v", err)
 	}
 
 	return &snmpValues{scalarResults, columnResults}, nil
 }
 
-func fetchScalarOids(session sessionAPI, oids []string) (map[string]snmpValue, error) {
-	// Get results
-	log.Debugf("fetchScalarOidsWithBatching() oids: %v", oids)
-	results, err := session.Get(oids)
-	log.Debugf("fetchColumnOidsWithBatching() results: %v", results)
-	if err != nil {
-		return nil, fmt.Errorf("error getting oids: %s", err.Error())
-	}
-	return resultToScalarValues(results), nil
-}
-
 func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize int) (map[string]snmpValue, error) {
-	// Get results
-	// TODO: Improve batching algorithm and make it more readable
 	retValues := make(map[string]snmpValue)
 
-	// Create batches of column oids
-	batches, err := makeStringBatches(oids, oidBatchSize)
+	batches, err := createStringBatches(oids, oidBatchSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create oid batches: %s", err)
 	}
@@ -58,20 +44,24 @@ func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize
 	return retValues, nil
 }
 
+func fetchScalarOids(session sessionAPI, oids []string) (map[string]snmpValue, error) {
+	// Get results
+	log.Debugf("fetchScalarOidsWithBatching() oids: %v", oids)
+	results, err := session.Get(oids)
+	log.Debugf("fetchColumnOidsWithBatching() results: %v", results)
+	if err != nil {
+		return nil, fmt.Errorf("error getting oids: %s", err.Error())
+	}
+	return resultToScalarValues(results), nil
+}
+
 func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oidBatchSize int) (map[string]map[string]snmpValue, error) {
 	// Get results
 	// TODO: Improve batching algorithm and make it more readable
-
 	retValues := make(map[string]map[string]snmpValue)
 
-	// Create list of column oids from keys
-	columnOids := make([]string, 0, len(oids))
-	for k := range oids {
-		columnOids = append(columnOids, k)
-	}
-
-	// Create batches of column oids
-	batches, err := makeStringBatches(columnOids, oidBatchSize)
+	columnOids := getOidsMapKeys(oids)
+	batches, err := createStringBatches(columnOids, oidBatchSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create column oid batches: %s", err)
 	}
@@ -141,4 +131,14 @@ func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map
 		curOids = nextOids
 	}
 	return returnValues, nil
+}
+
+func getOidsMapKeys(oidsMap map[string]string) []string {
+	keys := make([]string, len(oidsMap))
+	i := 0
+	for k := range oidsMap {
+		keys[i] = k
+		i++
+	}
+	return keys
 }

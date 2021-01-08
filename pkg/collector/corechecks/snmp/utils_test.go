@@ -79,7 +79,7 @@ func Test_makeStringBatches(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			batches, err := makeStringBatches(tt.elements, tt.size)
+			batches, err := createStringBatches(tt.elements, tt.size)
 			assert.Equal(t, tt.expectedBatches, batches)
 			assert.Equal(t, tt.expectedError, err)
 		})

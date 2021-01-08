@@ -2,7 +2,7 @@ package snmp
 
 import "fmt"
 
-func makeStringBatches(elements []string, size int) ([][]string, error) {
+func createStringBatches(elements []string, size int) ([][]string, error) {
 	var batches [][]string
 
 	if size <= 0 {
