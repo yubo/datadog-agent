@@ -55,7 +55,6 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 
 func hasNonPrintableByte(bytesValue []byte) bool {
 	hasNonPrintable := false
-
 	for _, bit := range bytesValue {
 		if bit < 32 || bit > 126 {
 			hasNonPrintable = true
@@ -78,6 +77,9 @@ func resultToScalarValues(result *gosnmp.SnmpPacket) scalarResultValuesType {
 	return returnValues
 }
 
+// resultToColumnValues builds column values
+// - columnResultValuesType: column values
+// - nextOidsMap: represent the oids that can be used to retrieve following rows/values
 func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (columnResultValuesType, map[string]string) {
 	returnValues := make(columnResultValuesType)
 	nextOidsMap := make(map[string]string)
@@ -87,6 +89,8 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (c
 			log.Debugf("Cannot get value for variable `%v` with type `%v` and value `%v`", pduVariable.Name, pduVariable.Type, pduVariable.Value)
 			continue
 		}
+		// the snmpPacket might contain multiple row values for a single column
+		// and the columnOid can be derived from the index of the PDU variable.
 		columnOid := columnOids[i%len(columnOids)]
 		if _, ok := returnValues[columnOid]; !ok {
 			returnValues[columnOid] = make(map[string]snmpValue)
@@ -105,17 +109,15 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (c
 }
 
 // getSubmissionType converts gosnmp.Asn1BER type to submission type
+//
+// ZeroBasedCounter64: We don't handle ZeroBasedCounter64 since it's not a type currently provided by gosnmp.
+// This type is currently supported by python impl: https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L37-L38
 func getSubmissionType(gosnmpType gosnmp.Asn1BER) metrics.MetricType {
 	switch gosnmpType {
-	// Counter Types:
-	// From the snmp doc: The Counter32 type represents a non-negative integer which monotonically increases until it reaches a maximum
+	// Counter Types: From the snmp doc: The Counter32 type represents a non-negative integer which monotonically increases until it reaches a maximum
 	// value of 2^32-1 (4294967295 decimal), when it wraps around and starts increasing again from zero.
 	// We convert snmp counters by default to `rate` submission type, but sometimes `monotonic_count` might be more appropriate.
 	// To achieve that, we can use `forced_type: monotonic_count` or `forced_type: monotonic_count_and_rate`.
-	//
-	// TODO: Should we handle ZeroBasedCounter64 as listed in Python impl ?
-	//   It's not a type currently provided by gosnmp.
-	//   https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L37-L38
 	case gosnmp.Counter32, gosnmp.Counter64:
 		return metrics.RateType
 	}
