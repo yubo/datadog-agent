@@ -1,12 +1,13 @@
 package snmp
 
 import (
+	"fmt"
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestFetchColumnOids(t *testing.T) {
+func Test_fetchColumnOids(t *testing.T) {
 	session := &mockSession{}
 
 	bulkPacket := gosnmp.SnmpPacket{
@@ -91,7 +92,7 @@ func TestFetchColumnOids(t *testing.T) {
 	assert.Equal(t, expectedColumnValues, columnValues)
 }
 
-func TestFetchColumnOidsBatch(t *testing.T) {
+func Test_fetchColumnOidsBatch(t *testing.T) {
 	session := &mockSession{}
 
 	bulkPacket := gosnmp.SnmpPacket{
@@ -203,7 +204,7 @@ func TestFetchColumnOidsBatch(t *testing.T) {
 	assert.Equal(t, expectedColumnValues, columnValues)
 }
 
-func TestFetchOidBatchSize(t *testing.T) {
+func Test_fetchOidBatchSize(t *testing.T) {
 	session := &mockSession{}
 
 	getPacket1 := gosnmp.SnmpPacket{
@@ -269,4 +270,26 @@ func TestFetchOidBatchSize(t *testing.T) {
 		"1.1.1.6.0": {val: float64(60)},
 	}
 	assert.Equal(t, expectedColumnValues, columnValues)
+}
+
+func Test_fetchOidBatchSize_zeroSizeError(t *testing.T) {
+	session := &mockSession{}
+
+	oids := []string{"1.1.1.1.0", "1.1.1.2.0", "1.1.1.3.0", "1.1.1.4.0", "1.1.1.5.0", "1.1.1.6.0"}
+	columnValues, err := fetchScalarOidsByBatch(session, oids, 0)
+
+	assert.EqualError(t, err, "oidBatchSize cannot be 0")
+	assert.Nil(t, columnValues)
+}
+
+func Test_fetchOidBatchSize_fetchError(t *testing.T) {
+	session := &mockSession{}
+
+	session.On("Get", []string{"1.1.1.1.0", "1.1.1.2.0"}).Return(&gosnmp.SnmpPacket{}, fmt.Errorf("my error"))
+
+	oids := []string{"1.1.1.1.0", "1.1.1.2.0", "1.1.1.3.0", "1.1.1.4.0", "1.1.1.5.0", "1.1.1.6.0"}
+	columnValues, err := fetchScalarOidsByBatch(session, oids, 2)
+
+	assert.EqualError(t, err, "fetching scalar oids: error getting oids: my error")
+	assert.Nil(t, columnValues)
 }

@@ -24,13 +24,13 @@ func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
 	return &snmpValues{scalarResults, columnResults}, nil
 }
 
-func fetchScalarOidsOne(session sessionAPI, oids []string) (map[string]snmpValue, error) {
+func fetchScalarOids(session sessionAPI, oids []string) (map[string]snmpValue, error) {
 	// Get results
 	log.Debugf("fetchScalarOidsByBatch() oids: %v", oids)
 	results, err := session.Get(oids)
 	log.Debugf("fetchColumnOids() results: %v", results)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting oids: %s", err.Error())
 	}
 	return resultToScalarValues(results), nil
 }
@@ -45,7 +45,7 @@ func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int)
 		return nil, fmt.Errorf("oidBatchSize cannot be 0")
 	}
 
-	// Make matches
+	// Make batches
 	for i := 0; i < len(oids); i += oidBatchSize {
 		j := i + oidBatchSize
 		if j > len(oids) {
@@ -53,9 +53,9 @@ func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int)
 		}
 		fetchOids := oids[i:j]
 
-		results, err := fetchScalarOidsOne(session, fetchOids)
+		results, err := fetchScalarOids(session, fetchOids)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("fetching scalar oids: %s", err.Error())
 		}
 		for k, v := range results {
 			retValues[k] = v
@@ -80,7 +80,7 @@ func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize in
 		columnOids = append(columnOids, k)
 	}
 
-	// Make matches
+	// Make batches
 	for i := 0; i < len(oids); i += oidBatchSize {
 		j := i + oidBatchSize
 		if j > len(oids) {
