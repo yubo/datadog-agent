@@ -290,6 +290,6 @@ func Test_fetchOidBatchSize_fetchError(t *testing.T) {
 	oids := []string{"1.1.1.1.0", "1.1.1.2.0", "1.1.1.3.0", "1.1.1.4.0", "1.1.1.5.0", "1.1.1.6.0"}
 	columnValues, err := fetchScalarOidsByBatch(session, oids, 2)
 
-	assert.EqualError(t, err, "fetching scalar oids: error getting oids: my error")
+	assert.EqualError(t, err, "failed to fetch scalar oids: error getting oids: my error")
 	assert.Nil(t, columnValues)
 }

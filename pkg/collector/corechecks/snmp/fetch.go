@@ -49,7 +49,7 @@ func fetchScalarOidsByBatch(session sessionAPI, oids []string, oidBatchSize int)
 	for _, batchOids := range batches {
 		results, err := fetchScalarOids(session, batchOids)
 		if err != nil {
-			return nil, fmt.Errorf("fetching scalar oids: %s", err.Error())
+			return nil, fmt.Errorf("failed to fetch scalar oids: %s", err.Error())
 		}
 		for k, v := range results {
 			retValues[k] = v
@@ -84,7 +84,7 @@ func fetchColumnOids(session sessionAPI, oids map[string]string, oidBatchSize in
 
 		results, err := fetchColumnOidsOneBatch(session, oidsToFetch)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to fetch column oids: %s", err)
 		}
 
 		for columnOid, instanceOids := range results {
