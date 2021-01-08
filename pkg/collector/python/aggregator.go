@@ -40,9 +40,7 @@ func SubmitMetric(checkID *C.char, metricType C.metric_type_t, metricName *C.cha
 	_tags := cStringArrayToSlice(tags)
 	_flushFirstValue := bool(flushFirstValue)
 
-	log.Infof("Python SubmitMetric (after conversion): metricType: %v, metricName: %v, value: %v", metricType, _name, _value)
-	log.Infof("C.DATADOG_AGENT_RTLOADER_GAUGE: %v", C.DATADOG_AGENT_RTLOADER_GAUGE)
-	log.Infof("C.DATADOG_AGENT_RTLOADER_RATE: %v", C.DATADOG_AGENT_RTLOADER_RATE)
+	log.Infof("Python SubmitMetric (after conversion): metricType: %v, metricName: %v, value: %v, flush_first_value: %v", metricType, _name, _value, _flushFirstValue)
 
 	switch metricType {
 	case C.DATADOG_AGENT_RTLOADER_GAUGE:
