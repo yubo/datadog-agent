@@ -2,6 +2,7 @@ package snmp
 
 import (
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/soniah/gosnmp"
 	"strings"
@@ -50,8 +51,8 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 	default:
 		return name, snmpValue{}, fmt.Errorf("oid %s: invalid type: %s", pduVariable.Name, pduVariable.Type.String())
 	}
-	valueType := gosnmpTypeToSimpleType(pduVariable.Type)
-	return name, snmpValue{valType: valueType, val: value}, nil
+	submissionType := getSubmissionType(pduVariable.Type)
+	return name, snmpValue{submissionType: submissionType, val: value}, nil
 }
 
 func hasNonPrintableByte(bytesValue []byte) bool {
@@ -105,14 +106,22 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (m
 	return returnValues, nextOidsMap
 }
 
-// gosnmpTypeToSimpleType converts gosnmp.Asn1BER type to valueType.
-// The simple type is used to know what type to use when submitting metrics.
-func gosnmpTypeToSimpleType(gosnmpType gosnmp.Asn1BER) valueType {
+// getSubmissionType converts gosnmp.Asn1BER type to submission type
+func getSubmissionType(gosnmpType gosnmp.Asn1BER) metrics.MetricType {
 	switch gosnmpType {
+
+	// Counter Types:
+	// From the snmp doc: The Counter32 type represents a non-negative integer which monotonically increases until it reaches a maximum
+	// value of 2^32-1 (4294967295 decimal), when it wraps around and starts increasing again from zero.
+	// We convert snmp counters by default to `rate` submission type, but sometimes `monotonic_count` might be more appropriate.
+	// To achieve that, we can use `forced_type: monotonic_count` or `forced_type: monotonic_count_and_rate`.
+	//
+	// TODO: Should we handle ZeroBasedCounter64 as listed in Python impl ?
+	//   It's not a type currently provided by gosnmp.
+	//   https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L37-L38
 	case gosnmp.Counter32, gosnmp.Counter64:
-		// TODO: ZeroBasedCounter64
-		//   https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L37-L38
-		return Counter
+		return metrics.RateType
 	}
-	return Other
+	// default to Gauge type
+	return metrics.GaugeType
 }

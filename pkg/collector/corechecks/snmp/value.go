@@ -1,28 +1,23 @@
 package snmp
 
 import (
+	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"strconv"
 )
-
-type valueType byte
 
 // For now, we are only interested in Counter val type,
 // this is needed a metric submission step to send metrics
 // as `rate` submission type.
-// Other is used as catch all, we will use `gauge` as submission type.
+// If no submission type is defined, metrics are sent as `gauge`.
 // Related Python integration code:
 // https://github.com/DataDog/integrations-core/blob/51b1d2366b7cb7864c4b4aed29945ffd14e512d6/snmp/datadog_checks/snmp/metrics.py#L20-L21
 const (
-	Other valueType = iota
-	Counter
+	Counter = "counter"
 )
 
 type snmpValue struct {
-	// valType is used for knowing which default submission type
-	// we should use (gauge, rate, etc)
-	valType valueType
-	// val might be a `string` or `float64`
-	val interface{}
+	submissionType metrics.MetricType // used when sending the metric
+	val            interface{}        // might be a `string` or `float64` type
 }
 
 func (sv *snmpValue) toFloat64() float64 {

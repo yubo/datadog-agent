@@ -2,6 +2,7 @@ package snmp
 
 import (
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -23,7 +24,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: 141,
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: float64(141)},
+			snmpValue{val: float64(141)},
 			nil,
 		},
 		{
@@ -34,7 +35,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: 141,
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: float64(141)},
+			snmpValue{val: float64(141)},
 			nil,
 		},
 		{
@@ -45,7 +46,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: []byte(`myVal`),
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: "myVal"},
+			snmpValue{val: "myVal"},
 			nil,
 		},
 		{
@@ -56,7 +57,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: []uint8{0x0, 0x24, 0x9b, 0x35, 0x3, 0xf6},
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: "0x00249b3503f6"},
+			snmpValue{val: "0x00249b3503f6"},
 			nil,
 		},
 		{
@@ -67,7 +68,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: []byte(`myVal`),
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: "myVal"},
+			snmpValue{val: "myVal"},
 			nil,
 		},
 		{
@@ -78,7 +79,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: "1.2.2",
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: "1.2.2"},
+			snmpValue{val: "1.2.2"},
 			nil,
 		},
 		{
@@ -89,7 +90,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: ".1.2.2",
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: "1.2.2"},
+			snmpValue{val: "1.2.2"},
 			nil,
 		},
 		{
@@ -100,7 +101,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: "1.2.3.4",
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: "1.2.3.4"},
+			snmpValue{val: "1.2.3.4"},
 			nil,
 		},
 		{
@@ -133,7 +134,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint(10),
 			},
 			"1.2.3",
-			snmpValue{valType: Counter, val: float64(10)},
+			snmpValue{submissionType: metrics.RateType, val: float64(10)},
 			nil,
 		},
 		{
@@ -144,7 +145,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint(10),
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: float64(10)},
+			snmpValue{val: float64(10)},
 			nil,
 		},
 		{
@@ -155,7 +156,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint32(10),
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: float64(10)},
+			snmpValue{val: float64(10)},
 			nil,
 		},
 		{
@@ -166,7 +167,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint64(10),
 			},
 			"1.2.3",
-			snmpValue{valType: Counter, val: float64(10)},
+			snmpValue{submissionType: metrics.RateType, val: float64(10)},
 			nil,
 		},
 		{
@@ -177,7 +178,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint32(10),
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: float64(10)},
+			snmpValue{val: float64(10)},
 			nil,
 		},
 		{
@@ -188,7 +189,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: float32(10),
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: float64(10)},
+			snmpValue{val: float64(10)},
 			nil,
 		},
 		{
@@ -199,7 +200,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: float64(10),
 			},
 			"1.2.3",
-			snmpValue{valType: Other, val: float64(10)},
+			snmpValue{val: float64(10)},
 			nil,
 		},
 		{
@@ -283,32 +284,26 @@ func Test_resultToColumnValues(t *testing.T) {
 			map[string]map[string]snmpValue{
 				"1.3.6.1.2.1.2.2.1.14": {
 					"1": snmpValue{
-						Other,
-						float64(141),
+						val: float64(141),
 					},
 					"2": snmpValue{
-						Other,
-						float64(142),
+						val: float64(142),
 					},
 				},
 				"1.3.6.1.2.1.2.2.1.2": {
 					"1": snmpValue{
-						Other,
-						"desc1",
+						val: "desc1",
 					},
 					"2": snmpValue{
-						Other,
-						"desc2",
+						val: "desc2",
 					},
 				},
 				"1.3.6.1.2.1.2.2.1.20": {
 					"1": snmpValue{
-						Other,
-						float64(201),
+						val: float64(201),
 					},
 					"2": snmpValue{
-						Other,
-						float64(202),
+						val: float64(202),
 					},
 				},
 			},
@@ -348,18 +343,15 @@ func Test_resultToColumnValues(t *testing.T) {
 				"1.3.6.1.2.1.2.2.1.14": {
 					// index 1 not fetched because of gosnmp.NoSuchObject error
 					"2": snmpValue{
-						Other,
-						float64(142),
+						val: float64(142),
 					},
 				},
 				"1.3.6.1.2.1.2.2.1.2": {
 					"1": snmpValue{
-						Other,
-						"desc1",
+						val: "desc1",
 					},
 					"2": snmpValue{
-						Other,
-						"desc2",
+						val: "desc2",
 					},
 				},
 			},

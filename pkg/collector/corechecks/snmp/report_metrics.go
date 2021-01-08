@@ -2,6 +2,7 @@ package snmp
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
+	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"sort"
 )
@@ -90,11 +91,12 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []st
 			}
 			ms.sender.Gauge(metricFullName+"."+options.MetricSuffix, floatValue, "", tags)
 		default:
-			log.Warnf("Unsupported forcedType: %s", forcedType)
+			// TODO: test me
+			log.Warnf("metric `%s`: unsupported forcedType: %s", metricFullName, forcedType)
 		}
 	} else {
-		switch value.valType {
-		case Counter:
+		switch value.submissionType {
+		case metrics.RateType:
 			ms.sender.Rate(metricFullName, value.toFloat64(), "", tags)
 		default:
 			ms.sender.Gauge(metricFullName, value.toFloat64(), "", tags)
