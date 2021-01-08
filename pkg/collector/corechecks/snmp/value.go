@@ -5,16 +5,6 @@ import (
 	"strconv"
 )
 
-// For now, we are only interested in Counter val type,
-// this is needed a metric submission step to send metrics
-// as `rate` submission type.
-// If no submission type is defined, metrics are sent as `gauge`.
-// Related Python integration code:
-// https://github.com/DataDog/integrations-core/blob/51b1d2366b7cb7864c4b4aed29945ffd14e512d6/snmp/datadog_checks/snmp/metrics.py#L20-L21
-const (
-	Counter = "counter"
-)
-
 type snmpValue struct {
 	submissionType metrics.MetricType // used when sending the metric
 	val            interface{}        // might be a `string` or `float64` type

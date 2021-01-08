@@ -93,12 +93,9 @@ func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oid
 // fetchColumnOids has an `oids` argument representing a `map[string]string`,
 // the key of the map is the column oid, and the value is the oid used to fetch the next value for the column.
 // The value oid might be equal to column oid or a row oid of the same column.
+//
+// Return value structure:  map[columnOID]map[index]interface(float64 or string)
 func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map[string]snmpValue, error) {
-	// Returns map[columnOID]map[index]interface(float64 or string)
-	// GetBulk results
-	// TODO:
-	//   - make batches
-	//   - GetBulk loop to get all rows
 	returnValues := make(map[string]map[string]snmpValue)
 	curOids := oids
 	for {
