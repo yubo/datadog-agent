@@ -6,6 +6,17 @@ import (
 	"sort"
 )
 
+// columnResultValuesType is used to store results fetched for column oids
+// Structure: map[<COLUMN OIDS AS STRING>]map[<ROW INDEX>]snmpValue
+// - the first map key is the table column oid
+// - the second map key is the index part of oid (not prefixed with column oid)
+type columnResultValuesType map[string]map[string]snmpValue
+
+// scalarResultValuesType is used to store results fetched for scalar oids
+// Structure: map[<INSTANCE OID VALUE>]snmpValue
+// - the instance oid value (suffixed with `.0`)
+type scalarResultValuesType map[string]snmpValue
+
 func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
 	scalarResults, err := fetchScalarOidsWithBatching(session, config.OidConfig.scalarOids, config.OidBatchSize)
 	if err != nil {
@@ -24,8 +35,8 @@ func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
 	return &snmpValues{scalarResults, columnResults}, nil
 }
 
-func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize int) (map[string]snmpValue, error) {
-	retValues := make(map[string]snmpValue)
+func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize int) (scalarResultValuesType, error) {
+	retValues := make(scalarResultValuesType)
 
 	batches, err := createStringBatches(oids, oidBatchSize)
 	if err != nil {
@@ -44,7 +55,7 @@ func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize
 	return retValues, nil
 }
 
-func fetchScalarOids(session sessionAPI, oids []string) (map[string]snmpValue, error) {
+func fetchScalarOids(session sessionAPI, oids []string) (scalarResultValuesType, error) {
 	// Get results
 	log.Debugf("fetchScalarOidsWithBatching() oids: %v", oids)
 	results, err := session.Get(oids)
@@ -55,10 +66,8 @@ func fetchScalarOids(session sessionAPI, oids []string) (map[string]snmpValue, e
 	return resultToScalarValues(results), nil
 }
 
-func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oidBatchSize int) (map[string]map[string]snmpValue, error) {
-	// Get results
-	// TODO: Improve batching algorithm and make it more readable
-	retValues := make(map[string]map[string]snmpValue)
+func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oidBatchSize int) (columnResultValuesType, error) {
+	retValues := make(columnResultValuesType)
 
 	columnOids := getOidsMapKeys(oids)
 	batches, err := createStringBatches(columnOids, oidBatchSize)
@@ -93,10 +102,8 @@ func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oid
 // fetchColumnOids has an `oids` argument representing a `map[string]string`,
 // the key of the map is the column oid, and the value is the oid used to fetch the next value for the column.
 // The value oid might be equal to column oid or a row oid of the same column.
-//
-// Return value structure:  map[columnOID]map[index]interface(float64 or string)
-func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map[string]snmpValue, error) {
-	returnValues := make(map[string]map[string]snmpValue)
+func fetchColumnOids(session sessionAPI, oids map[string]string) (columnResultValuesType, error) {
+	returnValues := make(columnResultValuesType)
 	curOids := oids
 	for {
 		log.Debugf("fetchColumnOidsWithBatching() curOids  : %v", curOids)
@@ -111,23 +118,29 @@ func fetchColumnOids(session sessionAPI, oids map[string]string) (map[string]map
 		// sorting columnOids and bulkOids to make them deterministic for testing purpose
 		sort.Strings(columnOids)
 		sort.Strings(bulkOids)
+
 		results, err := session.GetBulk(bulkOids)
 		log.Debugf("fetchColumnOidsWithBatching() results: %v", results)
 		if err != nil {
 			return nil, fmt.Errorf("GetBulk failed: %s", err)
 		}
-		values, nextOids := resultToColumnValues(columnOids, results)
-		for columnOid, columnValues := range values {
-			for oid, value := range columnValues {
-				if _, ok := returnValues[columnOid]; !ok {
-					returnValues[columnOid] = make(map[string]snmpValue)
-				}
-				returnValues[columnOid][oid] = value
-			}
-		}
+
+		newValues, nextOids := resultToColumnValues(columnOids, results)
+		updateColumnResultValues(returnValues, newValues)
 		curOids = nextOids
 	}
 	return returnValues, nil
+}
+
+func updateColumnResultValues(values columnResultValuesType, extraValues columnResultValuesType) {
+	for columnOid, columnValues := range extraValues {
+		for oid, value := range columnValues {
+			if _, ok := values[columnOid]; !ok {
+				values[columnOid] = make(map[string]snmpValue)
+			}
+			values[columnOid][oid] = value
+		}
+	}
 }
 
 func getOidsMapKeys(oidsMap map[string]string) []string {

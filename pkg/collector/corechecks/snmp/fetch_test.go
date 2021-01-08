@@ -76,7 +76,7 @@ func Test_fetchColumnOids(t *testing.T) {
 	columnValues, err := fetchColumnOidsWithBatching(session, oids, 100)
 	assert.Nil(t, err)
 
-	expectedColumnValues := map[string]map[string]snmpValue{
+	expectedColumnValues := columnResultValuesType{
 		"1.1.1": {
 			"1": snmpValue{val: float64(11)},
 			"2": snmpValue{val: float64(12)},
@@ -188,7 +188,7 @@ func Test_fetchColumnOidsBatch(t *testing.T) {
 	columnValues, err := fetchColumnOidsWithBatching(session, oids, 2)
 	assert.Nil(t, err)
 
-	expectedColumnValues := map[string]map[string]snmpValue{
+	expectedColumnValues := columnResultValuesType{
 		"1.1.1": {
 			"1": snmpValue{val: float64(11)},
 			"2": snmpValue{val: float64(12)},
@@ -261,7 +261,7 @@ func Test_fetchOidBatchSize(t *testing.T) {
 	columnValues, err := fetchScalarOidsWithBatching(session, oids, 2)
 	assert.Nil(t, err)
 
-	expectedColumnValues := map[string]snmpValue{
+	expectedColumnValues := scalarResultValuesType{
 		"1.1.1.1.0": {val: float64(10)},
 		"1.1.1.2.0": {val: float64(20)},
 		"1.1.1.3.0": {val: float64(30)},

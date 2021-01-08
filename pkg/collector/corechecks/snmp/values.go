@@ -5,8 +5,8 @@ import (
 )
 
 type snmpValues struct {
-	scalarValues map[string]snmpValue            // map[instanceOid]snmpValue
-	columnValues map[string]map[string]snmpValue // map[columnOid]map[rowOid]snmpValue
+	scalarValues scalarResultValuesType
+	columnValues columnResultValuesType
 }
 
 // getScalarValues look for oid and returns the val and boolean
