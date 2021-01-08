@@ -124,7 +124,7 @@ func fetchColumnOidsOneBatch(session sessionAPI, oids map[string]string) (map[st
 		results, err := session.GetBulk(bulkOids)
 		log.Debugf("fetchColumnOids() results: %v", results)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("GetBulk failed: %s", err)
 		}
 		values, nextOids := resultToColumnValues(columnOids, results)
 		for columnOid, columnValues := range values {
