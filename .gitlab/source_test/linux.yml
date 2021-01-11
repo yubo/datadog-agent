@@ -22,6 +22,40 @@
     - inv -e rtloader.format --raise-if-changed
     - inv -e rtloader.test
 
+.linux_tests_preparation_arm:
+  needs: ["linux_arm64_go_deps"]
+  before_script:
+    - *retrieve_linux_go_deps
+    - source /root/.bashrc
+    - python3 -m pip install wheel
+    - python3 -m pip install -r requirements.txt
+    - GO111MODULE=off go get gopkg.in/yaml.v2
+    - GO111MODULE=off go get github.com/stretchr/testify
+    - inv -e rtloader.make --install-prefix=$SRC_PATH/dev --python-runtimes "$PYTHON_RUNTIMES"
+    - inv -e rtloader.install
+    - inv -e rtloader.format --raise-if-changed
+    - inv -e rtloader.test
+
+tests_deb-arm64-py2:
+  extends: .linux_tests_preparation_arm
+  stage: source_test
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/deb_arm64:$DATADOG_AGENT_ARMBUILDIMAGES
+  tags: ["runner:docker-arm", "platform:arm64"]
+  variables:
+    PYTHON_RUNTIMES: '2'
+  script:
+    - inv -e test --race --profile --python-runtimes "$PYTHON_RUNTIMES" --cpus 4
+
+tests_deb-arm64-py3:
+  extends: .linux_tests_preparation_arm
+  stage: source_test
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/deb_arm64:$DATADOG_AGENT_ARMBUILDIMAGES
+  tags: ["runner:docker-arm", "platform:arm64"]
+  variables:
+    PYTHON_RUNTIMES: '3'
+  script:
+    - inv -e test --race --profile --python-runtimes "$PYTHON_RUNTIMES" --cpus 4
+
 tests_deb-x64-py2:
   extends: .linux_tests_preparation
   stage: source_test

@@ -1,6 +1,6 @@
 # python development requirements for the Datadog Agent
 invoke==1.4.1
-reno==3.1.0
+reno==3.1.0 ; platform_machine == "x86_64"
 docker==3.7.3
 docker-squash==1.0.8
 requests==2.23.0
