@@ -116,7 +116,6 @@ def stop(flavor)
   if os == :windows
     # forces the trace agent (and other dependent services) to stop
     result = system "net stop /y #{service} 2>&1"
-    sleep 5
   else
     if has_systemctl
       result = system "sudo systemctl stop #{service}.service"
@@ -134,7 +133,6 @@ def start(flavor)
   service = get_service_name(flavor)
   if os == :windows
     result = system "net start #{service} 2>&1"
-    sleep 5
   else
     if has_systemctl
       result = system "sudo systemctl start #{service}.service"
@@ -154,11 +152,9 @@ def restart(flavor)
     # forces the trace agent (and other dependent services) to stop
     if is_service_running?(service)
       result = system "net stop /y #{service} 2>&1"
-      sleep 5
       wait_until_service_stopped(service)
     end
     result = system "net start #{service} 2>&1"
-    sleep 5
     wait_until_service_started(service)
   else
     if has_systemctl
@@ -727,7 +723,6 @@ shared_examples_for 'an Agent that is removed' do
   end
 
   it 'should not be running the agent after removal' do
-    sleep 5
     expect(agent_processes_running?).to be_falsey
   end
 
