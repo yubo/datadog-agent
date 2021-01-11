@@ -14,6 +14,7 @@ type metricSender struct {
 
 func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metricTagConfig, values *snmpValues, tags []string) {
 	// TODO: Move code to a better place, we should report `snmp.devices_monitored` even if calls fail
+	log.Warnf("reportMetrics tags: %v", tags)
 	ms.sender.Gauge("snmp.devices_monitored", float64(1), "", tags)
 	for _, metric := range metrics {
 		if metric.Symbol.OID != "" {
@@ -48,6 +49,7 @@ func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *snmpVa
 }
 
 func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
+	log.Warnf("reportColumnMetrics tags: %v", tags)
 	for _, symbol := range metricConfig.Symbols {
 		metricValues, err := values.getColumnValues(symbol.OID)
 		if err != nil {
@@ -55,9 +57,14 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 			continue
 		}
 		for fullIndex, value := range metricValues {
+			log.Warnf("reportColumnMetrics tags: %v", tags)
 			var rowTags []string
+			log.Warnf("reportColumnMetrics tags: %v", tags)
+			log.Warnf("reportColumnMetrics rowTags: %v", rowTags)
 			rowTags = append(rowTags, tags...)
 			rowTags = append(rowTags, metricConfig.getTags(fullIndex, values)...)
+			log.Warnf("reportColumnMetrics tags: %v", tags)
+			log.Warnf("reportColumnMetrics rowTags: %v", rowTags)
 			ms.sendMetric(symbol.Name, value, rowTags, metricConfig.ForcedType, metricConfig.Options)
 		}
 	}
@@ -69,7 +76,15 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []st
 	metricFullName := "snmp." + metricName
 
 	sort.Strings(tags)
-
+	hasLoaderCore := false
+	for _, tag := range tags {
+		if "loader:core" == tag {
+			hasLoaderCore = true
+		}
+	}
+	if ! hasLoaderCore {
+		log.Errorf("Tags does not contain loader core: %v", tags)
+	}
 	if forcedType != "" {
 		switch forcedType {
 		case "gauge":
