@@ -51,7 +51,7 @@ TEST_F(CustomActionDataTest, When_ServiceDoesNotExists_And_UserExists_ButNoPassw
 TEST_F(CustomActionDataTest, When_ServiceExists_And_UserDoesNotExists_WithUserInDifferentDomain_ReturnsFalse) {
     CustomActionData customActionCtx;
     customActionCtx.init(L"DDAGENTUSER_NAME=different_domain\\test");
-    domainname = L"domain";
+    //ddAgentUserDomain = L"domain";
 
     bool shouldResetPass;
 
@@ -70,7 +70,7 @@ TEST_F(CustomActionDataTest, When_ServiceExists_And_UserDoesNotExists_WithUserIn
 TEST_F(CustomActionDataTest, When_ServiceDoesNotExists_And_UserDoesNotExists_WithUserInDotLocalDomain_ReturnsTrue) {
     CustomActionData customActionCtx;
     customActionCtx.init(L"DDAGENTUSER_NAME=TEST.LOCAL\\username");
-    domainname = L"test";
+    //ddAgentUserDomain = L"domain";
 
     bool shouldResetPass;
 
