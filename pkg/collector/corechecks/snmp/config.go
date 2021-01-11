@@ -78,7 +78,9 @@ func (c *snmpConfig) refreshWithProfile(profile string) error {
 		return fmt.Errorf("unknown profile '%s'", profile)
 	}
 	log.Debugf("Refreshing with profile `%s` with content: %#v", profile, c.Profiles[profile])
+	log.Warnf("refreshWithProfile Tags 1: %v", c.Tags)
 	c.Tags = append(c.Tags, "snmp_profile:"+profile)
+	log.Warnf("refreshWithProfile Tags 2: %v", c.Tags)
 	definition := c.Profiles[profile]
 
 	// https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py#L181-L200
@@ -87,9 +89,11 @@ func (c *snmpConfig) refreshWithProfile(profile string) error {
 	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, parseScalarOids(definition.Metrics, definition.MetricTags)...)
 	c.OidConfig.columnOids = append(c.OidConfig.columnOids, parseColumnOids(definition.Metrics)...)
 
+	log.Warnf("refreshWithProfile Tags 3: %v", c.Tags)
 	if definition.Device.Vendor != "" {
 		c.Tags = append(c.Tags, "device_vendor:"+definition.Device.Vendor)
 	}
+	log.Warnf("refreshWithProfile Tags 4: %v", c.Tags)
 	return nil
 }
 
@@ -205,7 +209,9 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	profile := instance.Profile
 
 	if profile != "" {
+		log.Warnf("config.go Tags 1: %v", c.Tags)
 		err = c.refreshWithProfile(profile)
+		log.Warnf("config.go Tags 2: %v", c.Tags)
 		if err != nil {
 			// TODO: test me
 			return snmpConfig{}, fmt.Errorf("failed to refresh with profile: %s", err)
