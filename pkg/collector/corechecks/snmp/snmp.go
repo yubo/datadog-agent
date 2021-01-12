@@ -31,7 +31,6 @@ func (c *Check) Run() error {
 	}
 
 	tags := c.config.getInstanceTags()
-	log.Warnf("Run Tags 1: %v", tags)
 
 	sender.MonotonicCount("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
 	start := time.Now()
@@ -50,7 +49,6 @@ func (c *Check) Run() error {
 	sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", tags, "")
 	defer c.session.Close() // TODO: handle error?
 
-	log.Warnf("Run Tags 2: %v", tags)
 	// If no OIDs, try to detect profile using device sysobjectid
 	if !c.config.OidConfig.hasOids() {
 		sysObjectID, err := fetchSysObjectID(c.session)
@@ -61,16 +59,13 @@ func (c *Check) Run() error {
 		if err != nil {
 			return fmt.Errorf("failed to get profile sys object id for `%s`: %s", sysObjectID, err)
 		}
-		log.Warnf("snmp.go Tags 1: %v", c.config.Tags)
 		err = c.config.refreshWithProfile(profile)
 		if err != nil {
 			return fmt.Errorf("failed to refresh with profile: %s", err)
 		}
-		log.Warnf("snmp.go Tags 2: %v", c.config.Tags)
 		tags = c.config.getInstanceTags()
 	}
 
-	log.Warnf("Run Tags 3: %v", tags)
 	// Fetch and report metrics
 	if c.config.OidConfig.hasOids() {
 		c.config.addUptimeMetric()
@@ -80,9 +75,7 @@ func (c *Check) Run() error {
 			return err
 		}
 
-		log.Warnf("Report metrics 1: %v", tags)
 		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, snmpValues)...)
-		log.Warnf("Report metrics 2: %v", tags)
 		c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
 	}
 
