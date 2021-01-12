@@ -14,7 +14,7 @@ import (
 )
 
 // ksmMetricPrefix defines the KSM metrics namespace
-const ksmMetricPrefix = "kubernetes_state."
+const ksmMetricPrefix = "kubernetes_state_core."
 
 var (
 	// defaultLabelsMapper contains the default label to tag names mapping
