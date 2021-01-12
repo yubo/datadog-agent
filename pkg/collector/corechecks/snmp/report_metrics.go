@@ -70,6 +70,7 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []st
 
 	sort.Strings(tags)
 
+	log.Warnf("sendMetric tags: %v", tags)
 	if forcedType != "" {
 		switch forcedType {
 		case "gauge":
