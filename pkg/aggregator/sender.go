@@ -229,9 +229,10 @@ func (s *checkSender) SendRawMetricSample(sample *metrics.MetricSample) {
 }
 
 func (s *checkSender) sendMetricSample(metric string, value float64, hostname string, tags []string, mType metrics.MetricType, flushFirstValue bool) {
+	log.Trace(mType.String(), " 1 sample: ", metric, ": ", value, " for hostname: ", hostname, " tags: ", tags, " s.checkTags: ", s.checkTags)
 	tags = append(tags, s.checkTags...)
 
-	log.Trace(mType.String(), " sample: ", metric, ": ", value, " for hostname: ", hostname, " tags: ", tags)
+	log.Trace(mType.String(), " 2 sample: ", metric, ": ", value, " for hostname: ", hostname, " tags: ", tags, " s.checkTags: ", s.checkTags)
 
 	metricSample := &metrics.MetricSample{
 		Name:            metric,

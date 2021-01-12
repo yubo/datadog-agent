@@ -68,7 +68,9 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []st
 	//   See https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L34-L48
 	metricFullName := "snmp." + metricName
 
+	log.Trace("sendMetric 1: ", metricFullName, " : ", tags, " pointer", &tags)
 	sort.Strings(tags)
+	log.Trace("sendMetric 2: ", metricFullName, " : ", tags, " pointer", &tags)
 
 	if forcedType != "" {
 		switch forcedType {
