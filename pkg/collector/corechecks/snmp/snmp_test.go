@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"path/filepath"
-	"sort"
 	"testing"
 	"time"
 )
@@ -189,17 +188,13 @@ tags:
 	row2Tags = append(row2Tags, snmpGlobalTags...)
 	row2Tags = append(row2Tags, "if_index:2", "if_desc:desc2")
 
-	sort.Strings(snmpGlobalTags)
-	sort.Strings(row1Tags)
-	sort.Strings(row2Tags)
-
-	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpGlobalTags)
-	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpGlobalTags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifNumber", float64(30), "", snmpGlobalTags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(141), "", row1Tags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifInErrors", float64(142), "", row2Tags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(201), "", row1Tags)
-	sender.AssertCalled(t, "Gauge", "snmp.ifOutErrors", float64(202), "", row2Tags)
+	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpGlobalTags)
+	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpGlobalTags)
+	sender.AssertMetric(t, "Gauge", "snmp.ifNumber", float64(30), "", snmpGlobalTags)
+	sender.AssertMetric(t, "Gauge", "snmp.ifInErrors", float64(141), "", row1Tags)
+	sender.AssertMetric(t, "Gauge", "snmp.ifInErrors", float64(142), "", row2Tags)
+	sender.AssertMetric(t, "Gauge", "snmp.ifOutErrors", float64(201), "", row1Tags)
+	sender.AssertMetric(t, "Gauge", "snmp.ifOutErrors", float64(202), "", row2Tags)
 
 	sender.AssertMetricTaggedWith(t, "MonotonicCount", "snmp.check_interval", snmpTags)
 	sender.AssertMetricTaggedWith(t, "Gauge", "snmp.check_duration", snmpGlobalTags)
@@ -266,11 +261,11 @@ metrics:
 	assert.Nil(t, err)
 
 	tags := []string{"loader:core", "snmp_device:1.2.3.4"}
-	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
-	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", tags)
-	sender.AssertCalled(t, "Gauge", "snmp.SomeGaugeMetric", float64(30), "", tags)
-	sender.AssertCalled(t, "Rate", "snmp.SomeCounter32Metric", float64(40), "", tags)
-	sender.AssertCalled(t, "Rate", "snmp.SomeCounter64Metric", float64(50), "", tags)
+	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
+	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", tags)
+	sender.AssertMetric(t, "Gauge", "snmp.SomeGaugeMetric", float64(30), "", tags)
+	sender.AssertMetric(t, "Rate", "snmp.SomeCounter32Metric", float64(40), "", tags)
+	sender.AssertMetric(t, "Rate", "snmp.SomeCounter64Metric", float64(50), "", tags)
 }
 
 func TestProfile(t *testing.T) {
@@ -397,17 +392,13 @@ profiles:
 	row2Tags = append(row2Tags, snmpTags...)
 	row2Tags = append(row2Tags, "interface:nameRow2", "interface_alias:descRow2")
 
-	sort.Strings(snmpTags)
-	sort.Strings(row1Tags)
-	sort.Strings(row2Tags)
-
-	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
-	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
-	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(141), "", row1Tags)
-	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(142), "", row2Tags)
-	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
-	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
-	sender.AssertCalled(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
+	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
+	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
+	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInErrors", float64(141), "", row1Tags)
+	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInErrors", float64(142), "", row2Tags)
+	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
+	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
+	sender.AssertMetric(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
 }
 
 func TestProfileWithSysObjectIdDetection(t *testing.T) {
@@ -544,17 +535,13 @@ profiles:
 	row2Tags = append(row2Tags, snmpTags...)
 	row2Tags = append(row2Tags, "interface:nameRow2", "interface_alias:descRow2")
 
-	sort.Strings(snmpTags)
-	sort.Strings(row1Tags)
-	sort.Strings(row2Tags)
-
-	sender.AssertCalled(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
-	sender.AssertCalled(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
-	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(141), "", row1Tags)
-	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInErrors", float64(142), "", row2Tags)
-	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
-	sender.AssertCalled(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
-	sender.AssertCalled(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
+	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
+	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
+	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInErrors", float64(141), "", row1Tags)
+	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInErrors", float64(142), "", row2Tags)
+	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
+	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
+	sender.AssertMetric(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
 }
 
 func TestCheckID(t *testing.T) {
