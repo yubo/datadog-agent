@@ -70,6 +70,13 @@ metrics:
       3: ipv4z
       4: ipv6z
       16: dns
+  - column:
+      OID: '1.2.3.4.8.1.2'
+      name: 'cpiPduName'
+    match: '(\w)(\w+)'
+    tags:
+      prefix: '\1'
+      suffix: '\2'
 metric_tags:
   - OID: 1.2.3
     symbol: mySymbol
@@ -132,6 +139,16 @@ global_metrics:
 					"4":  "ipv6z",
 					"16": "dns",
 				}},
+				{
+					Column: symbolConfig{
+						Name: "cpiPduName",
+						OID:  "1.2.3.4.8.1.2",
+					},
+					Match: "(\\w)(\\w+)",
+					Tags: map[string]string{
+						"prefix": "\\1",
+						"suffix": "\\2",
+					}},
 			},
 		},
 		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},

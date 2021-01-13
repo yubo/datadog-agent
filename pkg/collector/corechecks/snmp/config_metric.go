@@ -24,6 +24,10 @@ type metricTagConfig struct {
 	IndexTransform []metricIndexTransform `yaml:"index_transform"`
 
 	Mapping map[string]string `yaml:"mapping"`
+
+	// Regex
+	Match string            `yaml:"match"`
+	Tags  map[string]string `yaml:"tags"`
 }
 
 type metricIndexTransform struct {
