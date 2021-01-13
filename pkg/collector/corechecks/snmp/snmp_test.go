@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"path/filepath"
-	"sort"
 	"testing"
 	"time"
 )
@@ -180,18 +179,9 @@ tags:
 	assert.Nil(t, err)
 
 	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
-	snmpGlobalTags := []string{"snmp_host:foo_sys_name"}
-	snmpGlobalTags = append(snmpGlobalTags, snmpTags...)
-
-	var row1Tags, row2Tags []string
-	row1Tags = append(row1Tags, snmpGlobalTags...)
-	row1Tags = append(row1Tags, "if_index:1", "if_desc:desc1")
-	row2Tags = append(row2Tags, snmpGlobalTags...)
-	row2Tags = append(row2Tags, "if_index:2", "if_desc:desc2")
-
-	sort.Strings(snmpGlobalTags)
-	sort.Strings(row1Tags)
-	sort.Strings(row2Tags)
+	snmpGlobalTags := append(copyTags(snmpTags), "snmp_host:foo_sys_name")
+	row1Tags := append(copyTags(snmpGlobalTags), "if_index:1", "if_desc:desc1")
+	row2Tags := append(copyTags(snmpGlobalTags), "if_index:2", "if_desc:desc2")
 
 	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpGlobalTags)
 	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpGlobalTags)
@@ -390,16 +380,8 @@ profiles:
 	assert.Nil(t, err)
 
 	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
-
-	var row1Tags, row2Tags []string
-	row1Tags = append(row1Tags, snmpTags...)
-	row1Tags = append(row1Tags, "interface:nameRow1", "interface_alias:descRow1")
-	row2Tags = append(row2Tags, snmpTags...)
-	row2Tags = append(row2Tags, "interface:nameRow2", "interface_alias:descRow2")
-
-	sort.Strings(snmpTags)
-	sort.Strings(row1Tags)
-	sort.Strings(row2Tags)
+	row1Tags := append(copyTags(snmpTags), "interface:nameRow1", "interface_alias:descRow1")
+	row2Tags := append(copyTags(snmpTags), "interface:nameRow2", "interface_alias:descRow2")
 
 	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
 	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)
@@ -537,16 +519,8 @@ profiles:
 	assert.Nil(t, err)
 
 	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
-
-	var row1Tags, row2Tags []string
-	row1Tags = append(row1Tags, snmpTags...)
-	row1Tags = append(row1Tags, "interface:nameRow1", "interface_alias:descRow1")
-	row2Tags = append(row2Tags, snmpTags...)
-	row2Tags = append(row2Tags, "interface:nameRow2", "interface_alias:descRow2")
-
-	sort.Strings(snmpTags)
-	sort.Strings(row1Tags)
-	sort.Strings(row2Tags)
+	row1Tags := append(copyTags(snmpTags), "interface:nameRow1", "interface_alias:descRow1")
+	row2Tags := append(copyTags(snmpTags), "interface:nameRow2", "interface_alias:descRow2")
 
 	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpTags)
 	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpTags)

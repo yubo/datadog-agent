@@ -54,8 +54,7 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 			continue
 		}
 		for fullIndex, value := range metricValues {
-			var rowTags []string
-			rowTags = append(rowTags, tags...)
+			rowTags := copyTags(tags)
 			rowTags = append(rowTags, metricConfig.getTags(fullIndex, values)...)
 			ms.sendMetric(symbol.Name, value, rowTags, metricConfig.ForcedType, metricConfig.Options)
 		}
