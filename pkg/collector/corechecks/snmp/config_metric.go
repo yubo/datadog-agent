@@ -2,6 +2,7 @@ package snmp
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"regexp"
 	"strings"
 )
 
@@ -108,11 +109,35 @@ func (m *metricsConfig) getTags(fullIndex string, values *snmpValues) []string {
 				// TODO: Test me
 				log.Debugf("index not found for column value: tag=%v, index=%v", metricTag.Tag, newFullIndex)
 			} else {
-				rowTags = append(rowTags, metricTag.Tag+":"+tagValue.toString())
+				rowTags = append(rowTags, metricTag.getTags(tagValue.toString())...)
 			}
 		}
 	}
 	return rowTags
+}
+
+func (mtc metricTagConfig) getTags(value string) []string {
+	var tags []string
+	if mtc.Tag != "" {
+		tags = append(tags, mtc.Tag+":"+value)
+	} else if mtc.Match != "" {
+		re := regexp.MustCompile(mtc.Match) // TODO: may fail, compile in config validation
+		if re.MatchString(value) {
+			for key, val := range mtc.Tags {
+				replacedVal := re.ReplaceAllString(value, val)
+				tags = append(tags, key+":"+replacedVal)
+			}
+		}
+	}
+	// TODO: Handle error case in config validation
+	return tags
+}
+
+// normalizeRegexReplaceValue normalize regex value to keep compatibility with Python
+// Converts \1 into $1, \2 into $2, etc
+func normalizeRegexReplaceValue(val string) string {
+	re := regexp.MustCompile("\\\\(\\d+)")
+	return re.ReplaceAllString(val, "$$$1")
 }
 
 func transformIndex(indexes []string, transformRules []metricIndexTransform) []string {

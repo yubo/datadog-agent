@@ -126,6 +126,102 @@ metric_tags:
 			&snmpValues{},
 			[]string{"ipversion:ipv4z"},
 		},
+		{
+			"regex match",
+			[]byte(`
+table:
+  OID:  1.2.3.4.5
+  name: cpiPduBranchTable
+symbols:
+  - OID: 1.2.3.4.5.1.2
+    name: cpiPduBranchCurrent
+metric_tags:
+  - column:
+      OID:  1.2.3.4.8.1.2
+      name: cpiPduName
+    table: cpiPduTable
+    match: '(\w)(\w+)'
+    tags:
+      prefix: '$1'
+      suffix: '$2'
+`),
+			"1.2.3.4.5.6.7.8",
+			&snmpValues{
+				columnValues: map[string]map[string]snmpValue{
+					"1.2.3.4.8.1.2": {
+						"1.2.3.4.5.6.7.8": snmpValue{
+							val: "eth0",
+						},
+					},
+				},
+			},
+			[]string{"prefix:e", "suffix:th0"},
+		},
+		{
+			"regex does not match",
+			[]byte(`
+table:
+  OID:  1.2.3.4.5
+  name: cpiPduBranchTable
+symbols:
+  - OID: 1.2.3.4.5.1.2
+    name: cpiPduBranchCurrent
+metric_tags:
+  - column:
+      OID:  1.2.3.4.8.1.2
+      name: cpiPduName
+    table: cpiPduTable
+    match: '(\w)(\w+)'
+    tags:
+      prefix: '$1'
+      suffix: '$2'
+`),
+			"1.2.3.4.5.6.7.8",
+			&snmpValues{
+				columnValues: map[string]map[string]snmpValue{
+					"1.2.3.4.8.1.2": {
+						"1.2.3.4.5.6.7.8": snmpValue{
+							val: "....",
+						},
+					},
+				},
+			},
+			[]string(nil),
+		},
+		// TODO: Test value 'GigabitEthernet1/0/8' with match: '(\w)(\w+)'
+		//
+		//		{
+		//			"regex",
+		//			[]byte(`
+		//table:
+		//  OID:  1.2.3.4.5
+		//  name: cpiPduBranchTable
+		//symbols:
+		//  - OID: 1.2.3.4.5.1.2
+		//    name: cpiPduBranchCurrent
+		//metric_tags:
+		//  - column:
+		//      OID:  1.2.3.4.8.1.2
+		//      name: cpiPduName
+		//    table: cpiPduTable
+		//    match: '(\w)(\w+)'
+		//    tags:
+		//      prefix: '$1'
+		//      suffix: '$2'
+		//`),
+		//			"1.2.3.4.5.6.7.8",
+		//			&snmpValues{
+		//				columnValues: map[string]map[string]snmpValue{
+		//					"1.2.3.4.8.1.2": {
+		//						"1.2.3.4.5.6.7.8": snmpValue{
+		//							val: "GigabitEthernet1/0/8",
+		//						},
+		//					},
+		//				},
+		//			},
+		//			[]string{},
+		//		},
+
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -135,6 +231,39 @@ metric_tags:
 			tags := m.getTags(tt.fullIndex, tt.values)
 
 			assert.Equal(t, tt.expectedTags, tags)
+		})
+	}
+}
+
+func Test_normalizeRegexReplaceValue(t *testing.T) {
+	tests := []struct {
+		val                   string
+		expectedReplacedValue string
+	}{
+		{
+			"abc",
+			"abc",
+		},
+		{
+			"a\\1b",
+			"a$1b",
+		},
+		{
+			"a$1b",
+			"a$1b",
+		},
+		{
+			"\\1",
+			"$1",
+		},
+		{
+			"\\2",
+			"$2",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.val, func(t *testing.T) {
+			assert.Equal(t, tt.expectedReplacedValue, normalizeRegexReplaceValue(tt.val))
 		})
 	}
 }
