@@ -40,9 +40,6 @@ type snmpInstanceConfig struct {
 	// Profile and Metrics configs
 	Profile          string `yaml:"profile"`
 	UseGlobalMetrics bool   `yaml:"use_global_metrics"`
-
-	// TODO: To implement:
-	//   - context_engine_id: Investigate if we can remove this configuration.
 }
 
 // TODO: Move to config_oid.go file
