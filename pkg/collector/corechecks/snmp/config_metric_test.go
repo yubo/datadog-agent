@@ -188,6 +188,37 @@ metric_tags:
 			},
 			[]string(nil),
 		},
+		{
+			"regex does not match exact",
+			[]byte(`
+table:
+  OID:  1.2.3.4.5
+  name: cpiPduBranchTable
+symbols:
+  - OID: 1.2.3.4.5.1.2
+    name: cpiPduBranchCurrent
+metric_tags:
+  - column:
+      OID:  1.2.3.4.8.1.2
+      name: cpiPduName
+    table: cpiPduTable
+    match: '^(\w)(\w+)$'
+    tags:
+      prefix: '$1'
+      suffix: '$2'
+`),
+			"1.2.3.4.5.6.7.8",
+			&snmpValues{
+				columnValues: map[string]map[string]snmpValue{
+					"1.2.3.4.8.1.2": {
+						"1.2.3.4.5.6.7.8": snmpValue{
+							val: "abc.",
+						},
+					},
+				},
+			},
+			[]string(nil),
+		},
 		// TODO: Test value 'GigabitEthernet1/0/8' with match: '(\w)(\w+)'
 		//
 		//		{
