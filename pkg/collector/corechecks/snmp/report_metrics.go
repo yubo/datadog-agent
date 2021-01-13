@@ -11,7 +11,7 @@ type metricSender struct {
 	submittedMetrics int
 }
 
-func (ms *metricSender) reportMetrics(metrics []metricsConfig, metricTags []metricTagConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *snmpValues, tags []string) {
 	// TODO: Move code to a better place, we should report `snmp.devices_monitored` even if calls fail
 	ms.sender.Gauge("snmp.devices_monitored", float64(1), "", tags)
 	for _, metric := range metrics {
@@ -62,8 +62,6 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 }
 
 func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []string, forcedType string, options metricsConfigOption) {
-	// TODO: Submit using the right type
-	//   See https://github.com/DataDog/integrations-core/blob/d6add1dfcd99c3610f45390b8d4cd97390af1f69/snmp/datadog_checks/snmp/pysnmp_inspect.py#L34-L48
 	metricFullName := "snmp." + metricName
 
 	tags = copyTags(tags)

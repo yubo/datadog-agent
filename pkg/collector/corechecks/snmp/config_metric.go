@@ -5,45 +5,10 @@ import (
 	"strings"
 )
 
-/*
-TODO: Shall we support 1/ deprecated syntax
-We are only supporting case 2/ for now.
-
-1/ deprecated
-    metrics:
-      - OID: 1.3.6.1.2.1.2.1
-        name: ifNumber
-2/
-    metrics:
-      - MIB: IF-MIB
-        symbol:
-          - OID: 1.3.6.1.2.1.2.1
-            name: ifNumber
-*/
-
 type symbolConfig struct {
 	OID  string `yaml:"OID"`
 	Name string `yaml:"name"`
 }
-
-/*
-metrics:
-  # Example for the dummy table above:
-  - MIB: EXAMPLE-MIB
-    table:
-      # Identification of the table which metrics come from.
-      OID: 1.3.6.1.4.1.10
-      name: exampleTable
-    symbols:
-      # List of symbols ('columns') to retrieve.
-      # Same format as for a single OID.
-      # Each row in the table will emit these metrics.
-      - OID: 1.3.6.1.4.1.10.1.1
-        name: exampleColumn1
-      - OID: 1.3.6.1.4.1.10.1.2
-        name: exampleColumn2
-      # ...
-*/
 
 type metricTagConfig struct {
 	Tag string `yaml:"tag"`

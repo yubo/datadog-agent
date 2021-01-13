@@ -76,7 +76,7 @@ func (c *Check) Run() error {
 		}
 
 		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, snmpValues)...)
-		c.sender.reportMetrics(c.config.Metrics, c.config.MetricTags, snmpValues, tags)
+		c.sender.reportMetrics(c.config.Metrics, snmpValues, tags)
 	}
 
 	// TODO: Remove Telemetry

@@ -169,7 +169,6 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.MetricTags = instance.MetricTags
 	// TODO: Validate c.MetricTags
 
-	// TODO: test me
 	c.OidConfig.scalarOids = parseScalarOids(c.Metrics, c.MetricTags)
 	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
 
