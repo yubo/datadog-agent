@@ -42,12 +42,6 @@ type snmpInstanceConfig struct {
 	UseGlobalMetrics bool   `yaml:"use_global_metrics"`
 }
 
-// TODO: Move to config_oid.go file
-type oidConfig struct {
-	scalarOids []string
-	columnOids []string
-}
-
 type snmpConfig struct {
 	IPAddress         string
 	Port              uint16
@@ -107,10 +101,6 @@ func (c *snmpConfig) getInstanceTags() []string {
 	// TODO: Remove Telemetry
 	tags = append(tags, "loader:core")
 	return tags
-}
-
-func (oc *oidConfig) hasOids() bool {
-	return len(oc.columnOids) != 0 || len(oc.scalarOids) != 0
 }
 
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
