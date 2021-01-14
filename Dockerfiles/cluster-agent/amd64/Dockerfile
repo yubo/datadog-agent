@@ -2,7 +2,7 @@
 # Preparation stage: layout and chmods #
 ########################################
 
-FROM debian:bullseye-slim as builder
+FROM debian:stable as builder
 
 WORKDIR /output
 
@@ -25,7 +25,7 @@ RUN chmod 755 entrypoint.sh \
 # Actual docker image construction #
 ####################################
 
-FROM debian:bullseye-slim
+FROM debian:stable
 
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
@@ -35,7 +35,7 @@ ENV PATH="/opt/datadog-agent/bin/:$PATH"
 ENV DD_SECRET_BACKEND_COMMAND_ALLOW_GROUP_EXEC_PERM="true"
 
 RUN apt-get update \
-    && apt full-upgrade -y \
+    # && apt full-upgrade -y \
     && apt-get install --no-install-recommends -y ca-certificates curl \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

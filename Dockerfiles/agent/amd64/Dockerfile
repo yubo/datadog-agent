@@ -2,7 +2,7 @@
 #  Preparation stage: extract and cleanup  #
 ############################################
 
-FROM debian:bullseye-slim AS extract
+FROM debian:stable AS extract
 ARG WITH_JMX
 ARG PYTHON_VERSION
 ARG DD_AGENT_ARTIFACT=datadog-agent*_amd64.deb
@@ -76,7 +76,7 @@ COPY install_info etc/datadog-agent/
 #  Actual docker image construction  #
 ######################################
 
-FROM debian:bullseye-slim AS release
+FROM debian:stable AS release
 LABEL maintainer "Datadog <package@datadoghq.com>"
 ARG WITH_JMX
 ARG PYTHON_VERSION
@@ -96,7 +96,7 @@ ENV DOCKER_DD_AGENT=true \
 # make sure we have recent dependencies
 RUN apt update \
   # CVE-fixing time!
-  && apt full-upgrade -y \
+  # && apt full-upgrade -y \
   # Install iproute2 package for the ss utility that is used by the network check.
   # When the network check will have switched from using ss to directly parsing /proc/net/tcp,
   # this can be removed
@@ -110,7 +110,7 @@ RUN apt update \
 # Install openjdk-11-jre-headless on jmx flavor
 RUN if [ -n "$WITH_JMX" ]; then echo "Pulling openjdk-11 from testing" \
  && apt update \
- && mkdir /usr/share/man/man1 \
+ && mkdir -p /usr/share/man/man1 \
  && apt install --no-install-recommends -y openjdk-11-jre-headless \
  && apt clean; fi
 
