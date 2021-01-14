@@ -124,7 +124,8 @@ func (mtc metricTagConfig) getTags(value string) []string {
 		re := regexp.MustCompile(mtc.Match) // TODO: may fail, compile in config validation
 		if re.MatchString(value) {
 			for key, val := range mtc.Tags {
-				replacedVal := re.ReplaceAllString(value, val)
+				normalizedVal := normalizeRegexReplaceValue(val)
+				replacedVal := re.ReplaceAllString(value, normalizedVal)
 				tags = append(tags, key+":"+replacedVal)
 			}
 		}
