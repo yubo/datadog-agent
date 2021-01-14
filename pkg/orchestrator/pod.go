@@ -105,6 +105,9 @@ func ProcessPodList(podList []*v1.Pod, groupID int32, hostName string, clusterID
 		})
 	}
 
+	if len(messages) > 0 {
+		log.Warnf("DDFLORIANTEST: %v+", messages[0])
+	}
 	log.Debugf("Collected & enriched %d out of %d pods in %s", len(podMsgs), len(podList), time.Now().Sub(start))
 	return messages, nil
 }
