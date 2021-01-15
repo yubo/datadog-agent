@@ -57,7 +57,7 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 			rowTags := copyTags(tags)
 			rowTags = append(rowTags, metricConfig.getTags(fullIndex, values)...)
 			ms.sendMetric(symbol.Name, value, rowTags, metricConfig.ForcedType, metricConfig.Options)
-			ms.sendBandwidthUsageMetric(symbol, fullIndex, values, rowTags)
+			ms.trySendBandwidthUsageMetric(symbol, fullIndex, values, rowTags)
 		}
 	}
 }
