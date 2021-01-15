@@ -29,7 +29,7 @@ func fetchScalarOids(session sessionAPI, oids []string) (scalarResultValuesType,
 	// Get results
 	log.Debugf("fetchScalarOidsWithBatching() oids: %v", oids)
 	results, err := session.Get(oids)
-	log.Debugf("fetchColumnOidsWithBatching() results: %v", results)
+	log.Debugf("fetchScalarOidsWithBatching() results: %v", results)
 	if err != nil {
 		return nil, fmt.Errorf("error getting oids: %s", err.Error())
 	}
