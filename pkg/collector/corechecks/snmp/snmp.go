@@ -74,7 +74,7 @@ func (c *Check) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("snmpValues: %#v", snmpValues)
+		log.Debugf("fetched snmpValues: %#v", snmpValues)
 		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, snmpValues)...)
 		c.sender.reportMetrics(c.config.Metrics, snmpValues, tags)
 	}
