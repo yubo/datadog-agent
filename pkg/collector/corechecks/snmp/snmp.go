@@ -25,17 +25,15 @@ type Check struct {
 
 // Run executes the check
 func (c *Check) Run() error {
+	start := time.Now()
+
 	sender, err := aggregator.GetSender(c.ID())
 	if err != nil {
 		return err
 	}
+	c.sender = metricSender{sender: sender}
 
 	tags := c.config.getInstanceTags()
-
-	sender.MonotonicCount("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", copyTags(tags))
-	start := time.Now()
-
-	c.sender = metricSender{sender: sender}
 
 	// Create connection
 	err = c.session.Connect()
@@ -79,9 +77,11 @@ func (c *Check) Run() error {
 		c.sender.reportMetrics(c.config.Metrics, snmpValues, tags)
 	}
 
-	// TODO: Remove Telemetry
-	sender.Gauge("snmp.check_duration", float64(time.Since(start))/1e9, "", copyTags(tags))
-	sender.Gauge("snmp.submitted_metrics", float64(c.sender.submittedMetrics), "", copyTags(tags))
+	// SNMP Performance metrics
+	// TODO: Remove Telemetry?
+	sender.MonotonicCount("datadog.snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", copyTags(tags))
+	sender.Gauge("datadog.snmp.check_duration", float64(time.Since(start))/1e9, "", copyTags(tags))
+	sender.Gauge("datadog.snmp.submitted_metrics", float64(c.sender.submittedMetrics), "", copyTags(tags))
 
 	// Commit
 	sender.Commit()

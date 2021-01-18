@@ -191,9 +191,9 @@ tags:
 	sender.AssertMetric(t, "Gauge", "snmp.ifOutErrors", float64(201), "", row1Tags)
 	sender.AssertMetric(t, "Gauge", "snmp.ifOutErrors", float64(202), "", row2Tags)
 
-	sender.AssertMetricTaggedWith(t, "MonotonicCount", "snmp.check_interval", snmpTags)
-	sender.AssertMetricTaggedWith(t, "Gauge", "snmp.check_duration", snmpGlobalTags)
-	sender.AssertMetricTaggedWith(t, "Gauge", "snmp.submitted_metrics", snmpGlobalTags)
+	sender.AssertMetricTaggedWith(t, "MonotonicCount", "datadog.snmp.check_interval", snmpTags)
+	sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.check_duration", snmpGlobalTags)
+	sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.submitted_metrics", snmpGlobalTags)
 }
 
 func TestSupportedMetricTypes(t *testing.T) {
