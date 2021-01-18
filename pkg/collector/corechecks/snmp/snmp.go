@@ -85,7 +85,8 @@ func (c *Check) doRun() ([]string, error) {
 
 		valuesStore, err := fetchValues(c.session, c.config)
 		if err != nil {
-			return nil, err
+			// TODO: test me
+			return nil, fmt.Errorf("failed to fetch values: %s", err)
 		}
 		log.Debugf("fetched valuesStore: %#v", valuesStore)
 		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, valuesStore)...)
