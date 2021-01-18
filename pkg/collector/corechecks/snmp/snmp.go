@@ -52,14 +52,14 @@ func (c *Check) Run() error {
 }
 
 func (c *Check) doRun() ([]string, error) {
-	tags := c.config.getInstanceTags()
-
 	// Create connection
 	err := c.session.Connect()
 	if err != nil {
 		return nil, fmt.Errorf("snmp connection error: %s", err)
 	}
 	defer c.session.Close() // TODO: handle error?
+
+	var tags []string
 
 	// If no OIDs, try to detect profile using device sysobjectid
 	if !c.config.OidConfig.hasOids() {
@@ -75,8 +75,9 @@ func (c *Check) doRun() ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to refresh with profile: %s", err)
 		}
-		tags = c.config.getInstanceTags()
+
 	}
+	tags = c.config.getInstanceTags()
 
 	// Fetch and report metrics
 	if c.config.OidConfig.hasOids() {
