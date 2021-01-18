@@ -13,7 +13,7 @@ type metricSender struct {
 
 func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *snmpValues, tags []string) {
 	// TODO: Move code to a better place, we should report `snmp.devices_monitored` even if calls fail
-	ms.sender.Gauge("snmp.devices_monitored", float64(1), "", tags)
+	ms.sender.Gauge("snmp.devices_monitored", float64(1), "", copyTags(tags))
 	for _, metric := range metrics {
 		if metric.Symbol.OID != "" {
 			ms.reportScalarMetrics(metric, values, tags)

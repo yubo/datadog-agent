@@ -32,7 +32,7 @@ func (c *Check) Run() error {
 
 	tags := c.config.getInstanceTags()
 
-	sender.MonotonicCount("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
+	sender.MonotonicCount("snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", copyTags(tags))
 	start := time.Now()
 
 	c.sender = metricSender{sender: sender}
@@ -41,12 +41,12 @@ func (c *Check) Run() error {
 	err = c.session.Connect()
 	if err != nil {
 		// TODO: Test connection error
-		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", tags, err.Error())
+		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", copyTags(tags), err.Error())
 		return fmt.Errorf("snmp connection error: %s", err)
 	}
 	// TODO: Handle service check tags like
 	//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L401-L449
-	sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", tags, "")
+	sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", copyTags(tags), "")
 	defer c.session.Close() // TODO: handle error?
 
 	// If no OIDs, try to detect profile using device sysobjectid
@@ -80,8 +80,8 @@ func (c *Check) Run() error {
 	}
 
 	// TODO: Remove Telemetry
-	sender.Gauge("snmp.check_duration", float64(time.Since(start))/1e9, "", tags)
-	sender.Gauge("snmp.submitted_metrics", float64(c.sender.submittedMetrics), "", tags)
+	sender.Gauge("snmp.check_duration", float64(time.Since(start))/1e9, "", copyTags(tags))
+	sender.Gauge("snmp.submitted_metrics", float64(c.sender.submittedMetrics), "", copyTags(tags))
 
 	// Commit
 	sender.Commit()
