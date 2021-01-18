@@ -261,7 +261,7 @@ metric_tags:
 
 			tags := m.getTags(tt.fullIndex, tt.values)
 
-			assert.Equal(t, tt.expectedTags, tags)
+			assert.EqualValues(t, tt.expectedTags, tags)
 		})
 	}
 }

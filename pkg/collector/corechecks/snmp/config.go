@@ -60,7 +60,7 @@ type snmpConfig struct {
 	MetricTags        []metricTagConfig
 	OidBatchSize      int
 	Profiles          profileDefinitionMap
-	Tags              []string
+	InstanceTags      []string
 	uptimeMetricAdded bool
 }
 
@@ -69,7 +69,7 @@ func (c *snmpConfig) refreshWithProfile(profile string) error {
 		return fmt.Errorf("unknown profile '%s'", profile)
 	}
 	log.Debugf("Refreshing with profile `%s` with content: %#v", profile, c.Profiles[profile])
-	c.Tags = append(c.Tags, "snmp_profile:"+profile)
+	c.InstanceTags = append(c.InstanceTags, "snmp_profile:"+profile)
 	definition := c.Profiles[profile]
 
 	// https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py#L181-L200
@@ -79,7 +79,7 @@ func (c *snmpConfig) refreshWithProfile(profile string) error {
 	c.OidConfig.columnOids = append(c.OidConfig.columnOids, parseColumnOids(definition.Metrics)...)
 
 	if definition.Device.Vendor != "" {
-		c.Tags = append(c.Tags, "device_vendor:"+definition.Device.Vendor)
+		c.InstanceTags = append(c.InstanceTags, "device_vendor:"+definition.Device.Vendor)
 	}
 	return nil
 }
@@ -96,7 +96,7 @@ func (c *snmpConfig) addUptimeMetric() {
 
 func (c *snmpConfig) getInstanceTags() []string {
 	tags := []string{"snmp_device:" + c.IPAddress}
-	tags = append(tags, c.Tags...)
+	tags = append(tags, c.InstanceTags...)
 
 	// TODO: Remove Telemetry
 	tags = append(tags, "loader:core")
