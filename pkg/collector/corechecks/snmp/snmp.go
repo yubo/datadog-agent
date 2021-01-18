@@ -33,12 +33,15 @@ func (c *Check) Run() error {
 	}
 	c.sender = metricSender{sender: sender}
 
-	tags, err := c.doRun()
-	if err != nil {
-		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", copyTags(tags), err.Error())
-		return err
+	staticTags := c.config.getStaticTags()
+
+	var checkErr error
+	tags, checkErr := c.doRun(staticTags)
+	if checkErr != nil {
+		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", copyTags(tags), checkErr.Error())
+	} else {
+		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", copyTags(tags), "")
 	}
-	sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", copyTags(tags), "")
 
 	// SNMP Performance metrics
 	// TODO: Remove Telemetry?
@@ -48,18 +51,20 @@ func (c *Check) Run() error {
 
 	// Commit
 	sender.Commit()
-	return nil
+	return checkErr
 }
 
-func (c *Check) doRun() ([]string, error) {
-	// Create connection
-	err := c.session.Connect()
-	if err != nil {
-		return nil, fmt.Errorf("snmp connection error: %s", err)
-	}
-	defer c.session.Close() // TODO: handle error?
+func (c *Check) doRun(staticTags []string) (tags []string, err error) {
+	tags = copyTags(staticTags)
 
-	var tags []string
+	// Create connection
+	connErr := c.session.Connect()
+	if connErr != nil {
+		return tags, fmt.Errorf("snmp connection error: %s", connErr)
+	}
+	defer func() {
+		err = c.session.Close()
+	}()
 
 	// If no OIDs, try to detect profile using device sysobjectid
 	if !c.config.OidConfig.hasOids() {
@@ -77,7 +82,7 @@ func (c *Check) doRun() ([]string, error) {
 		}
 
 	}
-	tags = c.config.getInstanceTags()
+	tags = append(tags, c.config.ProfileTags...)
 
 	// Fetch and report metrics
 	if c.config.OidConfig.hasOids() {

@@ -6,10 +6,12 @@
 package snmp
 
 import (
+	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/mocksender"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/soniah/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -20,6 +22,7 @@ import (
 
 type mockSession struct {
 	mock.Mock
+	connectErr error
 }
 
 func (s *mockSession) Configure(config snmpConfig) error {
@@ -27,7 +30,7 @@ func (s *mockSession) Configure(config snmpConfig) error {
 }
 
 func (s *mockSession) Connect() error {
-	return nil
+	return s.connectErr
 }
 
 func (s *mockSession) Close() error {
@@ -390,6 +393,8 @@ profiles:
 	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
 	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
 	sender.AssertMetric(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
+
+	sender.AssertServiceCheck(t, "snmp.can_check", metrics.ServiceCheckOK, "", snmpTags, "")
 }
 
 func TestProfileWithSysObjectIdDetection(t *testing.T) {
@@ -529,6 +534,37 @@ profiles:
 	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInDiscards", float64(131), "", row1Tags)
 	sender.AssertMetric(t, "MonotonicCount", "snmp.ifInDiscards", float64(132), "", row2Tags)
 	sender.AssertMetric(t, "Gauge", "snmp.sysStatMemoryTotal", float64(30), "", snmpTags)
+}
+
+func TestServiceCheckFailures(t *testing.T) {
+	setConfdPath()
+	session := &mockSession{}
+	session.connectErr = fmt.Errorf("can't connect")
+	check := Check{session: session}
+
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+`)
+
+	err := check.Configure(rawInstanceConfig, []byte(``), "test")
+	assert.Nil(t, err)
+
+	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
+	sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("ServiceCheck", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sender.On("Commit").Return()
+
+	err = check.Run()
+	assert.Error(t, err, "snmp connection error: can't connect")
+
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
+
+	sender.AssertMetric(t, "Gauge", "datadog.snmp.submitted_metrics", 0.0, "", snmpTags)
+	sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.check_duration", snmpTags)
+	sender.AssertMetricTaggedWith(t, "MonotonicCount", "datadog.snmp.check_interval", snmpTags)
+	sender.AssertServiceCheck(t, "snmp.can_check", metrics.ServiceCheckCritical, "", snmpTags, "snmp connection error: can't connect")
 }
 
 func TestCheckID(t *testing.T) {
