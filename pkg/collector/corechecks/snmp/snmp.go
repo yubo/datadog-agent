@@ -33,49 +33,12 @@ func (c *Check) Run() error {
 	}
 	c.sender = metricSender{sender: sender}
 
-	tags := c.config.getInstanceTags()
-
-	// Create connection
-	err = c.session.Connect()
+	tags, err := c.doRun()
 	if err != nil {
-		// TODO: Test connection error
 		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", copyTags(tags), err.Error())
-		return fmt.Errorf("snmp connection error: %s", err)
+		return err
 	}
-	// TODO: Handle service check tags like
-	//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L401-L449
 	sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", copyTags(tags), "")
-	defer c.session.Close() // TODO: handle error?
-
-	// If no OIDs, try to detect profile using device sysobjectid
-	if !c.config.OidConfig.hasOids() {
-		sysObjectID, err := fetchSysObjectID(c.session)
-		if err != nil {
-			return fmt.Errorf("failed to fetching sysobjectid: %s", err)
-		}
-		profile, err := getProfileForSysObjectID(c.config.Profiles, sysObjectID)
-		if err != nil {
-			return fmt.Errorf("failed to get profile sys object id for `%s`: %s", sysObjectID, err)
-		}
-		err = c.config.refreshWithProfile(profile)
-		if err != nil {
-			return fmt.Errorf("failed to refresh with profile: %s", err)
-		}
-		tags = c.config.getInstanceTags()
-	}
-
-	// Fetch and report metrics
-	if c.config.OidConfig.hasOids() {
-		c.config.addUptimeMetric()
-
-		snmpValues, err := fetchValues(c.session, c.config)
-		if err != nil {
-			return err
-		}
-		log.Debugf("fetched snmpValues: %#v", snmpValues)
-		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, snmpValues)...)
-		c.sender.reportMetrics(c.config.Metrics, snmpValues, tags)
-	}
 
 	// SNMP Performance metrics
 	// TODO: Remove Telemetry?
@@ -86,6 +49,48 @@ func (c *Check) Run() error {
 	// Commit
 	sender.Commit()
 	return nil
+}
+
+func (c *Check) doRun() ([]string, error) {
+	tags := c.config.getInstanceTags()
+
+	// Create connection
+	err := c.session.Connect()
+	if err != nil {
+		return nil, fmt.Errorf("snmp connection error: %s", err)
+	}
+	defer c.session.Close() // TODO: handle error?
+
+	// If no OIDs, try to detect profile using device sysobjectid
+	if !c.config.OidConfig.hasOids() {
+		sysObjectID, err := fetchSysObjectID(c.session)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetching sysobjectid: %s", err)
+		}
+		profile, err := getProfileForSysObjectID(c.config.Profiles, sysObjectID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get profile sys object id for `%s`: %s", sysObjectID, err)
+		}
+		err = c.config.refreshWithProfile(profile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to refresh with profile: %s", err)
+		}
+		tags = c.config.getInstanceTags()
+	}
+
+	// Fetch and report metrics
+	if c.config.OidConfig.hasOids() {
+		c.config.addUptimeMetric()
+
+		snmpValues, err := fetchValues(c.session, c.config)
+		if err != nil {
+			return nil, err
+		}
+		log.Debugf("fetched snmpValues: %#v", snmpValues)
+		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, snmpValues)...)
+		c.sender.reportMetrics(c.config.Metrics, snmpValues, tags)
+	}
+	return tags, nil
 }
 
 // Configure configures the snmp checks
