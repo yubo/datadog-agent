@@ -11,7 +11,7 @@ func TestSendMetric(t *testing.T) {
 	tests := []struct {
 		caseName           string
 		metricName         string
-		value              snmpValue
+		value              snmpValueType
 		tags               []string
 		forcedType         string
 		options            metricsConfigOption
@@ -23,7 +23,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Gauge metric case",
 			"gauge.metric",
-			snmpValue{val: float64(10)},
+			snmpValueType{value: float64(10)},
 			[]string{},
 			"",
 			metricsConfigOption{},
@@ -35,7 +35,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Counter32 metric case",
 			"counter.metric",
-			snmpValue{submissionType: metrics.RateType, val: float64(10)},
+			snmpValueType{submissionType: metrics.RateType, value: float64(10)},
 			[]string{},
 			"",
 			metricsConfigOption{},
@@ -47,7 +47,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Forced gauge metric case",
 			"my.metric",
-			snmpValue{submissionType: metrics.RateType, val: float64(10)},
+			snmpValueType{submissionType: metrics.RateType, value: float64(10)},
 			[]string{},
 			"gauge",
 			metricsConfigOption{},
@@ -59,7 +59,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Forced counter metric case",
 			"my.metric",
-			snmpValue{submissionType: metrics.RateType, val: float64(10)},
+			snmpValueType{submissionType: metrics.RateType, value: float64(10)},
 			[]string{},
 			"counter",
 			metricsConfigOption{},
@@ -71,7 +71,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Forced monotonic_count metric case",
 			"my.metric",
-			snmpValue{submissionType: metrics.RateType, val: float64(10)},
+			snmpValueType{submissionType: metrics.RateType, value: float64(10)},
 			[]string{},
 			"monotonic_count",
 			metricsConfigOption{},
@@ -83,7 +83,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Forced monotonic_count_and_rate metric case: MonotonicCount called",
 			"my.metric",
-			snmpValue{submissionType: metrics.RateType, val: float64(10)},
+			snmpValueType{submissionType: metrics.RateType, value: float64(10)},
 			[]string{},
 			"monotonic_count_and_rate",
 			metricsConfigOption{},
@@ -95,7 +95,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Forced monotonic_count_and_rate metric case: Rate called",
 			"my.metric",
-			snmpValue{submissionType: metrics.RateType, val: float64(10)},
+			snmpValueType{submissionType: metrics.RateType, value: float64(10)},
 			[]string{},
 			"monotonic_count_and_rate",
 			metricsConfigOption{},
@@ -107,7 +107,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Forced percent metric case: Rate called",
 			"rate.metric",
-			snmpValue{val: 0.5},
+			snmpValueType{value: 0.5},
 			[]string{},
 			"percent",
 			metricsConfigOption{},
@@ -119,7 +119,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Forced flag_stream case 1",
 			"metric",
-			snmpValue{val: "1010"},
+			snmpValueType{value: "1010"},
 			[]string{},
 			"flag_stream",
 			metricsConfigOption{Placement: 1, MetricSuffix: "foo"},
@@ -131,7 +131,7 @@ func TestSendMetric(t *testing.T) {
 		{
 			"Forced flag_stream case 2",
 			"metric",
-			snmpValue{val: "1010"},
+			snmpValueType{value: "1010"},
 			[]string{},
 			"flag_stream",
 			metricsConfigOption{Placement: 2, MetricSuffix: "foo"},

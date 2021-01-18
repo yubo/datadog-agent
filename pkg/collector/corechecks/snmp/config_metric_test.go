@@ -66,7 +66,7 @@ func Test_metricsConfig_getTags(t *testing.T) {
 		name            string
 		rawMetricConfig []byte
 		fullIndex       string
-		values          *snmpValues
+		values          *valueStoreType
 		expectedTags    []string
 	}{
 		{
@@ -91,11 +91,11 @@ metric_tags:
     tag: pdu_name
 `),
 			"1.2.3.4.5.6.7.8",
-			&snmpValues{
-				columnValues: map[string]map[string]snmpValue{
+			&valueStoreType{
+				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
-						"2.3.7.8": snmpValue{
-							val: "myval",
+						"2.3.7.8": snmpValueType{
+							value: "myval",
 						},
 					},
 				},
@@ -123,7 +123,7 @@ metric_tags:
       16: dns
 `),
 			"3",
-			&snmpValues{},
+			&valueStoreType{},
 			[]string{"ipversion:ipv4z"},
 		},
 		{
@@ -146,11 +146,11 @@ metric_tags:
       suffix: '$2'
 `),
 			"1.2.3.4.5.6.7.8",
-			&snmpValues{
-				columnValues: map[string]map[string]snmpValue{
+			&valueStoreType{
+				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
-						"1.2.3.4.5.6.7.8": snmpValue{
-							val: "eth0",
+						"1.2.3.4.5.6.7.8": snmpValueType{
+							value: "eth0",
 						},
 					},
 				},
@@ -177,11 +177,11 @@ metric_tags:
       suffix: '$2'
 `),
 			"1.2.3.4.5.6.7.8",
-			&snmpValues{
-				columnValues: map[string]map[string]snmpValue{
+			&valueStoreType{
+				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
-						"1.2.3.4.5.6.7.8": snmpValue{
-							val: "....",
+						"1.2.3.4.5.6.7.8": snmpValueType{
+							value: "....",
 						},
 					},
 				},
@@ -208,11 +208,11 @@ metric_tags:
       suffix: '$2'
 `),
 			"1.2.3.4.5.6.7.8",
-			&snmpValues{
-				columnValues: map[string]map[string]snmpValue{
+			&valueStoreType{
+				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
-						"1.2.3.4.5.6.7.8": snmpValue{
-							val: "abc.",
+						"1.2.3.4.5.6.7.8": snmpValueType{
+							value: "abc.",
 						},
 					},
 				},
@@ -241,11 +241,11 @@ metric_tags:
 		//      suffix: '$2'
 		//`),
 		//			"1.2.3.4.5.6.7.8",
-		//			&snmpValues{
-		//				columnValues: map[string]map[string]snmpValue{
+		//			&valueStoreType{
+		//				columnValues: map[string]map[string]snmpValueType{
 		//					"1.2.3.4.8.1.2": {
-		//						"1.2.3.4.5.6.7.8": snmpValue{
-		//							val: "GigabitEthernet1/0/8",
+		//						"1.2.3.4.5.6.7.8": snmpValueType{
+		//							value: "GigabitEthernet1/0/8",
 		//						},
 		//					},
 		//				},

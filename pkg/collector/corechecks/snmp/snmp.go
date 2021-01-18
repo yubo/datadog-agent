@@ -83,13 +83,13 @@ func (c *Check) doRun() ([]string, error) {
 	if c.config.OidConfig.hasOids() {
 		c.config.addUptimeMetric()
 
-		snmpValues, err := fetchValues(c.session, c.config)
+		valuesStore, err := fetchValues(c.session, c.config)
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf("fetched snmpValues: %#v", snmpValues)
-		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, snmpValues)...)
-		c.sender.reportMetrics(c.config.Metrics, snmpValues, tags)
+		log.Debugf("fetched valuesStore: %#v", valuesStore)
+		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, valuesStore)...)
+		c.sender.reportMetrics(c.config.Metrics, valuesStore, tags)
 	}
 	return tags, nil
 }

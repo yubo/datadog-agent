@@ -13,7 +13,7 @@ var bandwidthMetricNameToUsage = map[string]string{
 
 var ifHighSpeedOID = "1.3.6.1.2.1.31.1.1.1.15"
 
-func (ms *metricSender) trySendBandwidthUsageMetric(symbol symbolConfig, fullIndex string, values *snmpValues, tags []string) {
+func (ms *metricSender) trySendBandwidthUsageMetric(symbol symbolConfig, fullIndex string, values *valueStoreType, tags []string) {
 	err := ms.sendBandwidthUsageMetric(symbol, fullIndex, values, tags)
 	if err != nil {
 		log.Debugf("failed to send bandwidth usage metric: %s", err)
@@ -38,7 +38,7 @@ func (ms *metricSender) trySendBandwidthUsageMetric(symbol symbolConfig, fullInd
                   It is the total available bandwidth.
    Bandwidth usage is evaluated as: ifHC[In|Out]Octets/ifHighSpeed and reported as *rate*
 */
-func (ms *metricSender) sendBandwidthUsageMetric(symbol symbolConfig, fullIndex string, values *snmpValues, tags []string) error {
+func (ms *metricSender) sendBandwidthUsageMetric(symbol symbolConfig, fullIndex string, values *valueStoreType, tags []string) error {
 	usageName, ok := bandwidthMetricNameToUsage[symbol.Name]
 	if !ok {
 		return nil
@@ -70,6 +70,6 @@ func (ms *metricSender) sendBandwidthUsageMetric(symbol symbolConfig, fullIndex 
 	}
 	usageValue := ((octetsValue.toFloat64() * 8) / (ifHighSpeedFloatValue * (1e6))) * 100.0
 
-	ms.sendMetric(usageName+".rate", snmpValue{metrics.RateType, usageValue}, tags, "counter", metricsConfigOption{})
+	ms.sendMetric(usageName+".rate", snmpValueType{metrics.RateType, usageValue}, tags, "counter", metricsConfigOption{})
 	return nil
 }

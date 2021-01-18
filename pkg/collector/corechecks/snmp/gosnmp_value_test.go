@@ -13,7 +13,7 @@ func Test_getValueFromPDU(t *testing.T) {
 		caseName          string
 		pduVariable       gosnmp.SnmpPDU
 		expectedName      string
-		expectedSnmpValue snmpValue
+		expectedSnmpValue snmpValueType
 		expectedErr       error
 	}{
 		{
@@ -24,7 +24,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: 141,
 			},
 			"1.2.3",
-			snmpValue{val: float64(141)},
+			snmpValueType{value: float64(141)},
 			nil,
 		},
 		{
@@ -35,7 +35,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: 141,
 			},
 			"1.2.3",
-			snmpValue{val: float64(141)},
+			snmpValueType{value: float64(141)},
 			nil,
 		},
 		{
@@ -46,7 +46,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: []byte(`myVal`),
 			},
 			"1.2.3",
-			snmpValue{val: "myVal"},
+			snmpValueType{value: "myVal"},
 			nil,
 		},
 		{
@@ -57,7 +57,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: []uint8{0x0, 0x24, 0x9b, 0x35, 0x3, 0xf6},
 			},
 			"1.2.3",
-			snmpValue{val: "0x00249b3503f6"},
+			snmpValueType{value: "0x00249b3503f6"},
 			nil,
 		},
 		{
@@ -68,7 +68,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: []byte(`myVal`),
 			},
 			"1.2.3",
-			snmpValue{val: "myVal"},
+			snmpValueType{value: "myVal"},
 			nil,
 		},
 		{
@@ -79,7 +79,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: "1.2.2",
 			},
 			"1.2.3",
-			snmpValue{val: "1.2.2"},
+			snmpValueType{value: "1.2.2"},
 			nil,
 		},
 		{
@@ -90,7 +90,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: ".1.2.2",
 			},
 			"1.2.3",
-			snmpValue{val: "1.2.2"},
+			snmpValueType{value: "1.2.2"},
 			nil,
 		},
 		{
@@ -101,7 +101,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: "1.2.3.4",
 			},
 			"1.2.3",
-			snmpValue{val: "1.2.3.4"},
+			snmpValueType{value: "1.2.3.4"},
 			nil,
 		},
 		{
@@ -112,7 +112,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: nil,
 			},
 			"1.2.3",
-			snmpValue{},
+			snmpValueType{},
 			fmt.Errorf("oid .1.2.3: invalid IP Address with value <nil>"),
 		},
 		{
@@ -123,7 +123,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: nil,
 			},
 			"1.2.3",
-			snmpValue{},
+			snmpValueType{},
 			fmt.Errorf("oid .1.2.3: invalid type: Null"),
 		},
 		{
@@ -134,7 +134,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint(10),
 			},
 			"1.2.3",
-			snmpValue{submissionType: metrics.RateType, val: float64(10)},
+			snmpValueType{submissionType: metrics.RateType, value: float64(10)},
 			nil,
 		},
 		{
@@ -145,7 +145,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint(10),
 			},
 			"1.2.3",
-			snmpValue{val: float64(10)},
+			snmpValueType{value: float64(10)},
 			nil,
 		},
 		{
@@ -156,7 +156,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint32(10),
 			},
 			"1.2.3",
-			snmpValue{val: float64(10)},
+			snmpValueType{value: float64(10)},
 			nil,
 		},
 		{
@@ -167,7 +167,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint64(10),
 			},
 			"1.2.3",
-			snmpValue{submissionType: metrics.RateType, val: float64(10)},
+			snmpValueType{submissionType: metrics.RateType, value: float64(10)},
 			nil,
 		},
 		{
@@ -178,7 +178,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: uint32(10),
 			},
 			"1.2.3",
-			snmpValue{val: float64(10)},
+			snmpValueType{value: float64(10)},
 			nil,
 		},
 		{
@@ -189,7 +189,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: float32(10),
 			},
 			"1.2.3",
-			snmpValue{val: float64(10)},
+			snmpValueType{value: float64(10)},
 			nil,
 		},
 		{
@@ -200,7 +200,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: float64(10),
 			},
 			"1.2.3",
-			snmpValue{val: float64(10)},
+			snmpValueType{value: float64(10)},
 			nil,
 		},
 		{
@@ -211,7 +211,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: nil,
 			},
 			"1.2.3",
-			snmpValue{},
+			snmpValueType{},
 			fmt.Errorf("oid .1.2.3: invalid type: NoSuchObject"),
 		},
 		{
@@ -222,7 +222,7 @@ func Test_getValueFromPDU(t *testing.T) {
 				Value: nil,
 			},
 			"1.2.3",
-			snmpValue{},
+			snmpValueType{},
 			fmt.Errorf("oid .1.2.3: invalid type: NoSuchInstance"),
 		},
 	}
@@ -283,27 +283,27 @@ func Test_resultToColumnValues(t *testing.T) {
 			},
 			columnResultValuesType{
 				"1.3.6.1.2.1.2.2.1.14": {
-					"1": snmpValue{
-						val: float64(141),
+					"1": snmpValueType{
+						value: float64(141),
 					},
-					"2": snmpValue{
-						val: float64(142),
+					"2": snmpValueType{
+						value: float64(142),
 					},
 				},
 				"1.3.6.1.2.1.2.2.1.2": {
-					"1": snmpValue{
-						val: "desc1",
+					"1": snmpValueType{
+						value: "desc1",
 					},
-					"2": snmpValue{
-						val: "desc2",
+					"2": snmpValueType{
+						value: "desc2",
 					},
 				},
 				"1.3.6.1.2.1.2.2.1.20": {
-					"1": snmpValue{
-						val: float64(201),
+					"1": snmpValueType{
+						value: float64(201),
 					},
-					"2": snmpValue{
-						val: float64(202),
+					"2": snmpValueType{
+						value: float64(202),
 					},
 				},
 			},
@@ -342,16 +342,16 @@ func Test_resultToColumnValues(t *testing.T) {
 			columnResultValuesType{
 				"1.3.6.1.2.1.2.2.1.14": {
 					// index 1 not fetched because of gosnmp.NoSuchObject error
-					"2": snmpValue{
-						val: float64(142),
+					"2": snmpValueType{
+						value: float64(142),
 					},
 				},
 				"1.3.6.1.2.1.2.2.1.2": {
-					"1": snmpValue{
-						val: "desc1",
+					"1": snmpValueType{
+						value: "desc1",
 					},
-					"2": snmpValue{
-						val: "desc2",
+					"2": snmpValueType{
+						value: "desc2",
 					},
 				},
 			},
@@ -400,11 +400,11 @@ func Test_resultToScalarValues(t *testing.T) {
 			scalarResultValuesType{
 				"1.3.6.1.2.1.2.2.1.14.1": {
 					submissionType: metrics.GaugeType,
-					val:            float64(142),
+					value:          float64(142),
 				},
 				"1.3.6.1.2.1.2.2.1.14.2": {
 					submissionType: metrics.RateType,
-					val:            float64(142),
+					value:          float64(142),
 				},
 			},
 		},

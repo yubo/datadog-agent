@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-// getValueFromPDU converts gosnmp.SnmpPDU to snmpValue
+// getValueFromPDU converts gosnmp.SnmpPDU to snmpValueType
 // See possible types here: https://github.com/gosnmp/gosnmp/blob/master/helper.go#L59-L271
 //
 // - gosnmp.Opaque: No support for gosnmp.Opaque since the type is processed recursively and never returned:
 //   is never returned https://github.com/gosnmp/gosnmp/blob/dc320dac5b53d95a366733fd95fb5851f2099387/helper.go#L195-L205
 // - gosnmp.Boolean: seems not exist anymore and not handled by gosnmp
-func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
+func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValueType, error) {
 	var value interface{}
 	name := strings.TrimLeft(pduVariable.Name, ".") // remove leading dot
 	// TODO: Handle error if pduVariable.Value has a wrong type for each switch case
@@ -41,16 +41,16 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValue, error) {
 	case gosnmp.IPAddress:
 		strValue, ok := pduVariable.Value.(string)
 		if !ok {
-			return name, snmpValue{}, fmt.Errorf("oid %s: invalid IP Address with value %v", pduVariable.Name, pduVariable.Value)
+			return name, snmpValueType{}, fmt.Errorf("oid %s: invalid IP Address with value %v", pduVariable.Name, pduVariable.Value)
 		}
 		value = strValue
 	case gosnmp.ObjectIdentifier:
 		value = strings.TrimLeft(pduVariable.Value.(string), ".")
 	default:
-		return name, snmpValue{}, fmt.Errorf("oid %s: invalid type: %s", pduVariable.Name, pduVariable.Type.String())
+		return name, snmpValueType{}, fmt.Errorf("oid %s: invalid type: %s", pduVariable.Name, pduVariable.Type.String())
 	}
 	submissionType := getSubmissionType(pduVariable.Type)
-	return name, snmpValue{submissionType: submissionType, val: value}, nil
+	return name, snmpValueType{submissionType: submissionType, value: value}, nil
 }
 
 func hasNonPrintableByte(bytesValue []byte) bool {
@@ -64,7 +64,7 @@ func hasNonPrintableByte(bytesValue []byte) bool {
 }
 
 func resultToScalarValues(result *gosnmp.SnmpPacket) scalarResultValuesType {
-	returnValues := make(map[string]snmpValue)
+	returnValues := make(map[string]snmpValueType)
 	for _, pduVariable := range result.Variables {
 		// TODO: Skip in valid types like NoSuchObject NoSuchInstance EndOfMibView ?
 		name, value, err := getValueFromPDU(pduVariable)
@@ -94,7 +94,7 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (c
 		// and the columnOid can be derived from the index of the PDU variable.
 		columnOid := columnOids[i%len(columnOids)]
 		if _, ok := returnValues[columnOid]; !ok {
-			returnValues[columnOid] = make(map[string]snmpValue)
+			returnValues[columnOid] = make(map[string]snmpValueType)
 		}
 
 		prefix := columnOid + "."

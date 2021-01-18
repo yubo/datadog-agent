@@ -11,7 +11,7 @@ type metricSender struct {
 	submittedMetrics int
 }
 
-func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *valueStoreType, tags []string) {
 	// TODO: Move code to a better place, we should report `snmp.devices_monitored` even if calls fail
 	ms.sender.Gauge("snmp.devices_monitored", float64(1), "", copyTags(tags))
 	for _, metric := range metrics {
@@ -23,13 +23,13 @@ func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *snmpValue
 	}
 }
 
-func (ms *metricSender) getCheckInstanceMetricTags(metricTags []metricTagConfig, values *snmpValues) []string {
+func (ms *metricSender) getCheckInstanceMetricTags(metricTags []metricTagConfig, values *valueStoreType) []string {
 	var globalTags []string
 
 	for _, metricTag := range metricTags {
 		value, err := values.getScalarValues(metricTag.OID)
 		if err != nil {
-			log.Warnf("error getting scalar val: %v", err)
+			log.Warnf("error getting scalar value: %v", err)
 			continue
 		}
 		globalTags = append(globalTags, metricTag.Tag+":"+value.toString())
@@ -37,16 +37,16 @@ func (ms *metricSender) getCheckInstanceMetricTags(metricTags []metricTagConfig,
 	return globalTags
 }
 
-func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *valueStoreType, tags []string) {
 	value, err := values.getScalarValues(metric.Symbol.OID)
 	if err != nil {
-		log.Warnf("error getting scalar val: %v", err)
+		log.Warnf("error getting scalar value: %v", err)
 		return
 	}
 	ms.sendMetric(metric.Symbol.Name, value, tags, metric.ForcedType, metric.Options)
 }
 
-func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *snmpValues, tags []string) {
+func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *valueStoreType, tags []string) {
 	for _, symbol := range metricConfig.Symbols {
 		metricValues, err := values.getColumnValues(symbol.OID)
 		if err != nil {
@@ -62,7 +62,7 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 	}
 }
 
-func (ms *metricSender) sendMetric(metricName string, value snmpValue, tags []string, forcedType string, options metricsConfigOption) {
+func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags []string, forcedType string, options metricsConfigOption) {
 	metricFullName := "snmp." + metricName
 
 	tags = copyTags(tags)

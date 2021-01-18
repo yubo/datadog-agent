@@ -5,21 +5,21 @@ import (
 )
 
 // columnResultValuesType is used to store results fetched for column oids
-// Structure: map[<COLUMN OIDS AS STRING>]map[<ROW INDEX>]snmpValue
+// Structure: map[<COLUMN OIDS AS STRING>]map[<ROW INDEX>]snmpValueType
 // - the first map key is the table column oid
 // - the second map key is the index part of oid (not prefixed with column oid)
-type columnResultValuesType map[string]map[string]snmpValue
+type columnResultValuesType map[string]map[string]snmpValueType
 
 // scalarResultValuesType is used to store results fetched for scalar oids
-// Structure: map[<INSTANCE OID VALUE>]snmpValue
+// Structure: map[<INSTANCE OID VALUE>]snmpValueType
 // - the instance oid value (suffixed with `.0`)
-type scalarResultValuesType map[string]snmpValue
+type scalarResultValuesType map[string]snmpValueType
 
-func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
+func fetchValues(session sessionAPI, config snmpConfig) (*valueStoreType, error) {
 	// fetch scalar values
 	scalarResults, err := fetchScalarOidsWithBatching(session, config.OidConfig.scalarOids, config.OidBatchSize)
 	if err != nil {
-		return &snmpValues{}, fmt.Errorf("failed to fetch scalar oids with batching: %v", err)
+		return &valueStoreType{}, fmt.Errorf("failed to fetch scalar oids with batching: %v", err)
 	}
 
 	// fetch column values
@@ -29,8 +29,8 @@ func fetchValues(session sessionAPI, config snmpConfig) (*snmpValues, error) {
 	}
 	columnResults, err := fetchColumnOidsWithBatching(session, oids, config.OidBatchSize)
 	if err != nil {
-		return &snmpValues{}, fmt.Errorf("failed to fetch oids with batching: %v", err)
+		return &valueStoreType{}, fmt.Errorf("failed to fetch oids with batching: %v", err)
 	}
 
-	return &snmpValues{scalarResults, columnResults}, nil
+	return &valueStoreType{scalarResults, columnResults}, nil
 }
