@@ -43,6 +43,8 @@ func (c *Check) Run() error {
 		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", copyTags(tags), "")
 	}
 
+	sender.Gauge("snmp.devices_monitored", float64(1), "", copyTags(tags))
+
 	// SNMP Performance metrics
 	// TODO: Remove Telemetry?
 	sender.MonotonicCount("datadog.snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", copyTags(tags))
