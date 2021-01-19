@@ -44,7 +44,7 @@ type snmpInstanceConfig struct {
 
 type snmpConfig struct {
 	ipAddress         string
-	Port              uint16
+	port              uint16
 	CommunityString   string
 	SnmpVersion       string
 	Timeout           int
@@ -126,12 +126,12 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 
 	// SNMP common connection configs
 	c.ipAddress = instance.IPAddress
-	c.Port = instance.Port
+	c.port = instance.Port
 
 	if instance.Port == 0 {
-		c.Port = defaultPort
+		c.port = defaultPort
 	} else {
-		c.Port = instance.Port
+		c.port = instance.Port
 	}
 
 	if instance.Retries == 0 {
