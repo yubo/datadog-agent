@@ -310,13 +310,13 @@ func Test_fetchScalarOids_retry(t *testing.T) {
 				Value: 20,
 			},
 			{
-				Name:  "1.1.1.3",
+				Name:  ".1.1.1.3", // test `.` prefix is trimmed
 				Type:  gosnmp.NoSuchObject,
 				Value: 30,
 			},
 			{
 				Name:  "1.1.1.4.0",
-				Type:  gosnmp.Gauge32,
+				Type:  gosnmp.NoSuchInstance,
 				Value: 40,
 			},
 		},
@@ -348,7 +348,6 @@ func Test_fetchScalarOids_retry(t *testing.T) {
 		"1.1.1.1.0": {value: float64(10)},
 		"1.1.1.2":   {value: float64(20)},
 		"1.1.1.3":   {value: float64(30)},
-		"1.1.1.4.0": {value: float64(40)},
 	}
 	assert.Equal(t, expectedColumnValues, columnValues)
 }

@@ -28,23 +28,12 @@ func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize
 }
 
 func fetchScalarOids(session sessionAPI, oids []string) (scalarResultValuesType, error) {
-	values, err := doFetchScalarOids(session, oids)
+	packet, err := doFetchScalarOids(session, oids)
 	if err != nil {
 		return nil, err
 	}
-	return values, nil
-}
-
-func doFetchScalarOids(session sessionAPI, oids []string) (scalarResultValuesType, error) {
-	// Get results
-	log.Debugf("fetchScalarOidsWithBatching() oids: %v", oids)
-	results, err := session.Get(oids)
-	log.Debugf("fetchScalarOidsWithBatching() results: %v", results)
-	if err != nil {
-		return nil, fmt.Errorf("error getting oids: %s", err.Error())
-	}
-	values := resultToScalarValues(results)
-	retryScalarOids(session, results, values)
+	values := resultToScalarValues(packet)
+	retryScalarOids(session, packet, values)
 	return values, nil
 }
 
@@ -55,8 +44,8 @@ func doFetchScalarOids(session sessionAPI, oids []string) (scalarResultValuesTyp
 func retryScalarOids(session sessionAPI, results *gosnmp.SnmpPacket, valuesToUpdate scalarResultValuesType) {
 	retryOids := make(map[string]string)
 	for _, variable := range results.Variables {
-		oid := variable.Name
-		if (variable.Type == gosnmp.NoSuchObject || variable.Type == gosnmp.NoSuchInstance) && !strings.HasSuffix(".0", oid) {
+		oid := strings.TrimLeft(variable.Name, ".")
+		if (variable.Type == gosnmp.NoSuchObject || variable.Type == gosnmp.NoSuchInstance) && !strings.HasSuffix(oid, ".0") {
 			retryOids[oid] = oid + ".0"
 		}
 	}
@@ -65,7 +54,7 @@ func retryScalarOids(session sessionAPI, results *gosnmp.SnmpPacket, valuesToUpd
 		for _, oid := range retryOids {
 			fetchOids = append(fetchOids, oid)
 		}
-		retryResults, err := session.Get(fetchOids)
+		retryResults, err := doFetchScalarOids(session, fetchOids)
 		if err != nil {
 			log.Debugf("failed to oids `%v` on retry: %v", retryOids, err)
 		} else {
@@ -77,4 +66,15 @@ func retryScalarOids(session sessionAPI, results *gosnmp.SnmpPacket, valuesToUpd
 			}
 		}
 	}
+}
+
+func doFetchScalarOids(session sessionAPI, oids []string) (*gosnmp.SnmpPacket, error) {
+	// Get results
+	log.Debugf("fetchScalarOidsWithBatching() oids: %v", oids)
+	results, err := session.Get(oids)
+	log.Debugf("fetchScalarOidsWithBatching() results: %v", results)
+	if err != nil {
+		return nil, fmt.Errorf("error getting oids: %s", err.Error())
+	}
+	return results, nil
 }
