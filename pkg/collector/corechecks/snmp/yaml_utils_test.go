@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-type MyStruct struct {
+type MyStringArray struct {
 	SomeIds StringArray `yaml:"my_field"`
 }
 
 func TestStringArray_UnmarshalYAML_array(t *testing.T) {
-	myStruct := MyStruct{}
-	expected := MyStruct{SomeIds: StringArray{"aaa", "bbb"}}
+	myStruct := MyStringArray{}
+	expected := MyStringArray{SomeIds: StringArray{"aaa", "bbb"}}
 
 	yaml.Unmarshal([]byte(`
 my_field:
@@ -24,11 +24,35 @@ my_field:
 }
 
 func TestStringArray_UnmarshalYAML_string(t *testing.T) {
-	myStruct := MyStruct{}
-	expected := MyStruct{SomeIds: StringArray{"aaa"}}
+	myStruct := MyStringArray{}
+	expected := MyStringArray{SomeIds: StringArray{"aaa"}}
 
 	yaml.Unmarshal([]byte(`
 my_field: aaa
+`), &myStruct)
+
+	assert.Equal(t, expected, myStruct)
+}
+
+func Test_metricTagConfig_UnmarshalYAML(t *testing.T) {
+	myStruct := metricsConfig{}
+	expected := metricsConfig{MetricTags: []metricTagConfig{{Index: 3}}}
+
+	yaml.Unmarshal([]byte(`
+metric_tags:
+- index: 3
+`), &myStruct)
+
+	assert.Equal(t, expected, myStruct)
+}
+
+func Test_metricTagConfig_onlyTags(t *testing.T) {
+	myStruct := metricsConfig{}
+	expected := metricsConfig{MetricTags: []metricTagConfig{{symbolTag: "aaa"}}}
+
+	yaml.Unmarshal([]byte(`
+metric_tags:
+- aaa
 `), &myStruct)
 
 	assert.Equal(t, expected, myStruct)

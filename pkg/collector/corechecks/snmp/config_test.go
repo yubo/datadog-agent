@@ -34,6 +34,9 @@ metrics:
     name: ifNumber
 - OID: 1.3.6.1.2.1.2.2
   name: ifNumber2
+  metric_tags:
+  - mytag1
+  - mytag2
 - symbol:
     OID: 1.3.6.1.4.1.318.1.1.1.11.1.1.0
     name: upsBasicStateOutputState
@@ -109,7 +112,10 @@ global_metrics:
 	assert.Equal(t, "my-contextName", check.config.contextName)
 	metrics := []metricsConfig{
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
-		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifNumber2"}},
+		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifNumber2"}, MetricTags: metricTagConfigList{
+			{symbolTag: "mytag1"},
+			{symbolTag: "mytag2"},
+		}},
 		{Symbol: symbolConfig{OID: "1.3.6.1.4.1.318.1.1.1.11.1.1.0", Name: "upsBasicStateOutputState"}, ForcedType: "flag_stream", Options: metricsConfigOption{Placement: 5, MetricSuffix: "ReplaceBattery"}},
 		{
 			Table: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},

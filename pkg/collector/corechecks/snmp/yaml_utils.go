@@ -21,3 +21,22 @@ func (a *StringArray) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	return nil
 }
+
+//UnmarshalYAML unmarshalls metricTagConfigList
+func (a *metricTagConfigList) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var multi []metricTagConfig
+	err := unmarshal(&multi)
+	if err != nil {
+		var tags []string
+		err := unmarshal(&tags)
+		if err != nil {
+			return err
+		}
+		multi = []metricTagConfig{}
+		for _, tag := range tags {
+			multi = append(multi, metricTagConfig{symbolTag: tag})
+		}
+	}
+	*a = multi
+	return nil
+}

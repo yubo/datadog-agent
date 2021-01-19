@@ -29,7 +29,11 @@ type metricTagConfig struct {
 	// Regex
 	Match string            `yaml:"match"`
 	Tags  map[string]string `yaml:"tags"`
+
+	symbolTag string
 }
+
+type metricTagConfigList []metricTagConfig
 
 type metricIndexTransform struct {
 	Start uint `yaml:"start"`
@@ -53,7 +57,7 @@ type metricsConfig struct {
 	Table   symbolConfig   `yaml:"table"`
 	Symbols []symbolConfig `yaml:"symbols"`
 
-	MetricTags []metricTagConfig `yaml:"metric_tags"`
+	MetricTags metricTagConfigList `yaml:"metric_tags"`
 
 	ForcedType string              `yaml:"forced_type"`
 	Options    metricsConfigOption `yaml:"options"`
