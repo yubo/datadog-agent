@@ -96,7 +96,7 @@ global_metrics:
 	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
 
 	assert.Nil(t, err)
-	assert.Equal(t, "1.2.3.4", check.config.IPAddress)
+	assert.Equal(t, "1.2.3.4", check.config.ipAddress)
 	assert.Equal(t, uint16(1161), check.config.Port)
 	assert.Equal(t, 7, check.config.Timeout)
 	assert.Equal(t, 5, check.config.Retries)
@@ -178,7 +178,7 @@ ip_address: 1.2.3.4
 	err := check.Configure(rawInstanceConfig, rawInitConfig, "test")
 
 	assert.Nil(t, err)
-	assert.Equal(t, "1.2.3.4", check.config.IPAddress)
+	assert.Equal(t, "1.2.3.4", check.config.ipAddress)
 	assert.Equal(t, uint16(161), check.config.Port)
 	assert.Equal(t, 2, check.config.Timeout)
 	assert.Equal(t, 3, check.config.Retries)

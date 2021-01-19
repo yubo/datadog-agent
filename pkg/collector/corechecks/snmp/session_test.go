@@ -24,7 +24,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "valid v1 config",
 			config: snmpConfig{
-				IPAddress:       "1.2.3.4",
+				ipAddress:       "1.2.3.4",
 				Port:            uint16(1234),
 				SnmpVersion:     "1",
 				Timeout:         4,
@@ -41,7 +41,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "valid default v2 config",
 			config: snmpConfig{
-				IPAddress:       "1.2.3.4",
+				ipAddress:       "1.2.3.4",
 				Port:            uint16(1234),
 				SnmpVersion:     "",
 				Timeout:         4,
@@ -58,7 +58,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "valid v2 config",
 			config: snmpConfig{
-				IPAddress:       "1.2.3.4",
+				ipAddress:       "1.2.3.4",
 				Port:            uint16(1234),
 				SnmpVersion:     "2",
 				Timeout:         4,
@@ -75,7 +75,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "valid v2c config",
 			config: snmpConfig{
-				IPAddress:       "1.2.3.4",
+				ipAddress:       "1.2.3.4",
 				Port:            uint16(1234),
 				SnmpVersion:     "2c",
 				Timeout:         4,
@@ -92,7 +92,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "valid v3 AuthPriv config",
 			config: snmpConfig{
-				IPAddress:    "1.2.3.4",
+				ipAddress:    "1.2.3.4",
 				Port:         uint16(1234),
 				SnmpVersion:  "3",
 				Timeout:      4,
@@ -122,7 +122,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "valid v3 AuthNoPriv config",
 			config: snmpConfig{
-				IPAddress:    "1.2.3.4",
+				ipAddress:    "1.2.3.4",
 				Port:         uint16(1234),
 				SnmpVersion:  "3",
 				Timeout:      4,
@@ -148,7 +148,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "invalid v3 AuthProtocol",
 			config: snmpConfig{
-				IPAddress:    "1.2.3.4",
+				ipAddress:    "1.2.3.4",
 				Port:         uint16(1234),
 				SnmpVersion:  "3",
 				Timeout:      4,
@@ -164,7 +164,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "invalid v3 PrivProtocol",
 			config: snmpConfig{
-				IPAddress:    "1.2.3.4",
+				ipAddress:    "1.2.3.4",
 				Port:         uint16(1234),
 				SnmpVersion:  "3",
 				Timeout:      4,
@@ -182,7 +182,7 @@ func Test_snmpSession_Configure(t *testing.T) {
 		{
 			name: "batch size too big",
 			config: snmpConfig{
-				IPAddress:       "1.2.3.4",
+				ipAddress:       "1.2.3.4",
 				Port:            uint16(1234),
 				SnmpVersion:     "2",
 				Timeout:         4,

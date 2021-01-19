@@ -43,7 +43,7 @@ type snmpInstanceConfig struct {
 }
 
 type snmpConfig struct {
-	IPAddress         string
+	ipAddress         string
 	Port              uint16
 	CommunityString   string
 	SnmpVersion       string
@@ -96,7 +96,7 @@ func (c *snmpConfig) addUptimeMetric() {
 }
 
 func (c *snmpConfig) getStaticTags() []string {
-	tags := []string{"snmp_device:" + c.IPAddress}
+	tags := []string{"snmp_device:" + c.ipAddress}
 
 	// TODO: Remove Telemetry
 	tags = append(tags, "loader:core")
@@ -125,7 +125,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.SnmpVersion = instance.SnmpVersion
 
 	// SNMP common connection configs
-	c.IPAddress = instance.IPAddress
+	c.ipAddress = instance.IPAddress
 	c.Port = instance.Port
 
 	if instance.Port == 0 {

@@ -29,7 +29,7 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 		return err
 	}
 	gosnmpInst := gosnmp.GoSNMP{
-		Target:  config.IPAddress,
+		Target:  config.ipAddress,
 		Port:    config.Port,
 		Version: snmpVersion,
 		Timeout: time.Duration(config.Timeout) * time.Second,
