@@ -3,6 +3,8 @@ package snmp
 import (
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/soniah/gosnmp"
+	"strings"
 )
 
 func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize int) (scalarResultValuesType, error) {
@@ -33,5 +35,33 @@ func fetchScalarOids(session sessionAPI, oids []string) (scalarResultValuesType,
 	if err != nil {
 		return nil, fmt.Errorf("error getting oids: %s", err.Error())
 	}
-	return resultToScalarValues(results), nil
+	values := resultToScalarValues(results)
+
+	// Retry on NoSuchObject or NoSuchInstance for scalar oids not ending with .0
+	// This helps keeping compatibility with python implementation.
+	retryOids := make(map[string]string)
+	for _, variable := range results.Variables {
+		oid := variable.Name
+		if (variable.Type == gosnmp.NoSuchObject || variable.Type == gosnmp.NoSuchInstance) && !strings.HasSuffix(".0", oid) {
+			retryOids[oid] = oid + ".0"
+		}
+	}
+	if len(retryOids) > 0 {
+		fetchOids := make([]string, 0, len(retryOids))
+		for _, oid := range retryOids {
+			fetchOids = append(fetchOids, oid)
+		}
+		retryResults, err := session.Get(fetchOids)
+		if err != nil {
+			log.Debugf("failed to oids `%v` on retry: %v", retryOids, err)
+		} else {
+			retryValues := resultToScalarValues(retryResults)
+			for initialOid, actualOid := range retryOids {
+				if value, ok := retryValues[actualOid]; ok {
+					values[initialOid] = value
+				}
+			}
+		}
+	}
+	return values, nil
 }

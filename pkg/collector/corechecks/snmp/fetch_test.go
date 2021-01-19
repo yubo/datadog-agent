@@ -293,3 +293,62 @@ func Test_fetchOidBatchSize_fetchError(t *testing.T) {
 	assert.EqualError(t, err, "failed to fetch scalar oids: error getting oids: my error")
 	assert.Nil(t, columnValues)
 }
+
+func Test_fetchScalarOids_retry(t *testing.T) {
+	session := &mockSession{}
+
+	getPacket := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.1.1.1.0",
+				Type:  gosnmp.Gauge32,
+				Value: 10,
+			},
+			{
+				Name:  "1.1.1.2",
+				Type:  gosnmp.NoSuchInstance,
+				Value: 20,
+			},
+			{
+				Name:  "1.1.1.3",
+				Type:  gosnmp.NoSuchObject,
+				Value: 30,
+			},
+			{
+				Name:  "1.1.1.4.0",
+				Type:  gosnmp.Gauge32,
+				Value: 40,
+			},
+		},
+	}
+	retryGetPacket := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.1.1.2.0",
+				Type:  gosnmp.Gauge32,
+				Value: 20,
+			},
+			{
+				Name:  "1.1.1.3.0",
+				Type:  gosnmp.Gauge32,
+				Value: 30,
+			},
+		},
+	}
+
+	session.On("Get", []string{"1.1.1.1.0", "1.1.1.2", "1.1.1.3", "1.1.1.4.0"}).Return(&getPacket, nil)
+	session.On("Get", []string{"1.1.1.2.0", "1.1.1.3.0"}).Return(&retryGetPacket, nil)
+
+	oids := []string{"1.1.1.1.0", "1.1.1.2", "1.1.1.3", "1.1.1.4.0"}
+
+	columnValues, err := fetchScalarOids(session, oids)
+	assert.Nil(t, err)
+
+	expectedColumnValues := scalarResultValuesType{
+		"1.1.1.1.0": {value: float64(10)},
+		"1.1.1.2":   {value: float64(20)},
+		"1.1.1.3":   {value: float64(30)},
+		"1.1.1.4.0": {value: float64(40)},
+	}
+	assert.Equal(t, expectedColumnValues, columnValues)
+}
