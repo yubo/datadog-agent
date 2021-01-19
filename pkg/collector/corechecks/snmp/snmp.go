@@ -54,35 +54,42 @@ func (c *Check) Run() error {
 	return checkErr
 }
 
-func (c *Check) doRun(staticTags []string) (tags []string, err error) {
-	tags = copyTags(staticTags)
+func (c *Check) doRun(staticTags []string) (retTags []string, retErr error) {
+	retTags = copyTags(staticTags)
 
 	// Create connection
 	connErr := c.session.Connect()
 	if connErr != nil {
-		return tags, fmt.Errorf("snmp connection error: %s", connErr)
+		retErr = fmt.Errorf("snmp connection error: %s", connErr)
+		return
 	}
 	defer func() {
-		err = c.session.Close()
+		err := c.session.Close()
+		if err != nil && retErr != nil {
+			retErr = err
+		}
 	}()
 
 	// If no OIDs, try to detect profile using device sysobjectid
 	if !c.config.OidConfig.hasOids() {
 		sysObjectID, err := fetchSysObjectID(c.session)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetching sysobjectid: %s", err)
+			retErr = fmt.Errorf("failed to fetching sysobjectid: %s", err)
+			return
 		}
 		profile, err := getProfileForSysObjectID(c.config.Profiles, sysObjectID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get profile sys object id for `%s`: %s", sysObjectID, err)
+			retErr = fmt.Errorf("failed to get profile sys object id for `%s`: %s", sysObjectID, err)
+			return
 		}
 		err = c.config.refreshWithProfile(profile)
 		if err != nil {
-			return nil, fmt.Errorf("failed to refresh with profile: %s", err)
+			// Should not happen since the profile is one of those we matched in getProfileForSysObjectID
+			retErr = fmt.Errorf("failed to refresh with profile: %s", err)
+			return
 		}
-
 	}
-	tags = append(tags, c.config.ProfileTags...)
+	retTags = append(retTags, c.config.ProfileTags...)
 
 	// Fetch and report metrics
 	if c.config.OidConfig.hasOids() {
@@ -90,14 +97,14 @@ func (c *Check) doRun(staticTags []string) (tags []string, err error) {
 
 		valuesStore, err := fetchValues(c.session, c.config)
 		if err != nil {
-			// TODO: test me
-			return nil, fmt.Errorf("failed to fetch values: %s", err)
+			retErr = fmt.Errorf("failed to fetch values: %s", err)
+			return
 		}
 		log.Debugf("fetched valuesStore: %#v", valuesStore)
-		tags = append(tags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, valuesStore)...)
-		c.sender.reportMetrics(c.config.Metrics, valuesStore, tags)
+		retTags = append(retTags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, valuesStore)...)
+		c.sender.reportMetrics(c.config.Metrics, valuesStore, retTags)
 	}
-	return tags, nil
+	return
 }
 
 // Configure configures the snmp checks

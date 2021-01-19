@@ -590,3 +590,123 @@ ip_address: 2.2.2.2
 	assert.Equal(t, check.ID("snmp:f22c3d8b3858f07d"), check2.ID())
 	assert.NotEqual(t, check1.ID(), check2.ID())
 }
+
+func TestCheck_Run(t *testing.T) {
+	sysObjectIDPacketErrMock := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.1.2.0",
+				Type:  gosnmp.ObjectIdentifier,
+				Value: "1.999999",
+			},
+		},
+	}
+
+	sysObjectIDPacketOkMock := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.1.2.0",
+				Type:  gosnmp.ObjectIdentifier,
+				Value: "1.3.6.1.4.1.3375.2.1.3.4.1",
+			},
+		},
+	}
+
+	valuesPacketErrMock := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.1.3.0",
+				Type:  gosnmp.TimeTicks,
+				Value: 20,
+			},
+			{
+				Name:  "1.3.6.1.2.1.1.5.0",
+				Type:  gosnmp.OctetString,
+				Value: []byte("foo_sys_name"),
+			},
+			{
+				Name:  "1.3.6.1.4.1.3375.2.1.1.2.1.44.0",
+				Type:  gosnmp.Integer,
+				Value: 30,
+			},
+		},
+	}
+
+	tests := []struct {
+		name              string
+		disableAggregator bool
+		sessionConnError  error
+		sysObjectIDPacket gosnmp.SnmpPacket
+		sysObjectIDError  error
+		valuesPacket      gosnmp.SnmpPacket
+		valuesError       error
+		expectedErr       string
+	}{
+		{
+			name:             "connection error",
+			sessionConnError: fmt.Errorf("can't connect"),
+			expectedErr:      "snmp connection error: can't connect",
+		},
+		{
+			name:             "failed to fetching sysobjectid",
+			sysObjectIDError: fmt.Errorf("no sysobjectid"),
+			expectedErr:      "failed to fetching sysobjectid: cannot get sysobjectid: no sysobjectid",
+		},
+		{
+			name:              "failed to get profile sys object id",
+			sysObjectIDPacket: sysObjectIDPacketErrMock,
+			expectedErr:       "failed to get profile sys object id for `1.999999`: failed to get most specific profile for sysObjectID `1.999999`, for matched oids []: cannot get most specific oid from empty list of oids",
+		},
+		{
+			name:              "failed to fetch values",
+			sysObjectIDPacket: sysObjectIDPacketOkMock,
+			valuesPacket:      valuesPacketErrMock,
+			valuesError:       fmt.Errorf("no value"),
+			expectedErr:       "failed to fetch values: failed to fetch scalar oids with batching: failed to fetch scalar oids: error getting oids: no value",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setConfdPath()
+			session := &mockSession{}
+			session.connectErr = tt.sessionConnError
+			check := Check{session: session}
+
+			// language=yaml
+			rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+`)
+
+			err := check.Configure(rawInstanceConfig, []byte(``), "test")
+			assert.Nil(t, err)
+
+			sender := new(mocksender.MockSender)
+
+			if !tt.disableAggregator {
+				aggregator.InitAggregatorWithFlushInterval(nil, "", 1*time.Hour)
+			}
+
+			mocksender.SetSender(sender, check.ID())
+
+			session.On("Get", []string{"1.3.6.1.2.1.1.2.0"}).Return(&tt.sysObjectIDPacket, tt.sysObjectIDError)
+			session.On("Get", []string{"1.3.6.1.4.1.3375.2.1.1.2.1.44.0", "1.3.6.1.4.1.3375.2.1.1.2.1.44.999", "1.2.3.4.5", "1.3.6.1.2.1.1.5.0", "1.3.6.1.2.1.1.3.0"}).Return(&tt.valuesPacket, tt.valuesError)
+
+			sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+			sender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+			sender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+			sender.On("ServiceCheck", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+			sender.On("Commit").Return()
+
+			err = check.Run()
+			assert.EqualError(t, err, tt.expectedErr)
+
+			snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
+
+			sender.AssertMetric(t, "Gauge", "datadog.snmp.submitted_metrics", 0.0, "", snmpTags)
+			sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.check_duration", snmpTags)
+			sender.AssertMetricTaggedWith(t, "MonotonicCount", "datadog.snmp.check_interval", snmpTags)
+
+			sender.AssertServiceCheck(t, "snmp.can_check", metrics.ServiceCheckCritical, "", snmpTags, tt.expectedErr)
+		})
+	}
+}
