@@ -63,27 +63,27 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags []string, forcedType string, options metricsConfigOption) {
 	metricFullName := "snmp." + metricName
 
-	tags = copyTags(tags)
+	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
 	if forcedType != "" {
 		switch forcedType {
 		case "gauge":
-			ms.sender.Gauge(metricFullName, value.toFloat64(), "", tags)
+			ms.Gauge(metricFullName, value.toFloat64(), "", tags)
 		case "counter":
-			ms.sender.Rate(metricFullName, value.toFloat64(), "", tags)
+			ms.Rate(metricFullName, value.toFloat64(), "", tags)
 		case "percent":
-			ms.sender.Rate(metricFullName, value.toFloat64()*100, "", tags)
+			ms.Rate(metricFullName, value.toFloat64()*100, "", tags)
 		case "monotonic_count":
-			ms.sender.MonotonicCount(metricFullName, value.toFloat64(), "", tags)
+			ms.MonotonicCount(metricFullName, value.toFloat64(), "", tags)
 		case "monotonic_count_and_rate":
-			ms.sender.MonotonicCount(metricFullName, value.toFloat64(), "", tags)
-			ms.sender.Rate(metricFullName+".rate", value.toFloat64(), "", tags)
+			ms.MonotonicCount(metricFullName, value.toFloat64(), "", tags)
+			ms.Rate(metricFullName+".rate", value.toFloat64(), "", tags)
 		case "flag_stream":
 			index := options.Placement - 1
 			floatValue := 0.0
 			if value.toString()[index] == '1' {
 				floatValue = 1.0
 			}
-			ms.sender.Gauge(metricFullName+"."+options.MetricSuffix, floatValue, "", tags)
+			ms.Gauge(metricFullName+"."+options.MetricSuffix, floatValue, "", tags)
 		default:
 			// TODO: test me
 			log.Warnf("metric `%s`: unsupported forcedType: %s", metricFullName, forcedType)
@@ -91,9 +91,9 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 	} else {
 		switch value.submissionType {
 		case metrics.RateType:
-			ms.sender.Rate(metricFullName, value.toFloat64(), "", tags)
+			ms.Rate(metricFullName, value.toFloat64(), "", tags)
 		default:
-			ms.sender.Gauge(metricFullName, value.toFloat64(), "", tags)
+			ms.Gauge(metricFullName, value.toFloat64(), "", tags)
 		}
 	}
 
@@ -101,4 +101,24 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 		ms.submittedMetrics++
 	}
 	ms.submittedMetrics++
+}
+
+func (ms *metricSender) Gauge(metric string, value float64, hostname string, tags []string) {
+	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
+	ms.sender.Gauge(metric, value, hostname, copyTags(tags))
+}
+
+func (ms *metricSender) Rate(metric string, value float64, hostname string, tags []string) {
+	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
+	ms.sender.Rate(metric, value, hostname, copyTags(tags))
+}
+
+func (ms *metricSender) MonotonicCount(metric string, value float64, hostname string, tags []string) {
+	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
+	ms.sender.MonotonicCount(metric, value, hostname, copyTags(tags))
+}
+
+func (ms *metricSender) ServiceCheck(checkName string, status metrics.ServiceCheckStatus, hostname string, tags []string, message string) {
+	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
+	ms.sender.ServiceCheck(checkName, status, hostname, copyTags(tags), message)
 }

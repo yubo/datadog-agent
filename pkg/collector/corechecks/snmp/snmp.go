@@ -38,18 +38,18 @@ func (c *Check) Run() error {
 	var checkErr error
 	tags, checkErr := c.doRun(staticTags)
 	if checkErr != nil {
-		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", copyTags(tags), checkErr.Error())
+		c.sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", tags, checkErr.Error())
 	} else {
-		sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", copyTags(tags), "")
+		c.sender.ServiceCheck("snmp.can_check", metrics.ServiceCheckOK, "", tags, "")
 	}
 
-	sender.Gauge("snmp.devices_monitored", float64(1), "", copyTags(tags))
+	c.sender.Gauge("snmp.devices_monitored", float64(1), "", tags)
 
 	// SNMP Performance metrics
 	// TODO: Remove Telemetry?
-	sender.MonotonicCount("datadog.snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", copyTags(tags))
-	sender.Gauge("datadog.snmp.check_duration", float64(time.Since(start))/1e9, "", copyTags(tags))
-	sender.Gauge("datadog.snmp.submitted_metrics", float64(c.sender.submittedMetrics), "", copyTags(tags))
+	c.sender.MonotonicCount("datadog.snmp.check_interval", float64(time.Now().UnixNano())/1e9, "", tags)
+	c.sender.Gauge("datadog.snmp.check_duration", float64(time.Since(start))/1e9, "", tags)
+	c.sender.Gauge("datadog.snmp.submitted_metrics", float64(c.sender.submittedMetrics), "", tags)
 
 	// Commit
 	sender.Commit()
