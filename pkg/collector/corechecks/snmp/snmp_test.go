@@ -65,6 +65,9 @@ metrics:
 - symbol:
     OID: 1.3.6.1.2.1.2.1
     name: ifNumber
+  metric_tags:
+  - symboltag1:1
+  - symboltag2:2
 - table:
     OID: 1.3.6.1.2.1.2.2
     name: ifTable
@@ -185,10 +188,11 @@ tags:
 	snmpGlobalTags := append(copyTags(snmpTags), "snmp_host:foo_sys_name")
 	row1Tags := append(copyTags(snmpGlobalTags), "if_index:1", "if_desc:desc1")
 	row2Tags := append(copyTags(snmpGlobalTags), "if_index:2", "if_desc:desc2")
+	scalarTags := append(copyTags(snmpGlobalTags), "symboltag1:1", "symboltag2:2")
 
 	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", snmpGlobalTags)
 	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", snmpGlobalTags)
-	sender.AssertMetric(t, "Gauge", "snmp.ifNumber", float64(30), "", snmpGlobalTags)
+	sender.AssertMetric(t, "Gauge", "snmp.ifNumber", float64(30), "", scalarTags)
 	sender.AssertMetric(t, "Gauge", "snmp.ifInErrors", float64(141), "", row1Tags)
 	sender.AssertMetric(t, "Gauge", "snmp.ifInErrors", float64(142), "", row2Tags)
 	sender.AssertMetric(t, "Gauge", "snmp.ifOutErrors", float64(201), "", row1Tags)

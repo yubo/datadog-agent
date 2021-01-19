@@ -41,7 +41,10 @@ func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *valueS
 		log.Warnf("error getting scalar value: %v", err)
 		return
 	}
-	ms.sendMetric(metric.Symbol.Name, value, tags, metric.ForcedType, metric.Options)
+
+	scalarTags := copyTags(tags)
+	scalarTags = append(scalarTags, metric.getSymbolTags()...)
+	ms.sendMetric(metric.Symbol.Name, value, scalarTags, metric.ForcedType, metric.Options)
 }
 
 func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *valueStoreType, tags []string) {

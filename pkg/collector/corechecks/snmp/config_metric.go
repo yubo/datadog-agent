@@ -120,6 +120,14 @@ func (m *metricsConfig) getTags(fullIndex string, values *valueStoreType) []stri
 	return rowTags
 }
 
+func (m *metricsConfig) getSymbolTags() []string {
+	var symbolTags []string
+	for _, metricTag := range m.MetricTags {
+		symbolTags = append(symbolTags, metricTag.symbolTag)
+	}
+	return symbolTags
+}
+
 func (mtc metricTagConfig) getTags(value string) []string {
 	var tags []string
 	if mtc.Tag != "" {
