@@ -24,6 +24,8 @@ SET PATH=%PATH%;%GOPATH%/bin
 @echo VSTUDIO_ROOT %VSTUDIO_ROOT%
 @echo TARGET_ARCH %TARGET_ARCH%
 
+exit /b 99
+
 REM Section to pre-install libyajl2 gem with fix for gcc10 compatibility
 Powershell -C "ridk enable; ./tasks/winbuildscripts/libyajl2_install.ps1"
 
