@@ -40,7 +40,7 @@ func Test_getDefaultProfilesDefinitionFiles(t *testing.T) {
 	actualProfileConfig := getDefaultProfilesDefinitionFiles()
 
 	confdPath := config.Datadog.GetString("confd_path")
-	expectedProfileConfig := profilesConfig{
+	expectedProfileConfig := profileConfigMap{
 		"f5-big-ip": {
 			filepath.Join(confdPath, "snmp.d", "profiles", "f5-big-ip.yaml"),
 		},

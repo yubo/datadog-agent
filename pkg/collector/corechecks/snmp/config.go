@@ -15,8 +15,8 @@ var defaultRetries = 3
 var defaultTimeout = 2
 
 type snmpInitConfig struct {
-	Profiles      profilesConfig  `yaml:"profiles"`
-	GlobalMetrics []metricsConfig `yaml:"global_metrics"`
+	Profiles      profileConfigMap `yaml:"profiles"`
+	GlobalMetrics []metricsConfig  `yaml:"global_metrics"`
 }
 
 type snmpInstanceConfig struct {
@@ -173,7 +173,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.oidConfig.columnOids = parseColumnOids(c.metrics)
 
 	// Profile Configs
-	var pConfig profilesConfig
+	var pConfig profileConfigMap
 	if len(initConfig.Profiles) > 0 {
 		pConfig = initConfig.Profiles
 	} else {

@@ -25,14 +25,14 @@ type profileDefinition struct {
 	SysObjectIds StringArray       `yaml:"sysobjectid"`
 }
 
-func getDefaultProfilesDefinitionFiles() profilesConfig {
+func getDefaultProfilesDefinitionFiles() profileConfigMap {
 	profilesRoot := getProfileConfdRoot()
 	files, err := ioutil.ReadDir(profilesRoot)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	profiles := make(profilesConfig)
+	profiles := make(profileConfigMap)
 	for _, f := range files {
 		fName := f.Name()
 		// Skip partial profiles
@@ -48,7 +48,7 @@ func getDefaultProfilesDefinitionFiles() profilesConfig {
 	return profiles
 }
 
-func loadProfiles(pConfig profilesConfig) (profileDefinitionMap, error) {
+func loadProfiles(pConfig profileConfigMap) (profileDefinitionMap, error) {
 	// TODO: profiles
 	//   - Load default profiles
 	//   - Load config profiles
