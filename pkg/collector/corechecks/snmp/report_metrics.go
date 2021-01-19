@@ -67,23 +67,23 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 	if forcedType != "" {
 		switch forcedType {
 		case "gauge":
-			ms.Gauge(metricFullName, value.toFloat64(), "", tags)
+			ms.gauge(metricFullName, value.toFloat64(), "", tags)
 		case "counter":
-			ms.Rate(metricFullName, value.toFloat64(), "", tags)
+			ms.rate(metricFullName, value.toFloat64(), "", tags)
 		case "percent":
-			ms.Rate(metricFullName, value.toFloat64()*100, "", tags)
+			ms.rate(metricFullName, value.toFloat64()*100, "", tags)
 		case "monotonic_count":
-			ms.MonotonicCount(metricFullName, value.toFloat64(), "", tags)
+			ms.monotonicCount(metricFullName, value.toFloat64(), "", tags)
 		case "monotonic_count_and_rate":
-			ms.MonotonicCount(metricFullName, value.toFloat64(), "", tags)
-			ms.Rate(metricFullName+".rate", value.toFloat64(), "", tags)
+			ms.monotonicCount(metricFullName, value.toFloat64(), "", tags)
+			ms.rate(metricFullName+".rate", value.toFloat64(), "", tags)
 		case "flag_stream":
 			index := options.Placement - 1
 			floatValue := 0.0
 			if value.toString()[index] == '1' {
 				floatValue = 1.0
 			}
-			ms.Gauge(metricFullName+"."+options.MetricSuffix, floatValue, "", tags)
+			ms.gauge(metricFullName+"."+options.MetricSuffix, floatValue, "", tags)
 		default:
 			// TODO: test me
 			log.Warnf("metric `%s`: unsupported forcedType: %s", metricFullName, forcedType)
@@ -91,9 +91,9 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 	} else {
 		switch value.submissionType {
 		case metrics.RateType:
-			ms.Rate(metricFullName, value.toFloat64(), "", tags)
+			ms.rate(metricFullName, value.toFloat64(), "", tags)
 		default:
-			ms.Gauge(metricFullName, value.toFloat64(), "", tags)
+			ms.gauge(metricFullName, value.toFloat64(), "", tags)
 		}
 	}
 
@@ -103,22 +103,22 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 	ms.submittedMetrics++
 }
 
-func (ms *metricSender) Gauge(metric string, value float64, hostname string, tags []string) {
+func (ms *metricSender) gauge(metric string, value float64, hostname string, tags []string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
 	ms.sender.Gauge(metric, value, hostname, copyTags(tags))
 }
 
-func (ms *metricSender) Rate(metric string, value float64, hostname string, tags []string) {
+func (ms *metricSender) rate(metric string, value float64, hostname string, tags []string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
 	ms.sender.Rate(metric, value, hostname, copyTags(tags))
 }
 
-func (ms *metricSender) MonotonicCount(metric string, value float64, hostname string, tags []string) {
+func (ms *metricSender) monotonicCount(metric string, value float64, hostname string, tags []string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
 	ms.sender.MonotonicCount(metric, value, hostname, copyTags(tags))
 }
 
-func (ms *metricSender) ServiceCheck(checkName string, status metrics.ServiceCheckStatus, hostname string, tags []string, message string) {
+func (ms *metricSender) serviceCheck(checkName string, status metrics.ServiceCheckStatus, hostname string, tags []string, message string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
 	ms.sender.ServiceCheck(checkName, status, hostname, copyTags(tags), message)
 }
