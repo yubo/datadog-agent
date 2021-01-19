@@ -21,10 +21,10 @@ type snmpSession struct {
 
 func (s *snmpSession) Configure(config snmpConfig) error {
 	maxOids := gosnmp.MaxOids
-	if config.OidBatchSize > gosnmp.MaxOids {
-		return fmt.Errorf("config OidBatchSize (%d) cannot higher than gosnmp.MaxOids: %d", config.OidBatchSize, maxOids)
+	if config.oidBatchSize > gosnmp.MaxOids {
+		return fmt.Errorf("config oidBatchSize (%d) cannot higher than gosnmp.MaxOids: %d", config.oidBatchSize, maxOids)
 	}
-	snmpVersion, err := parseVersion(config.SnmpVersion)
+	snmpVersion, err := parseVersion(config.snmpVersion)
 	if err != nil {
 		return err
 	}
@@ -32,22 +32,22 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 		Target:  config.ipAddress,
 		Port:    config.port,
 		Version: snmpVersion,
-		Timeout: time.Duration(config.Timeout) * time.Second,
-		Retries: config.Retries,
+		Timeout: time.Duration(config.timeout) * time.Second,
+		Retries: config.retries,
 		MaxOids: maxOids,
 		// Uncomment following line for debugging
 		//Logger:  defaultLog.New(os.Stdout, "", 0),
 	}
 	switch snmpVersion {
 	case gosnmp.Version2c, gosnmp.Version1:
-		gosnmpInst.Community = config.CommunityString
+		gosnmpInst.Community = config.communityString
 	case gosnmp.Version3:
-		authProtocol, err := getAuthProtocol(config.AuthProtocol)
+		authProtocol, err := getAuthProtocol(config.authProtocol)
 		if err != nil {
 			return err
 		}
 
-		privProtocol, err := getPrivProtocol(config.PrivProtocol)
+		privProtocol, err := getPrivProtocol(config.privProtocol)
 		if err != nil {
 			return err
 		}
@@ -60,14 +60,14 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 		}
 
 		gosnmpInst.MsgFlags = msgFlags
-		gosnmpInst.ContextName = config.ContextName
+		gosnmpInst.ContextName = config.contextName
 		gosnmpInst.SecurityModel = gosnmp.UserSecurityModel
 		gosnmpInst.SecurityParameters = &gosnmp.UsmSecurityParameters{
-			UserName:                 config.User,
+			UserName:                 config.user,
 			AuthenticationProtocol:   authProtocol,
-			AuthenticationPassphrase: config.AuthKey,
+			AuthenticationPassphrase: config.authKey,
 			PrivacyProtocol:          privProtocol,
-			PrivacyPassphrase:        config.PrivKey,
+			PrivacyPassphrase:        config.privKey,
 		}
 	}
 	s.gosnmpInst = gosnmpInst

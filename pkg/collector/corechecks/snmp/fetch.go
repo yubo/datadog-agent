@@ -17,17 +17,17 @@ type scalarResultValuesType map[string]snmpValueType
 
 func fetchValues(session sessionAPI, config snmpConfig) (*valueStoreType, error) {
 	// fetch scalar values
-	scalarResults, err := fetchScalarOidsWithBatching(session, config.OidConfig.scalarOids, config.OidBatchSize)
+	scalarResults, err := fetchScalarOidsWithBatching(session, config.oidConfig.scalarOids, config.oidBatchSize)
 	if err != nil {
 		return &valueStoreType{}, fmt.Errorf("failed to fetch scalar oids with batching: %v", err)
 	}
 
 	// fetch column values
 	oids := make(map[string]string)
-	for _, value := range config.OidConfig.columnOids {
+	for _, value := range config.oidConfig.columnOids {
 		oids[value] = value
 	}
-	columnResults, err := fetchColumnOidsWithBatching(session, oids, config.OidBatchSize)
+	columnResults, err := fetchColumnOidsWithBatching(session, oids, config.oidBatchSize)
 	if err != nil {
 		return &valueStoreType{}, fmt.Errorf("failed to fetch oids with batching: %v", err)
 	}

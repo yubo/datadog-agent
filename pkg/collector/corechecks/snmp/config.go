@@ -45,43 +45,43 @@ type snmpInstanceConfig struct {
 type snmpConfig struct {
 	ipAddress         string
 	port              uint16
-	CommunityString   string
-	SnmpVersion       string
-	Timeout           int
-	Retries           int
-	User              string
-	AuthProtocol      string
-	AuthKey           string
-	PrivProtocol      string
-	PrivKey           string
-	ContextName       string
-	OidConfig         oidConfig
-	Metrics           []metricsConfig
-	MetricTags        []metricTagConfig
-	OidBatchSize      int
-	Profiles          profileDefinitionMap
-	ProfileTags       []string
+	communityString   string
+	snmpVersion       string
+	timeout           int
+	retries           int
+	user              string
+	authProtocol      string
+	authKey           string
+	privProtocol      string
+	privKey           string
+	contextName       string
+	oidConfig         oidConfig
+	metrics           []metricsConfig
+	metricTags        []metricTagConfig
+	oidBatchSize      int
+	profiles          profileDefinitionMap
+	profileTags       []string
 	uptimeMetricAdded bool
 }
 
 func (c *snmpConfig) refreshWithProfile(profile string) error {
-	if _, ok := c.Profiles[profile]; !ok {
+	if _, ok := c.profiles[profile]; !ok {
 		return fmt.Errorf("unknown profile '%s'", profile)
 	}
-	log.Debugf("Refreshing with profile `%s` with content: %#v", profile, c.Profiles[profile])
+	log.Debugf("Refreshing with profile `%s` with content: %#v", profile, c.profiles[profile])
 	tags := []string{"snmp_profile:" + profile}
-	definition := c.Profiles[profile]
+	definition := c.profiles[profile]
 
 	// https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py#L181-L200
-	c.Metrics = append(c.Metrics, definition.Metrics...)
-	c.MetricTags = append(c.MetricTags, definition.MetricTags...)
-	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, parseScalarOids(definition.Metrics, definition.MetricTags)...)
-	c.OidConfig.columnOids = append(c.OidConfig.columnOids, parseColumnOids(definition.Metrics)...)
+	c.metrics = append(c.metrics, definition.Metrics...)
+	c.metricTags = append(c.metricTags, definition.MetricTags...)
+	c.oidConfig.scalarOids = append(c.oidConfig.scalarOids, parseScalarOids(definition.Metrics, definition.MetricTags)...)
+	c.oidConfig.columnOids = append(c.oidConfig.columnOids, parseColumnOids(definition.Metrics)...)
 
 	if definition.Device.Vendor != "" {
 		tags = append(tags, "device_vendor:"+definition.Device.Vendor)
 	}
-	c.ProfileTags = tags
+	c.profileTags = tags
 	return nil
 }
 
@@ -90,8 +90,8 @@ func (c *snmpConfig) addUptimeMetric() {
 		return
 	}
 	metricConfig := getUptimeMetricConfig()
-	c.Metrics = append(c.Metrics, metricConfig)
-	c.OidConfig.scalarOids = append(c.OidConfig.scalarOids, metricConfig.Symbol.OID)
+	c.metrics = append(c.metrics, metricConfig)
+	c.oidConfig.scalarOids = append(c.oidConfig.scalarOids, metricConfig.Symbol.OID)
 	c.uptimeMetricAdded = true
 }
 
@@ -122,7 +122,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 
 	c := snmpConfig{}
 
-	c.SnmpVersion = instance.SnmpVersion
+	c.snmpVersion = instance.SnmpVersion
 
 	// SNMP common connection configs
 	c.ipAddress = instance.IPAddress
@@ -135,42 +135,42 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	}
 
 	if instance.Retries == 0 {
-		c.Retries = defaultRetries
+		c.retries = defaultRetries
 	} else {
-		c.Retries = instance.Retries
+		c.retries = instance.Retries
 	}
 
 	if instance.Timeout == 0 {
-		c.Timeout = defaultTimeout
+		c.timeout = defaultTimeout
 	} else {
-		c.Timeout = instance.Timeout
+		c.timeout = instance.Timeout
 	}
 
 	// SNMP connection configs
-	c.CommunityString = instance.CommunityString
-	c.User = instance.User
-	c.AuthProtocol = instance.AuthProtocol
-	c.AuthKey = instance.AuthKey
-	c.PrivProtocol = instance.PrivProtocol
-	c.PrivKey = instance.PrivKey
-	c.ContextName = instance.ContextName
+	c.communityString = instance.CommunityString
+	c.user = instance.User
+	c.authProtocol = instance.AuthProtocol
+	c.authKey = instance.AuthKey
+	c.privProtocol = instance.PrivProtocol
+	c.privKey = instance.PrivKey
+	c.contextName = instance.ContextName
 
-	c.Metrics = instance.Metrics
+	c.metrics = instance.Metrics
 
-	c.OidBatchSize = defaultOidBatchSize
+	c.oidBatchSize = defaultOidBatchSize
 
-	// Metrics Configs
+	// metrics Configs
 	if instance.UseGlobalMetrics {
-		c.Metrics = append(c.Metrics, initConfig.GlobalMetrics...)
+		c.metrics = append(c.metrics, initConfig.GlobalMetrics...)
 	}
-	// TODO: Validate c.Metrics
-	normalizeMetrics(c.Metrics)
+	// TODO: Validate c.metrics
+	normalizeMetrics(c.metrics)
 
-	c.MetricTags = instance.MetricTags
-	// TODO: Validate c.MetricTags
+	c.metricTags = instance.MetricTags
+	// TODO: Validate c.metricTags
 
-	c.OidConfig.scalarOids = parseScalarOids(c.Metrics, c.MetricTags)
-	c.OidConfig.columnOids = parseColumnOids(c.Metrics)
+	c.oidConfig.scalarOids = parseScalarOids(c.metrics, c.metricTags)
+	c.oidConfig.columnOids = parseColumnOids(c.metrics)
 
 	// Profile Configs
 	var pConfig profilesConfig
@@ -187,7 +187,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		normalizeMetrics(profileDef.Metrics)
 	}
 
-	c.Profiles = profiles
+	c.profiles = profiles
 	profile := instance.Profile
 
 	if profile != "" {
@@ -202,8 +202,8 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	//   https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py
 
 	// TODO: Validate metrics
-	//  - Metrics
-	//  - MetricTags
+	//  - metrics
+	//  - metricTags
 	//  Cases:
 	//   - index transform:
 	//     https://github.com/DataDog/integrations-core/blob/d31d3532e16cf8418a8b112f47359f14be5ecae1/snmp/datadog_checks/snmp/parsing/metrics.py#L523-L537

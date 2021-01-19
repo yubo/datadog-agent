@@ -73,13 +73,13 @@ func (c *Check) doRun(staticTags []string) (retTags []string, retErr error) {
 	}()
 
 	// If no OIDs, try to detect profile using device sysobjectid
-	if !c.config.OidConfig.hasOids() {
+	if !c.config.oidConfig.hasOids() {
 		sysObjectID, err := fetchSysObjectID(c.session)
 		if err != nil {
 			retErr = fmt.Errorf("failed to fetching sysobjectid: %s", err)
 			return
 		}
-		profile, err := getProfileForSysObjectID(c.config.Profiles, sysObjectID)
+		profile, err := getProfileForSysObjectID(c.config.profiles, sysObjectID)
 		if err != nil {
 			retErr = fmt.Errorf("failed to get profile sys object id for `%s`: %s", sysObjectID, err)
 			return
@@ -91,10 +91,10 @@ func (c *Check) doRun(staticTags []string) (retTags []string, retErr error) {
 			return
 		}
 	}
-	retTags = append(retTags, c.config.ProfileTags...)
+	retTags = append(retTags, c.config.profileTags...)
 
 	// Fetch and report metrics
-	if c.config.OidConfig.hasOids() {
+	if c.config.oidConfig.hasOids() {
 		c.config.addUptimeMetric()
 
 		valuesStore, err := fetchValues(c.session, c.config)
@@ -103,8 +103,8 @@ func (c *Check) doRun(staticTags []string) (retTags []string, retErr error) {
 			return
 		}
 		log.Debugf("fetched valuesStore: %#v", valuesStore)
-		retTags = append(retTags, c.sender.getCheckInstanceMetricTags(c.config.MetricTags, valuesStore)...)
-		c.sender.reportMetrics(c.config.Metrics, valuesStore, retTags)
+		retTags = append(retTags, c.sender.getCheckInstanceMetricTags(c.config.metricTags, valuesStore)...)
+		c.sender.reportMetrics(c.config.metrics, valuesStore, retTags)
 	}
 	return
 }

@@ -24,10 +24,10 @@ retries: 5
 snmp_version: 2c
 user: my-user
 authProtocol: sha
-authKey: my-AuthKey
+authKey: my-authKey
 privProtocol: aes
-privKey: my-PrivKey
-context_name: my-ContextName
+privKey: my-privKey
+context_name: my-contextName
 metrics:
 - symbol:
     OID: 1.3.6.1.2.1.2.1
@@ -98,15 +98,15 @@ global_metrics:
 	assert.Nil(t, err)
 	assert.Equal(t, "1.2.3.4", check.config.ipAddress)
 	assert.Equal(t, uint16(1161), check.config.port)
-	assert.Equal(t, 7, check.config.Timeout)
-	assert.Equal(t, 5, check.config.Retries)
-	assert.Equal(t, "2c", check.config.SnmpVersion)
-	assert.Equal(t, "my-user", check.config.User)
-	assert.Equal(t, "sha", check.config.AuthProtocol)
-	assert.Equal(t, "my-AuthKey", check.config.AuthKey)
-	assert.Equal(t, "aes", check.config.PrivProtocol)
-	assert.Equal(t, "my-PrivKey", check.config.PrivKey)
-	assert.Equal(t, "my-ContextName", check.config.ContextName)
+	assert.Equal(t, 7, check.config.timeout)
+	assert.Equal(t, 5, check.config.retries)
+	assert.Equal(t, "2c", check.config.snmpVersion)
+	assert.Equal(t, "my-user", check.config.user)
+	assert.Equal(t, "sha", check.config.authProtocol)
+	assert.Equal(t, "my-authKey", check.config.authKey)
+	assert.Equal(t, "aes", check.config.privProtocol)
+	assert.Equal(t, "my-privKey", check.config.privKey)
+	assert.Equal(t, "my-contextName", check.config.contextName)
 	metrics := []metricsConfig{
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifNumber2"}},
@@ -160,9 +160,9 @@ global_metrics:
 		{Tag: "snmp_host", OID: "1.3.6.1.2.1.1.5.0", Name: "sysName"},
 	}
 
-	assert.Equal(t, metrics, check.config.Metrics)
-	assert.Equal(t, metricsTags, check.config.MetricTags)
-	assert.Equal(t, 1, len(check.config.Profiles))
+	assert.Equal(t, metrics, check.config.metrics)
+	assert.Equal(t, metricsTags, check.config.metricTags)
+	assert.Equal(t, 1, len(check.config.profiles))
 }
 
 func TestDefaultConfigurations(t *testing.T) {
@@ -180,16 +180,16 @@ ip_address: 1.2.3.4
 	assert.Nil(t, err)
 	assert.Equal(t, "1.2.3.4", check.config.ipAddress)
 	assert.Equal(t, uint16(161), check.config.port)
-	assert.Equal(t, 2, check.config.Timeout)
-	assert.Equal(t, 3, check.config.Retries)
+	assert.Equal(t, 2, check.config.timeout)
+	assert.Equal(t, 3, check.config.retries)
 	var metrics []metricsConfig
 
 	var metricsTags []metricTagConfig
 
-	assert.Equal(t, metrics, check.config.Metrics)
-	assert.Equal(t, metricsTags, check.config.MetricTags)
-	assert.Equal(t, 1, len(check.config.Profiles))
-	assert.Equal(t, mockProfilesDefinitions()["f5-big-ip"].Metrics, check.config.Profiles["f5-big-ip"].Metrics)
+	assert.Equal(t, metrics, check.config.metrics)
+	assert.Equal(t, metricsTags, check.config.metricTags)
+	assert.Equal(t, 1, len(check.config.profiles))
+	assert.Equal(t, mockProfilesDefinitions()["f5-big-ip"].Metrics, check.config.profiles["f5-big-ip"].Metrics)
 }
 
 func TestPortConfiguration(t *testing.T) {
@@ -241,7 +241,7 @@ global_metrics:
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "ifNumber"}},
 		{Symbol: symbolConfig{OID: "1.2.3.4", Name: "aGlobalMetric"}},
 	}
-	assert.Equal(t, metrics, check.config.Metrics)
+	assert.Equal(t, metrics, check.config.metrics)
 }
 
 func TestUseGlobalMetricsFalse(t *testing.T) {
@@ -270,7 +270,7 @@ global_metrics:
 	metrics := []metricsConfig{
 		{Symbol: symbolConfig{OID: "1.3.6.1.2.1.2.1", Name: "aInstanceMetric"}},
 	}
-	assert.Equal(t, metrics, check.config.Metrics)
+	assert.Equal(t, metrics, check.config.metrics)
 }
 
 func Test_oidConfig_hasOids(t *testing.T) {

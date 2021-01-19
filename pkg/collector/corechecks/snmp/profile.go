@@ -49,7 +49,7 @@ func getDefaultProfilesDefinitionFiles() profilesConfig {
 }
 
 func loadProfiles(pConfig profilesConfig) (profileDefinitionMap, error) {
-	// TODO: Profiles
+	// TODO: profiles
 	//   - Load default profiles
 	//   - Load config profiles
 	profiles := make(map[string]profileDefinition)
