@@ -97,5 +97,8 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 		}
 	}
 
+	if forcedType == "monotonic_count_and_rate" {
+		ms.submittedMetrics++
+	}
 	ms.submittedMetrics++
 }
