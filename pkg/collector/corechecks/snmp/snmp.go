@@ -113,7 +113,6 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	// Must be called before c.CommonConfigure
 	c.BuildID(rawInstance, rawInitConfig)
 
-	// TODO: test that instance tags are passed correctly to sender
 	err := c.CommonConfigure(rawInstance, source)
 	if err != nil {
 		return err
@@ -124,8 +123,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 		return err
 	}
 
-	// TODO: Clean up sensitive info: community string, auth key, priv key
-	log.Debugf("Config: %#v", config)
+	log.Debugf("SNMP configuration: %s", config.toString())
 
 	c.config = config
 	err = c.session.Configure(c.config)

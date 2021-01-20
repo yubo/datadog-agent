@@ -102,6 +102,14 @@ func (c *snmpConfig) getStaticTags() []string {
 	return tags
 }
 
+func (c *snmpConfig) toString() string {
+	configCopy := *c
+	configCopy.communityString = "***"
+	configCopy.authKey = "***"
+	configCopy.privKey = "***"
+	return fmt.Sprintf("%#v", configCopy)
+}
+
 func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (snmpConfig, error) {
 	instance := snmpInstanceConfig{}
 	initConfig := snmpInitConfig{}
