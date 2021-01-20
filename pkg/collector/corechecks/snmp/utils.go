@@ -21,7 +21,7 @@ func createStringBatches(elements []string, size int) ([][]string, error) {
 	return batches, nil
 }
 
-func copyTags(tags []string) []string {
+func copyStrings(tags []string) []string {
 	newTags := make([]string, len(tags))
 	copy(newTags, tags)
 	return newTags

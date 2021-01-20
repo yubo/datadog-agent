@@ -56,7 +56,7 @@ func (c *Check) Run() error {
 }
 
 func (c *Check) doRun(staticTags []string) (retTags []string, retErr error) {
-	retTags = copyTags(staticTags)
+	retTags = copyStrings(staticTags)
 
 	// Create connection
 	connErr := c.session.Connect()

@@ -111,7 +111,8 @@ func recursivelyExpandBaseProfiles(definition *profileDefinition, extends []stri
 		definition.Metrics = append(definition.Metrics, baseDefinition.Metrics...)
 		definition.MetricTags = append(definition.MetricTags, baseDefinition.MetricTags...)
 
-		err = recursivelyExpandBaseProfiles(definition, baseDefinition.Extends, append([]string{basePath}, extendsHistory...))
+		newExtendsHistory := append(copyStrings(extendsHistory), basePath)
+		err = recursivelyExpandBaseProfiles(definition, baseDefinition.Extends, newExtendsHistory)
 		if err != nil {
 			return err
 		}

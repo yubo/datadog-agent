@@ -86,9 +86,9 @@ func Test_makeStringBatches(t *testing.T) {
 	}
 }
 
-func Test_copyTags(t *testing.T) {
+func Test_copyStrings(t *testing.T) {
 	tags := []string{"aa", "bb"}
-	newTags := copyTags(tags)
+	newTags := copyStrings(tags)
 	assert.Equal(t, tags, newTags)
 	assert.NotEqual(t, fmt.Sprintf("%p", tags), fmt.Sprintf("%p", newTags))
 	assert.NotEqual(t, fmt.Sprintf("%p", &tags[0]), fmt.Sprintf("%p", &newTags[0]))

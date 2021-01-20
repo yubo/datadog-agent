@@ -43,7 +43,7 @@ func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *valueS
 		return
 	}
 
-	scalarTags := copyTags(tags)
+	scalarTags := copyStrings(tags)
 	scalarTags = append(scalarTags, metric.getSymbolTags()...)
 	ms.sendMetric(metric.Symbol.Name, value, scalarTags, metric.ForcedType, metric.Options)
 }
@@ -56,7 +56,7 @@ func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *
 			continue
 		}
 		for fullIndex, value := range metricValues {
-			rowTags := copyTags(tags)
+			rowTags := copyStrings(tags)
 			rowTags = append(rowTags, metricConfig.getTags(fullIndex, values)...)
 			ms.sendMetric(symbol.Name, value, rowTags, metricConfig.ForcedType, metricConfig.Options)
 			ms.trySendBandwidthUsageMetric(symbol, fullIndex, values, rowTags)
@@ -112,22 +112,22 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 
 func (ms *metricSender) gauge(metric string, value float64, hostname string, tags []string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
-	ms.sender.Gauge(metric, value, hostname, copyTags(tags))
+	ms.sender.Gauge(metric, value, hostname, copyStrings(tags))
 }
 
 func (ms *metricSender) rate(metric string, value float64, hostname string, tags []string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
-	ms.sender.Rate(metric, value, hostname, copyTags(tags))
+	ms.sender.Rate(metric, value, hostname, copyStrings(tags))
 }
 
 func (ms *metricSender) monotonicCount(metric string, value float64, hostname string, tags []string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
-	ms.sender.MonotonicCount(metric, value, hostname, copyTags(tags))
+	ms.sender.MonotonicCount(metric, value, hostname, copyStrings(tags))
 }
 
 func (ms *metricSender) serviceCheck(checkName string, status metrics.ServiceCheckStatus, hostname string, tags []string, message string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
-	ms.sender.ServiceCheck(checkName, status, hostname, copyTags(tags), message)
+	ms.sender.ServiceCheck(checkName, status, hostname, copyStrings(tags), message)
 }
 
 func getFlagStreamValue(placement uint, strValue string) (float64, error) {

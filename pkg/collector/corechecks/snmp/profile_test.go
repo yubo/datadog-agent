@@ -114,7 +114,7 @@ func Test_loadProfiles(t *testing.T) {
 				},
 			},
 			expectedProfileDefMap: nil,
-			expectedIncludeErrors: []string{"failed to expand profile `f5-big-ip`: cyclic profile extend detected, `_extend1.yaml` has already been extended, extendsHistory=`[_extend2.yaml _extend1.yaml]`"},
+			expectedIncludeErrors: []string{"failed to expand profile `f5-big-ip`: cyclic profile extend detected, `_extend1.yaml` has already been extended, extendsHistory=`[_extend1.yaml _extend2.yaml]`"},
 		},
 		{
 			name: "invalid yaml profile",
