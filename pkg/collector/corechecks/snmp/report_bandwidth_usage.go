@@ -20,9 +20,8 @@ func (ms *metricSender) trySendBandwidthUsageMetric(symbol symbolConfig, fullInd
 	}
 }
 
-/*
-   Evaluate and report input/output bandwidth usage. If any of `ifHCInOctets`, `ifHCOutOctets`  or `ifHighSpeed`
-   is missing then bandwidth will not be reported.
+/* sendBandwidthUsageMetric evaluate and report input/output bandwidth usage.
+   If any of `ifHCInOctets`, `ifHCOutOctets`  or `ifHighSpeed` is missing then bandwidth will not be reported.
 
    Bandwidth usage is:
 

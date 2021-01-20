@@ -6,6 +6,7 @@ import (
 )
 
 func parseVersion(rawVersion string) (gosnmp.SnmpVersion, error) {
+	// tested in Test_snmpSession_Configure
 	switch rawVersion {
 	case "1":
 		return gosnmp.Version1, nil

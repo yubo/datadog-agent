@@ -1,6 +1,7 @@
 package snmp
 
 import (
+	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -71,38 +72,42 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 		switch forcedType {
 		case "gauge":
 			ms.gauge(metricFullName, value.toFloat64(), "", tags)
+			ms.submittedMetrics++
 		case "counter":
 			ms.rate(metricFullName, value.toFloat64(), "", tags)
+			ms.submittedMetrics++
 		case "percent":
 			ms.rate(metricFullName, value.toFloat64()*100, "", tags)
+			ms.submittedMetrics++
 		case "monotonic_count":
 			ms.monotonicCount(metricFullName, value.toFloat64(), "", tags)
+			ms.submittedMetrics++
 		case "monotonic_count_and_rate":
 			ms.monotonicCount(metricFullName, value.toFloat64(), "", tags)
 			ms.rate(metricFullName+".rate", value.toFloat64(), "", tags)
+			ms.submittedMetrics += 2
 		case "flag_stream":
-			index := options.Placement - 1
-			floatValue := 0.0
-			if value.toString()[index] == '1' {
-				floatValue = 1.0
+			floatValue, err := getFlagStreamValue(options.Placement, value.toString())
+			if err != nil {
+				log.Debugf("metric `%s`: failed to get flag stream value: %s", metricFullName, err)
+				return
 			}
 			ms.gauge(metricFullName+"."+options.MetricSuffix, floatValue, "", tags)
+			ms.submittedMetrics++
 		default:
 			log.Debugf("metric `%s`: unsupported forcedType: %s", metricFullName, forcedType)
+			return
 		}
 	} else {
 		switch value.submissionType {
 		case metrics.RateType:
 			ms.rate(metricFullName, value.toFloat64(), "", tags)
+			ms.submittedMetrics++
 		default:
 			ms.gauge(metricFullName, value.toFloat64(), "", tags)
+			ms.submittedMetrics++
 		}
 	}
-
-	if forcedType == "monotonic_count_and_rate" {
-		ms.submittedMetrics++
-	}
-	ms.submittedMetrics++
 }
 
 func (ms *metricSender) gauge(metric string, value float64, hostname string, tags []string) {
@@ -123,4 +128,17 @@ func (ms *metricSender) monotonicCount(metric string, value float64, hostname st
 func (ms *metricSender) serviceCheck(checkName string, status metrics.ServiceCheckStatus, hostname string, tags []string, message string) {
 	// we need copy tags before using sender due to https://github.com/DataDog/datadog-agent/issues/7159
 	ms.sender.ServiceCheck(checkName, status, hostname, copyTags(tags), message)
+}
+
+func getFlagStreamValue(placement uint, strValue string) (float64, error) {
+	index := placement - 1
+	if int(index) >= len(strValue) {
+		return 0, fmt.Errorf("flag stream index `%d` not found in `%s`", index, strValue)
+	}
+	charAtIndex := strValue[index]
+	floatValue := 0.0
+	if charAtIndex == '1' {
+		floatValue = 1.0
+	}
+	return floatValue, nil
 }

@@ -43,7 +43,8 @@ func getDefaultProfilesDefinitionFiles() profileConfigMap {
 		if !strings.HasSuffix(fName, ".yaml") {
 			continue
 		}
-		profiles[fName[:len(fName)-5]] = profileConfig{filepath.Join(profilesRoot, fName)}
+		profileName := fName[:len(fName)-len(".yaml")]
+		profiles[profileName] = profileConfig{filepath.Join(profilesRoot, fName)}
 	}
 	return profiles
 }
@@ -118,23 +119,6 @@ func recursivelyExpandBaseProfiles(definition *profileDefinition, extends []stri
 	return nil
 }
 
-func getOidPatternSpecificity(pattern string) ([]int, error) {
-	wildcardKey := -1
-	var parts []int
-	for _, part := range strings.Split(strings.TrimLeft(pattern, "."), ".") {
-		if part == "*" {
-			parts = append(parts, wildcardKey)
-		} else {
-			intPart, err := strconv.Atoi(part)
-			if err != nil {
-				return nil, fmt.Errorf("error parsing part `%s` for pattern `%s`: %v", part, pattern, err)
-			}
-			parts = append(parts, intPart)
-		}
-	}
-	return parts, nil
-}
-
 func getMostSpecificOid(oids []string) (string, error) {
 	var mostSpecificParts []int
 	var mostSpecificOid string
@@ -163,4 +147,21 @@ func getMostSpecificOid(oids []string) (string, error) {
 		}
 	}
 	return mostSpecificOid, nil
+}
+
+func getOidPatternSpecificity(pattern string) ([]int, error) {
+	wildcardKey := -1
+	var parts []int
+	for _, part := range strings.Split(strings.TrimLeft(pattern, "."), ".") {
+		if part == "*" {
+			parts = append(parts, wildcardKey)
+		} else {
+			intPart, err := strconv.Atoi(part)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing part `%s` for pattern `%s`: %v", part, pattern, err)
+			}
+			parts = append(parts, intPart)
+		}
+	}
+	return parts, nil
 }
