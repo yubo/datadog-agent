@@ -439,6 +439,21 @@ func Test_resultToScalarValues(t *testing.T) {
 						Type:  gosnmp.NoSuchInstance,
 						Value: 142,
 					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.4",
+						Type:  gosnmp.NoSuchObject,
+						Value: 142,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.5",
+						Type:  gosnmp.EndOfContents,
+						Value: 142,
+					},
+					{
+						Name:  "1.3.6.1.2.1.2.2.1.14.6",
+						Type:  gosnmp.EndOfMibView,
+						Value: 142,
+					},
 				},
 			},
 			scalarResultValuesType{

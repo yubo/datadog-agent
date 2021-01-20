@@ -80,7 +80,10 @@ func hasNonPrintableByte(bytesValue []byte) bool {
 func resultToScalarValues(result *gosnmp.SnmpPacket) scalarResultValuesType {
 	returnValues := make(map[string]snmpValueType)
 	for _, pduVariable := range result.Variables {
-		// TODO: Skip in valid types like NoSuchObject NoSuchInstance EndOfMibView ?
+		switch pduVariable.Type {
+		case gosnmp.EndOfContents, gosnmp.EndOfMibView, gosnmp.NoSuchInstance, gosnmp.NoSuchObject:
+			continue
+		}
 		name, value, err := getValueFromPDU(pduVariable)
 		if err != nil {
 			log.Debugf("cannot get value for variable `%v` with type `%v` and value `%v`", pduVariable.Name, pduVariable.Type, pduVariable.Value)
