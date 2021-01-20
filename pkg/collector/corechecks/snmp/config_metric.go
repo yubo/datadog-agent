@@ -62,7 +62,7 @@ type metricsConfig struct {
 	ForcedType string              `yaml:"forced_type"`
 	Options    metricsConfigOption `yaml:"options"`
 
-	// TODO: Validate Symbol and Table are not both used
+	// TODO: [VALIDATION] Validate Symbol and Table are not both used
 }
 
 // getTags retrieve tags using the metric config and values
@@ -133,7 +133,11 @@ func (mtc metricTagConfig) getTags(value string) []string {
 	if mtc.Tag != "" {
 		tags = append(tags, mtc.Tag+":"+value)
 	} else if mtc.Match != "" {
-		re := regexp.MustCompile(mtc.Match) // TODO: may fail, compile in config validation
+		re, err := regexp.Compile(mtc.Match) // TODO: [VALIDATION] may fail, compile in config validation
+		if err != nil {
+			log.Warnf("failed to compile `%v` from metric tag config `%v`", mtc.Match, mtc)
+			return tags
+		}
 		if re.MatchString(value) {
 			for key, val := range mtc.Tags {
 				normalizedVal := normalizeRegexReplaceValue(val)
@@ -142,7 +146,7 @@ func (mtc metricTagConfig) getTags(value string) []string {
 			}
 		}
 	}
-	// TODO: Handle error case in config validation
+	// TODO: [VALIDATION] Handle error case in config validation
 	return tags
 }
 

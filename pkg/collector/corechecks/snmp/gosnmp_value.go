@@ -17,16 +17,18 @@ import (
 func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValueType, error) {
 	var value interface{}
 	name := strings.TrimLeft(pduVariable.Name, ".") // remove leading dot
-	// TODO: Handle error if pduVariable.Value has a wrong type for each switch case
 	switch pduVariable.Type {
 	case gosnmp.OctetString, gosnmp.BitString:
-		// TODO: Might need better impl.
+		// TODO: Investigate for possible better implementation
 		//   We hexify like Python/pysnmp impl (keep compatibility) if the value contains non ascii letters:
 		//   https://github.com/etingof/pyasn1/blob/db8f1a7930c6b5826357646746337dafc983f953/pyasn1/type/univ.py#L950-L953
 		//   hexifying like pysnmp prettyPrint might lead to unpredictable results since `[]byte` might or might not have
 		//   elements outside of 32-126 range
 		//   An alternative solution is to explicitly force the conversion to specific type using profile config.
-		bytesValue := pduVariable.Value.([]byte)
+		bytesValue, ok := pduVariable.Value.([]byte)
+		if !ok {
+			return name, snmpValueType{}, fmt.Errorf("oid %s: OctetString/BitString should be []byte type but got %T type: %#v", pduVariable.Name, pduVariable.Value, pduVariable)
+		}
 		if hasNonPrintableByte(bytesValue) {
 			value = fmt.Sprintf("%#x", bytesValue)
 		} else {
@@ -35,17 +37,29 @@ func getValueFromPDU(pduVariable gosnmp.SnmpPDU) (string, snmpValueType, error) 
 	case gosnmp.Integer, gosnmp.Counter32, gosnmp.Gauge32, gosnmp.TimeTicks, gosnmp.Counter64, gosnmp.Uinteger32:
 		value = float64(gosnmp.ToBigInt(pduVariable.Value).Int64())
 	case gosnmp.OpaqueFloat:
-		value = float64(pduVariable.Value.(float32))
+		floatValue, ok := pduVariable.Value.(float32)
+		if !ok {
+			return name, snmpValueType{}, fmt.Errorf("oid %s: OpaqueFloat should be float32 type but got %T type: %#v", pduVariable.Name, pduVariable.Value, pduVariable)
+		}
+		value = float64(floatValue)
 	case gosnmp.OpaqueDouble:
-		value = pduVariable.Value.(float64)
+		floatValue, ok := pduVariable.Value.(float64)
+		if !ok {
+			return name, snmpValueType{}, fmt.Errorf("oid %s: OpaqueDouble should be float64 type but got %T type: %#v", pduVariable.Name, pduVariable.Value, pduVariable)
+		}
+		value = floatValue
 	case gosnmp.IPAddress:
 		strValue, ok := pduVariable.Value.(string)
 		if !ok {
-			return name, snmpValueType{}, fmt.Errorf("oid %s: invalid IP Address with value %v", pduVariable.Name, pduVariable.Value)
+			return name, snmpValueType{}, fmt.Errorf("oid %s: IPAddress should be string type but got %T type: %#v", pduVariable.Name, pduVariable.Value, pduVariable)
 		}
 		value = strValue
 	case gosnmp.ObjectIdentifier:
-		value = strings.TrimLeft(pduVariable.Value.(string), ".")
+		strValue, ok := pduVariable.Value.(string)
+		if !ok {
+			return name, snmpValueType{}, fmt.Errorf("oid %s: ObjectIdentifier should be string type but got %T type: %#v", pduVariable.Name, pduVariable.Value, pduVariable)
+		}
+		value = strings.TrimLeft(strValue, ".")
 	default:
 		return name, snmpValueType{}, fmt.Errorf("oid %s: invalid type: %s", pduVariable.Name, pduVariable.Type.String())
 	}

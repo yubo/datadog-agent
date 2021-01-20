@@ -194,13 +194,13 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		}
 	}
 
-	// TODO: Check for duplicate profile sysobjectid
+	// TODO: [VALIDATION] Check for duplicate profile sysobjectid
 	//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L142-L144
 
-	// TODO: Add missing error handling by looking at
+	// TODO: [VALIDATION] Add missing error handling by looking at
 	//   https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py
 
-	// TODO: Validate metrics
+	// TODO: [VALIDATION] Validate metrics
 	//  - metrics
 	//  - metricTags
 	//  Cases:
@@ -217,12 +217,12 @@ func getUptimeMetricConfig() metricsConfig {
 func parseScalarOids(metrics []metricsConfig, metricTags []metricTagConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		if metric.Symbol.OID != "" { // TODO: need validation
+		if metric.Symbol.OID != "" { // TODO: [VALIDATION] need validation
 			oids = append(oids, metric.Symbol.OID)
 		}
 	}
 	for _, metricTag := range metricTags {
-		if metricTag.OID != "" { // TODO: need validation
+		if metricTag.OID != "" { // TODO: [VALIDATION] need validation
 			oids = append(oids, metricTag.OID)
 		}
 	}
@@ -232,7 +232,7 @@ func parseScalarOids(metrics []metricsConfig, metricTags []metricTagConfig) []st
 func parseColumnOids(metrics []metricsConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		if metric.Table.OID != "" { // TODO: need validation
+		if metric.Table.OID != "" { // TODO: [VALIDATION] need validation
 			for _, symbol := range metric.Symbols {
 				oids = append(oids, symbol.OID)
 			}

@@ -219,40 +219,6 @@ metric_tags:
 			},
 			[]string(nil),
 		},
-		// TODO: Test value 'GigabitEthernet1/0/8' with match: '(\w)(\w+)'
-		//
-		//		{
-		//			"regex",
-		//			[]byte(`
-		//table:
-		//  OID:  1.2.3.4.5
-		//  name: cpiPduBranchTable
-		//symbols:
-		//  - OID: 1.2.3.4.5.1.2
-		//    name: cpiPduBranchCurrent
-		//metric_tags:
-		//  - column:
-		//      OID:  1.2.3.4.8.1.2
-		//      name: cpiPduName
-		//    table: cpiPduTable
-		//    match: '(\w)(\w+)'
-		//    tags:
-		//      prefix: '$1'
-		//      suffix: '$2'
-		//`),
-		//			"1.2.3.4.5.6.7.8",
-		//			&valueStoreType{
-		//				columnValues: map[string]map[string]snmpValueType{
-		//					"1.2.3.4.8.1.2": {
-		//						"1.2.3.4.5.6.7.8": snmpValueType{
-		//							value: "GigabitEthernet1/0/8",
-		//						},
-		//					},
-		//				},
-		//			},
-		//			[]string{},
-		//		},
-
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
