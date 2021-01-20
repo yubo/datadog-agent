@@ -103,6 +103,7 @@ def follow_workflow_run(run_id):
             sleep(15)
             continue
 
+        print(run)
         status = run["status"]
         conclusion = run["conclusion"]
 

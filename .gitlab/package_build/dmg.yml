@@ -31,11 +31,11 @@
 
 agent_dmg-x64-a6:
   extends: .agent_build_common_dmg
-  rules:
-    - <<: *if_not_version_6
-      when: never
-    - <<: *if_master_branch
-    - <<: *if_deploy
+  # rules:
+  #   - <<: *if_not_version_6
+  #     when: never
+  #   - <<: *if_master_branch
+  #   - <<: *if_deploy
   allow_failure: true
   stage: package_build
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/deb_x64:$DATADOG_AGENT_BUILDIMAGES
