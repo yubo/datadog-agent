@@ -46,7 +46,7 @@ func fetchColumnOids(session sessionAPI, oids map[string]string) (columnResultVa
 	returnValues := make(columnResultValuesType)
 	curOids := oids
 	for {
-		log.Debugf("fetchColumnOidsWithBatching() curOids  : %v", curOids)
+		log.Debugf("fetch column request oids: %v", curOids)
 		if len(curOids) == 0 {
 			break
 		}
@@ -60,7 +60,7 @@ func fetchColumnOids(session sessionAPI, oids map[string]string) (columnResultVa
 		sort.Strings(bulkOids)
 
 		results, err := session.GetBulk(bulkOids)
-		log.Debugf("fetchColumnOidsWithBatching() results: %v", results)
+		log.Debugf("fetch column GetBulk results: %v", results)
 		if err != nil {
 			return nil, fmt.Errorf("GetBulk failed: %s", err)
 		}
