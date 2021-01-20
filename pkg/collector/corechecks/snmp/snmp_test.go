@@ -596,7 +596,7 @@ ip_address: 2.2.2.2
 }
 
 func TestCheck_Run(t *testing.T) {
-	sysObjectIDPacketInvalidSysObjectIdMock := gosnmp.SnmpPacket{
+	sysObjectIDPacketInvalidSysObjectIDMock := gosnmp.SnmpPacket{
 		Variables: []gosnmp.SnmpPDU{
 			{
 				Name:  "1.3.6.1.2.1.1.2.0",
@@ -673,7 +673,7 @@ func TestCheck_Run(t *testing.T) {
 		},
 		{
 			name:              "failed to get profile sys object id",
-			sysObjectIDPacket: sysObjectIDPacketInvalidSysObjectIdMock,
+			sysObjectIDPacket: sysObjectIDPacketInvalidSysObjectIDMock,
 			expectedErr:       "failed to get profile sys object id for `1.999999`: failed to get most specific profile for sysObjectID `1.999999`, for matched oids []: cannot get most specific oid from empty list of oids",
 		},
 		{

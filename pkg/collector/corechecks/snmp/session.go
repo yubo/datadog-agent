@@ -27,19 +27,10 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 	if err != nil {
 		return err
 	}
-	gosnmpInst := gosnmp.GoSNMP{
-		Target:  config.ipAddress,
-		Port:    config.port,
-		Version: snmpVersion,
-		Timeout: time.Duration(config.timeout) * time.Second,
-		Retries: config.retries,
-		MaxOids: maxOids,
-		// Uncomment following line for debugging
-		//Logger:  defaultLog.New(os.Stdout, "", 0),
-	}
+
 	switch snmpVersion {
 	case gosnmp.Version2c, gosnmp.Version1:
-		gosnmpInst.Community = config.communityString
+		s.gosnmpInst.Community = config.communityString
 	case gosnmp.Version3:
 		authProtocol, err := getAuthProtocol(config.authProtocol)
 		if err != nil {
@@ -58,10 +49,10 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 			msgFlags = gosnmp.AuthNoPriv
 		}
 
-		gosnmpInst.MsgFlags = msgFlags
-		gosnmpInst.ContextName = config.contextName
-		gosnmpInst.SecurityModel = gosnmp.UserSecurityModel
-		gosnmpInst.SecurityParameters = &gosnmp.UsmSecurityParameters{
+		s.gosnmpInst.MsgFlags = msgFlags
+		s.gosnmpInst.ContextName = config.contextName
+		s.gosnmpInst.SecurityModel = gosnmp.UserSecurityModel
+		s.gosnmpInst.SecurityParameters = &gosnmp.UsmSecurityParameters{
 			UserName:                 config.user,
 			AuthenticationProtocol:   authProtocol,
 			AuthenticationPassphrase: config.authKey,
@@ -69,7 +60,16 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 			PrivacyPassphrase:        config.privKey,
 		}
 	}
-	s.gosnmpInst = gosnmpInst
+
+	s.gosnmpInst.Target = config.ipAddress
+	s.gosnmpInst.Port = config.port
+	s.gosnmpInst.Version = snmpVersion
+	s.gosnmpInst.Timeout = time.Duration(config.timeout) * time.Second
+	s.gosnmpInst.Retries = config.retries
+	s.gosnmpInst.MaxOids = maxOids
+
+	// Uncomment following line for debugging
+	// s.gosnmpInst.Logger:  defaultLog.New(os.Stdout, "", 0),
 	return nil
 }
 
