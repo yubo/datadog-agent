@@ -131,8 +131,6 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c := snmpConfig{}
 
 	c.snmpVersion = instance.SnmpVersion
-
-	// SNMP common connection configs
 	c.ipAddress = instance.IPAddress
 	c.port = instance.Port
 
@@ -165,6 +163,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 
 	c.metrics = instance.Metrics
 
+	// Let's use a default batch for now and expose it as configuration if needed.
 	c.oidBatchSize = defaultOidBatchSize
 
 	// metrics Configs

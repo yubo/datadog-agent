@@ -351,3 +351,54 @@ func Test_fetchScalarOids_retry(t *testing.T) {
 	}
 	assert.Equal(t, expectedColumnValues, columnValues)
 }
+
+func Test_fetchValues_errors(t *testing.T) {
+	tests := []struct {
+		name          string
+		config        snmpConfig
+		bulkPacket    gosnmp.SnmpPacket
+		expectedError error
+	}{
+		{
+			name: "invalid batch size",
+			config: snmpConfig{
+				oidConfig: oidConfig{
+					scalarOids: []string{"1.1", "1.2"},
+				},
+			},
+			expectedError: fmt.Errorf("failed to fetch scalar oids with batching: failed to create oid batches: batch size must be positive. invalid size: 0"),
+		},
+		{
+			name: "get fetch error",
+			config: snmpConfig{
+				oidBatchSize: 10,
+				oidConfig: oidConfig{
+					scalarOids: []string{"1.1", "2.2"},
+				},
+			},
+			expectedError: fmt.Errorf("failed to fetch scalar oids with batching: failed to fetch scalar oids: error getting oids: get error"),
+		},
+		{
+			name: "bulk fetch error",
+			config: snmpConfig{
+				oidBatchSize: 10,
+				oidConfig: oidConfig{
+					scalarOids: []string{},
+					columnOids: []string{"1.1", "2.2"},
+				},
+			},
+			expectedError: fmt.Errorf("failed to fetch oids with batching: failed to fetch column oids: GetBulk failed: bulk error"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			session := &mockSession{}
+			session.On("Get", []string{"1.1", "2.2"}).Return(&gosnmp.SnmpPacket{}, fmt.Errorf("get error"))
+			session.On("GetBulk", []string{"1.1", "2.2"}).Return(&gosnmp.SnmpPacket{}, fmt.Errorf("bulk error"))
+
+			_, err := fetchValues(session, tt.config)
+
+			assert.Equal(t, tt.expectedError, err)
+		})
+	}
+}

@@ -155,6 +155,8 @@ func normalizeRegexReplaceValue(val string) string {
 	return re.ReplaceAllString(val, "$$$1")
 }
 
+// transformIndex change a source index into a new index using a list of transform rules.
+// A transform rule has start/end fields, it is used to extract a subset of the source index.
 func transformIndex(indexes []string, transformRules []metricIndexTransform) []string {
 	var newIndex []string
 
@@ -169,9 +171,12 @@ func transformIndex(indexes []string, transformRules []metricIndexTransform) []s
 	return newIndex
 }
 
+// normalizeMetrics converts legacy syntax to new syntax
 func normalizeMetrics(metrics []metricsConfig) {
 	for i := range metrics {
 		metric := &metrics[i]
+
+		// converts old symbol syntax to new symbol syntax
 		if metric.Symbol.Name == "" && metric.Symbol.OID == "" && metric.Name != "" && metric.OID != "" {
 			metric.Symbol.Name = metric.Name
 			metric.Symbol.OID = metric.OID
