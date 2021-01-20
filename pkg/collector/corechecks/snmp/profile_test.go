@@ -50,15 +50,11 @@ func Test_getDefaultProfilesDefinitionFiles(t *testing.T) {
 }
 
 func Test_loadProfiles(t *testing.T) {
-
-}
-
-func Test_loadProfiles1(t *testing.T) {
 	defaultTestConfdPath, _ := filepath.Abs(filepath.Join(".", "test", "conf.d"))
 	config.Datadog.Set("confd_path", defaultTestConfdPath)
 	defaultProfilesDef := getDefaultProfilesDefinitionFiles()
 
-	profilesWithInvalidExtendConfdPath, _ := filepath.Abs(filepath.Join(".", "test", "invalid_ext_confd", "conf.d"))
+	profilesWithInvalidExtendConfdPath, _ := filepath.Abs(filepath.Join(".", "test", "invalid_ext_confd_conf.d"))
 
 	profileWithInvalidExtends, _ := filepath.Abs(filepath.Join(".", "test", "test_profiles", "profile_with_invalid_extends.yaml"))
 	invalidYamlProfile, _ := filepath.Abs(filepath.Join(".", "test", "test_profiles", "invalid_yaml_file.yaml"))
