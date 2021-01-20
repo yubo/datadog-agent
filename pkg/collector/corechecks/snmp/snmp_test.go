@@ -596,12 +596,22 @@ ip_address: 2.2.2.2
 }
 
 func TestCheck_Run(t *testing.T) {
-	sysObjectIDPacketErrMock := gosnmp.SnmpPacket{
+	sysObjectIDPacketInvalidSysObjectIdMock := gosnmp.SnmpPacket{
 		Variables: []gosnmp.SnmpPDU{
 			{
 				Name:  "1.3.6.1.2.1.1.2.0",
 				Type:  gosnmp.ObjectIdentifier,
 				Value: "1.999999",
+			},
+		},
+	}
+
+	sysObjectIDPacketInvalidValueMock := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{
+			{
+				Name:  "1.3.6.1.2.1.1.2.0",
+				Type:  gosnmp.ObjectIdentifier,
+				Value: 1.0,
 			},
 		},
 	}
@@ -657,8 +667,13 @@ func TestCheck_Run(t *testing.T) {
 			expectedErr:      "failed to fetching sysobjectid: cannot get sysobjectid: no sysobjectid",
 		},
 		{
+			name:              "failed to fetching sysobjectid with invalid value",
+			sysObjectIDPacket: sysObjectIDPacketInvalidValueMock,
+			expectedErr:       "failed to fetching sysobjectid: error getting value from pdu: oid 1.3.6.1.2.1.1.2.0: ObjectIdentifier should be string type but got float64 type: gosnmp.SnmpPDU{Name:\"1.3.6.1.2.1.1.2.0\", Type:0x6, Value:1}",
+		},
+		{
 			name:              "failed to get profile sys object id",
-			sysObjectIDPacket: sysObjectIDPacketErrMock,
+			sysObjectIDPacket: sysObjectIDPacketInvalidSysObjectIdMock,
 			expectedErr:       "failed to get profile sys object id for `1.999999`: failed to get most specific profile for sysObjectID `1.999999`, for matched oids []: cannot get most specific oid from empty list of oids",
 		},
 		{
