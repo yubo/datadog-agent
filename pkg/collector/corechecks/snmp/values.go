@@ -14,7 +14,7 @@ type resultValueStore struct {
 func (v *resultValueStore) getScalarValues(oid string) (snmpValueType, error) {
 	value, ok := v.scalarValues[oid]
 	if !ok {
-		return snmpValueType{}, fmt.Errorf("value for Scalar OID not found: %s", oid)
+		return snmpValueType{}, fmt.Errorf("value for Scalar OID `%s` not found in `%v`", oid, v.scalarValues)
 	}
 	return value, nil
 }
@@ -23,7 +23,7 @@ func (v *resultValueStore) getColumnValues(oid string) (map[string]snmpValueType
 	retValues := make(map[string]snmpValueType)
 	values, ok := v.columnValues[oid]
 	if !ok {
-		return nil, fmt.Errorf("value for Column OID not found: %s", oid)
+		return nil, fmt.Errorf("value for Column OID `%s` not found in `%v`", oid, v.columnValues)
 	}
 	for index, value := range values {
 		retValues[index] = value

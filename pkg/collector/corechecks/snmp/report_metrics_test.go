@@ -1,10 +1,15 @@
 package snmp
 
 import (
+	"bufio"
+	"bytes"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/mocksender"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/cihub/seelog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"strings"
 	"testing"
 )
 
@@ -173,6 +178,78 @@ func TestSendMetric(t *testing.T) {
 			assert.Equal(t, tt.expectedSubMetrics, metricSender.submittedMetrics)
 			if tt.expectedMethod != "" {
 				mockSender.AssertCalled(t, tt.expectedMethod, tt.expectedMetricName, tt.expectedValue, "", tt.expectedTags)
+			}
+		})
+	}
+}
+
+func Test_metricSender_reportMetrics(t *testing.T) {
+	type logCount struct {
+		log   string
+		count int
+	}
+	tests := []struct {
+		name         string
+		metrics      []metricsConfig
+		values       *resultValueStore
+		tags         []string
+		expectedLogs []logCount
+	}{
+		{
+			name: "report scalar error",
+			metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			values: &resultValueStore{},
+			expectedLogs: []logCount{
+				{"[WARN] reportScalarMetrics: report scalar: error getting scalar value: value for Scalar OID `1.2.3.4.5` not found in `map[]`", 1},
+			},
+		},
+		{
+			name: "report column error",
+			metrics: []metricsConfig{
+				{
+					Table:      symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
+					ForcedType: "monotonic_count",
+					Symbols: []symbolConfig{
+						{OID: "1.3.6.1.2.1.2.2.1.14", Name: "ifInErrors"},
+						{OID: "1.3.6.1.2.1.2.2.1.13", Name: "ifInDiscards"},
+					},
+					MetricTags: []metricTagConfig{
+						{Tag: "interface", Column: symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.1", Name: "ifName"}},
+						{Tag: "interface_alias", Column: symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.18", Name: "ifAlias"}},
+					},
+				},
+			},
+			values: &resultValueStore{},
+			expectedLogs: []logCount{
+				{"[WARN] reportColumnMetrics: report column: error getting column value: value for Column OID `1.3.6.1.2.1.2.2.1.13` not found in `map[]`", 1},
+				{"[WARN] reportColumnMetrics: report column: error getting column value: value for Column OID `1.3.6.1.2.1.2.2.1.14` not found in `map[]`", 1},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b bytes.Buffer
+			w := bufio.NewWriter(&b)
+
+			l, err := seelog.LoggerFromWriterWithMinLevelAndFormat(w, seelog.DebugLvl, "[%LEVEL] %FuncShort: %Msg")
+			assert.Nil(t, err)
+			log.SetupLogger(l, "debug")
+
+			mockSender := mocksender.NewMockSender("foo")
+			metricSender := metricSender{sender: mockSender}
+			mockSender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+			mockSender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+			mockSender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+
+			metricSender.reportMetrics(tt.metrics, tt.values, tt.tags)
+
+			w.Flush()
+			logs := b.String()
+
+			for _, aLogCount := range tt.expectedLogs {
+				assert.Equal(t, strings.Count(logs, aLogCount.log), aLogCount.count, logs)
 			}
 		})
 	}
