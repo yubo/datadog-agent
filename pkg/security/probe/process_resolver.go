@@ -8,30 +8,22 @@
 package probe
 
 import (
-	"fmt"
 	"os"
+	"runtime"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
 	lib "github.com/DataDog/ebpf"
-	"github.com/DataDog/ebpf/manager"
 	"github.com/pkg/errors"
 
 	"github.com/DataDog/datadog-agent/pkg/security/ebpf"
-	"github.com/DataDog/datadog-agent/pkg/security/ebpf/probes"
 	"github.com/DataDog/datadog-agent/pkg/security/utils"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/gopsutil/process"
 )
-
-var snapshotProbeIDs = []manager.ProbeIdentificationPair{
-	{
-		UID:     probes.SecurityAgentUID,
-		Section: "kretprobe/get_task_exe_file",
-	},
-}
 
 const (
 	doForkListInput uint64 = iota
@@ -62,104 +54,110 @@ func (i *InodeInfo) UnmarshalBinary(data []byte) (int, error) {
 	return 8, nil
 }
 
+// ProcessResolverOpts options of resolver
+type ProcessResolverOpts struct {
+	DebugCacheSize bool
+}
+
 // ProcessResolver resolved process context
 type ProcessResolver struct {
 	sync.RWMutex
-	probe          *Probe
-	resolvers      *Resolvers
-	client         *statsd.Client
-	snapshotProbes []*manager.Probe
-	inodeInfoMap   *lib.Map
-	procCacheMap   *lib.Map
-	pidCookieMap   *lib.Map
-
-	entryCache map[uint32]*ProcessCacheEntry
+	probe        *Probe
+	resolvers    *Resolvers
+	client       *statsd.Client
+	inodeInfoMap *lib.Map
+	procCacheMap *lib.Map
+	pidCookieMap *lib.Map
+	entryCache   map[uint32]*ProcessCacheEntry
+	cacheSize    int64
+	opts         ProcessResolverOpts
 }
 
-// GetProbes returns the probes required by the snapshot
-func (p *ProcessResolver) GetProbes() []*manager.Probe {
-	return p.snapshotProbes
-}
-
-// AddEntry adds an entry to the local cache and returns the newly created entry
-func (p *ProcessResolver) AddEntry(pid uint32, entry *ProcessCacheEntry) *ProcessCacheEntry {
+// AddForkEntry adds an entry to the local cache and returns the newly created entry
+func (p *ProcessResolver) AddForkEntry(pid uint32, entry *ProcessCacheEntry) *ProcessCacheEntry {
 	p.Lock()
 	defer p.Unlock()
-	return p.insertEntry(pid, entry)
+	return p.insertForkEntry(pid, entry)
 }
 
-// DumpCache prints the process cache to the console
-func (p *ProcessResolver) DumpCache() {
-	fmt.Println("Dumping process cache ...")
-	for _, entry := range p.entryCache {
-		fmt.Printf("%s\n", entry)
-	}
+// AddExecEntry adds an entry to the local cache and returns the newly created entry
+func (p *ProcessResolver) AddExecEntry(pid uint32, entry *ProcessCacheEntry) *ProcessCacheEntry {
+	p.Lock()
+	defer p.Unlock()
+	return p.insertExecEntry(pid, entry)
 }
 
 // enrichEventFromProc uses /proc to enrich a ProcessCacheEntry with additional metadata
-func (p *ProcessResolver) enrichEventFromProc(entry *ProcessCacheEntry, proc *process.FilledProcess) error {
+func (p *ProcessResolver) enrichEventFromProc(entry *ProcessCacheEntry, proc *process.Process) error {
+	filledProc := utils.GetFilledProcess(proc)
+	if filledProc == nil {
+		return errors.Errorf("snapshot failed for %d: binary was deleted", proc.Pid)
+	}
+
 	pid := uint32(proc.Pid)
+	// the provided process is a kernel process if its virtual memory size is null
+	isKernelProcess := filledProc.MemInfo.VMS == 0
 
-	// Get process filename and pre-fill the cache
-	procExecPath := utils.ProcExePath(pid)
-	pathnameStr, err := os.Readlink(procExecPath)
-	if err != nil {
-		log.Debug(errors.Wrapf(err, "snapshot failed for %d: couldn't readlink binary", pid))
-		return err
-	}
-	if pathnameStr == "/ (deleted)" {
-		log.Debugf("snapshot failed for %d: binary was deleted", pid)
-		return errors.New("snapshot failed")
+	if !isKernelProcess {
+		// Get process filename and pre-fill the cache
+		procExecPath := utils.ProcExePath(proc.Pid)
+		pathnameStr, err := os.Readlink(procExecPath)
+		if err != nil {
+			return errors.Wrapf(err, "snapshot failed for %d: couldn't readlink binary", proc.Pid)
+		}
+		if pathnameStr == "/ (deleted)" {
+			return errors.Errorf("snapshot failed for %d: binary was deleted", proc.Pid)
+		}
+
+		// Get the inode of the process binary
+		fi, err := os.Stat(procExecPath)
+		if err != nil {
+			return errors.Wrapf(err, "snapshot failed for %d: couldn't stat binary", proc.Pid)
+		}
+		stat, ok := fi.Sys().(*syscall.Stat_t)
+		if !ok {
+			return errors.Errorf("snapshot failed for %d: couldn't stat binary", proc.Pid)
+		}
+		inode := stat.Ino
+
+		info, err := p.retrieveInodeInfo(inode)
+		if err != nil {
+			return errors.Wrapf(err, "snapshot failed for %d: couldn't retrieve inode info", proc.Pid)
+		}
+
+		// Retrieve the container ID of the process from /proc
+		containerID, err := p.resolvers.ContainerResolver.GetContainerID(pid)
+		if err != nil {
+			return errors.Wrapf(err, "snapshot failed for %d: couldn't parse container ID", proc.Pid)
+		}
+
+		entry.FileEvent = FileEvent{
+			Inode:           inode,
+			OverlayNumLower: info.OverlayNumLower,
+			MountID:         info.MountID,
+			PathnameStr:     pathnameStr,
+		}
+		entry.ContainerContext.ID = string(containerID)
 	}
 
-	// Get the inode of the process binary
-	fi, err := os.Stat(procExecPath)
-	if err != nil {
-		log.Debug(errors.Wrapf(err, "snapshot failed for %d: couldn't stat binary", pid))
-		return err
-	}
-	stat, ok := fi.Sys().(*syscall.Stat_t)
-	if !ok {
-		log.Debugf("snapshot failed for %d: couldn't stat binary", pid)
-		return errors.New("snapshot failed")
-	}
-	inode := stat.Ino
-
-	info, err := p.retrieveInodeInfo(inode)
-	if err != nil {
-		log.Debug(errors.Wrapf(err, "snapshot failed for %d: couldn't retrieve inode info", pid))
-		return err
-	}
-
-	// Retrieve the container ID of the process from /proc
-	containerID, err := p.resolvers.ContainerResolver.GetContainerID(pid)
-	if err != nil {
-		log.Debug(errors.Wrapf(err, "snapshot failed for %d: couldn't parse container ID", pid))
-		return err
-	}
-
-	entry.FileEvent = FileEvent{
-		Inode:           inode,
-		OverlayNumLower: info.OverlayNumLower,
-		MountID:         info.MountID,
-		PathnameStr:     pathnameStr,
-	}
 	// resolve container path with the MountResolver
 	entry.FileEvent.ResolveContainerPathWithResolvers(p.resolvers)
 
-	entry.ContainerContext.ID = string(containerID)
-	entry.ExecTimestamp = time.Unix(0, proc.CreateTime*int64(time.Millisecond))
-	entry.Comm = proc.Name
-	entry.PPid = uint32(proc.Ppid)
-	entry.TTYName = utils.PidTTY(pid)
+	entry.ExecTimestamp = time.Unix(0, filledProc.CreateTime*int64(time.Millisecond))
+	entry.ForkTimestamp = entry.ExecTimestamp
+	entry.Comm = filledProc.Name
+	entry.PPid = uint32(filledProc.Ppid)
+	entry.TTYName = utils.PidTTY(filledProc.Pid)
 	entry.ProcessContext.Pid = pid
 	entry.ProcessContext.Tid = pid
-	if len(proc.Uids) > 0 {
-		entry.ProcessContext.UID = uint32(proc.Uids[0])
+	if len(filledProc.Uids) > 0 {
+		entry.ProcessContext.UID = uint32(filledProc.Uids[0])
 	}
-	if len(proc.Gids) > 0 {
-		entry.ProcessContext.GID = uint32(proc.Gids[0])
+	if len(filledProc.Gids) > 0 {
+		entry.ProcessContext.GID = uint32(filledProc.Gids[0])
 	}
+	_ = entry.ProcessContext.ResolveUserWithResolvers(p.resolvers)
+	_ = entry.ProcessContext.ResolveGroupWithResolvers(p.resolvers)
 	return nil
 }
 
@@ -185,58 +183,48 @@ func (p *ProcessResolver) retrieveInodeInfo(inode uint64) (*InodeInfo, error) {
 	return &info, nil
 }
 
-// insertEntry inserts an event in the cache and ensures that the lineage of the new entry is properly updated
-func (p *ProcessResolver) insertEntry(pid uint32, entry *ProcessCacheEntry) *ProcessCacheEntry {
-	// look for the parent entry to update the processes lineage
-	parent, ok := p.entryCache[entry.PPid]
-	if ok {
-		// if the execve time of entry is not set, then entry was generated by a fork of a process for which
-		// we've lost kernel space context (LRU or snapshot). Copy all the data we can from the parent.
-		if entry.ExecTimestamp.IsZero() {
-			newEntry := parent.Copy()
-			// pid, tid, uid, gid, ppid and fork timestamp are the only attributes that we can salvage for sure from entry
-			newEntry.Pid = entry.Pid
-			newEntry.Tid = entry.Tid
-			newEntry.UID = entry.UID
-			newEntry.User = entry.User
-			newEntry.GID = entry.GID
-			newEntry.Group = entry.Group
-			newEntry.ForkTimestamp = entry.ForkTimestamp
-			newEntry.PPid = entry.PPid
-			entry = newEntry
-		}
-
-		// inherit the container ID from the parent if necessary. If a container is already running when system-probe
-		// starts, the in-kernel process cache will have out of sync container ID values for the processes of that
-		// container (the snapshot doesn't update the in-kernel cache with the container IDs). This can also happen if
-		// the proc_cache LRU ejects an entry.
-		// WARNING: this is why the user space cache should not be used to detect container breakouts. Dedicated
-		// in-kernel probes will need to be added.
-		if len(parent.ID) > 0 && len(entry.ID) == 0 {
-			entry.ID = parent.ID
-		}
-
-		// add entry to the children of its parent
-		parent.Children[entry.Pid] = entry
-	} else {
-		if entry.PPid >= 1 {
-			// create an entry for the parent, if the parent exists it might be populated later
-			parent = NewProcessCacheEntry()
-			parent.ProcessContext = ProcessContext{
-				Pid: entry.PPid,
-			}
-
-			// update lineage
-			parent.Children[entry.Pid] = entry
-			p.entryCache[entry.PPid] = parent
-			_ = p.client.Count(MetricPrefix+".process_resolver.added", 1, []string{}, 1.0)
-		}
+func (p *ProcessResolver) insertForkEntry(pid uint32, entry *ProcessCacheEntry) *ProcessCacheEntry {
+	if _, exists := p.entryCache[pid]; exists {
+		return nil
 	}
-	entry.Parent = parent
-	if _, ok := p.entryCache[pid]; !ok {
-		_ = p.client.Count(MetricPrefix+".process_resolver.added", 1, []string{}, 1.0)
+
+	parent := p.entryCache[entry.PPid]
+	if parent != nil {
+		parent.Fork(entry)
 	}
 	p.entryCache[pid] = entry
+
+	_ = p.client.Count(MetricPrefix+".process_resolver.added", 1, []string{}, 1.0)
+
+	if p.opts.DebugCacheSize {
+		atomic.AddInt64(&p.cacheSize, 1)
+
+		runtime.SetFinalizer(entry, func(obj interface{}) {
+			atomic.AddInt64(&p.cacheSize, -1)
+		})
+	}
+
+	return entry
+}
+
+func (p *ProcessResolver) insertExecEntry(pid uint32, entry *ProcessCacheEntry) *ProcessCacheEntry {
+	prev := p.entryCache[pid]
+	if prev == nil {
+		return nil
+	}
+	prev.Exec(entry)
+
+	p.entryCache[pid] = entry
+
+	_ = p.client.Count(MetricPrefix+".process_resolver.added", 1, []string{}, 1.0)
+
+	if p.opts.DebugCacheSize {
+		atomic.AddInt64(&p.cacheSize, 1)
+
+		runtime.SetFinalizer(entry, func(obj interface{}) {
+			atomic.AddInt64(&p.cacheSize, -1)
+		})
+	}
 
 	return entry
 }
@@ -251,64 +239,37 @@ func (p *ProcessResolver) DeleteEntry(pid uint32, exitTime time.Time) {
 	if !ok {
 		return
 	}
-	entry.ExitTimestamp = exitTime
+	entry.Exit(exitTime)
 
-	// delete the entry and clean up its parents if necessary
-	p.recursiveDelete(entry)
-}
-
-// recursiveDelete deletes an entry and its parent recursively, if the process can be deleted
-func (p *ProcessResolver) recursiveDelete(entry *ProcessCacheEntry) {
-	// We cannot delete the entry if the process is still alive
-	if entry.ExitTimestamp.IsZero() {
-		return
-	}
-
-	// We cannot delete the entry if it still has children
-	if len(entry.Children) > 0 {
-		return
-	}
-
-	// Delete the entry
-	_ = p.client.Count(MetricPrefix+".process_resolver.deleted", 1, []string{}, 1.0)
 	delete(p.entryCache, entry.Pid)
-
-	// There is nothing left to do if the entry does not have a parent
-	if entry.Parent == nil {
-		return
-	}
-
-	// Delete the reference to the entry from its parent
-	delete(entry.Parent.Children, entry.Pid)
-
-	// Check recursively if the parent entry can be deleted
-	p.recursiveDelete(entry.Parent)
 }
 
 // Resolve returns the cache entry for the given pid
 func (p *ProcessResolver) Resolve(pid uint32) *ProcessCacheEntry {
 	p.Lock()
 	defer p.Unlock()
-	var tags []string
-	defer func() {
-		_ = p.client.Count(MetricPrefix+".process_resolver.hits", 1, tags, 1.0)
-	}()
 
 	entry, exists := p.entryCache[pid]
 	if exists {
-		tags = append(tags, "type:cache")
+		_ = p.client.Count(MetricPrefix+".process_resolver.hits", 1, []string{"type:cache"}, 1.0)
 		return entry
 	}
 
 	// fallback to the kernel maps directly, the perf event may be delayed / may have been lost
 	if entry = p.resolveWithKernelMaps(pid); entry != nil {
-		tags = append(tags, "type:kernel_maps")
+		_ = p.client.Count(MetricPrefix+".process_resolver.hits", 1, []string{"type:kernel_maps"}, 1.0)
 		return entry
 	}
 
 	// fallback to /proc, the in-kernel LRU may have deleted the entry
-	tags = append(tags, "type:procfs")
-	return p.resolveWithProcfs(pid)
+	if entry = p.resolveWithProcfs(pid); entry != nil {
+		_ = p.client.Count(MetricPrefix+".process_resolver.hits", 1, []string{"type:procfs"}, 1.0)
+		return entry
+	}
+
+	_ = p.client.Count(MetricPrefix+".process_resolver.cache_miss", 1, []string{}, 1.0)
+
+	return nil
 }
 
 func (p *ProcessResolver) resolveWithKernelMaps(pid uint32) *ProcessCacheEntry {
@@ -342,7 +303,11 @@ func (p *ProcessResolver) resolveWithKernelMaps(pid uint32) *ProcessCacheEntry {
 	entry.Pid = pid
 	entry.Tid = pid
 
-	return p.insertEntry(pid, entry)
+	if entry.ExecTimestamp.IsZero() {
+		return p.insertForkEntry(pid, entry)
+	}
+
+	return p.insertExecEntry(pid, entry)
 }
 
 func (p *ProcessResolver) resolveWithProcfs(pid uint32) *ProcessCacheEntry {
@@ -352,35 +317,19 @@ func (p *ProcessResolver) resolveWithProcfs(pid uint32) *ProcessCacheEntry {
 		return nil
 	}
 
-	if filledProc := utils.GetFilledProcess(proc); filledProc != nil {
-		entry, _ := p.syncCache(filledProc)
-		return entry
-	}
-	return nil
+	entry, _ := p.syncCache(proc)
+	return entry
 }
 
 // Get returns the cache entry for a specified pid
 func (p *ProcessResolver) Get(pid uint32) *ProcessCacheEntry {
 	p.RLock()
 	defer p.RUnlock()
-	entry, exists := p.entryCache[pid]
-	if exists {
-		return entry
-	}
-	return nil
+	return p.entryCache[pid]
 }
 
 // Start starts the resolver
 func (p *ProcessResolver) Start() error {
-	// initializes the list of snapshot probes
-	for _, id := range snapshotProbeIDs {
-		probe, ok := p.probe.manager.GetProbe(id)
-		if !ok {
-			return errors.Errorf("couldn't find probe %s", id)
-		}
-		p.snapshotProbes = append(p.snapshotProbes, probe)
-	}
-
 	var err error
 	if p.inodeInfoMap, err = p.probe.Map("inode_info_cache"); err != nil {
 		return err
@@ -398,7 +347,7 @@ func (p *ProcessResolver) Start() error {
 }
 
 // SyncCache snapshots /proc for the provided pid. This method returns true if it updated the process cache.
-func (p *ProcessResolver) SyncCache(proc *process.FilledProcess) bool {
+func (p *ProcessResolver) SyncCache(proc *process.Process) bool {
 	// Only a R lock is necessary to check if the entry exists, but if it exists, we'll update it, so a RW lock is
 	// required.
 	p.Lock()
@@ -408,11 +357,8 @@ func (p *ProcessResolver) SyncCache(proc *process.FilledProcess) bool {
 }
 
 // syncCache snapshots /proc for the provided pid. This method returns true if it updated the process cache.
-func (p *ProcessResolver) syncCache(proc *process.FilledProcess) (*ProcessCacheEntry, bool) {
+func (p *ProcessResolver) syncCache(proc *process.Process) (*ProcessCacheEntry, bool) {
 	pid := uint32(proc.Pid)
-	if pid == 0 {
-		return nil, false
-	}
 
 	// Check if an entry is already in cache for the given pid.
 	entry, inCache := p.entryCache[pid]
@@ -425,38 +371,33 @@ func (p *ProcessResolver) syncCache(proc *process.FilledProcess) (*ProcessCacheE
 
 	// update the cache entry
 	if err := p.enrichEventFromProc(entry, proc); err != nil {
+		log.Debug(err)
 		return nil, false
 	}
 
-	entry = p.insertEntry(pid, entry)
-
-	log.Tracef("New process cache entry added: %s %s %d/%d", proc.Name, entry.PathnameStr, pid, entry.Inode)
-
-	// loop through the children of the newly inserted process to propagate the container ID if necessary
-	if len(entry.ID) > 0 {
-		for _, child := range entry.Children {
-			if len(child.ID) == 0 {
-				child.ID = entry.ID
-			}
-		}
+	if entry = p.insertForkEntry(pid, entry); entry == nil {
+		return nil, false
 	}
+
+	log.Tracef("New process cache entry added: %s %s %d/%d", entry.Comm, entry.PathnameStr, pid, entry.Inode)
 
 	return entry, true
 }
 
 // GetCacheSize returns the cache size of the process resolver
 func (p *ProcessResolver) GetCacheSize() float64 {
-	p.resolvers.ProcessResolver.RLock()
-	defer p.resolvers.ProcessResolver.RUnlock()
-	return float64(len(p.resolvers.ProcessResolver.entryCache))
+	p.RLock()
+	defer p.RUnlock()
+	return float64(len(p.entryCache))
 }
 
 // NewProcessResolver returns a new process resolver
-func NewProcessResolver(probe *Probe, resolvers *Resolvers, client *statsd.Client) (*ProcessResolver, error) {
+func NewProcessResolver(probe *Probe, resolvers *Resolvers, client *statsd.Client, opts ProcessResolverOpts) (*ProcessResolver, error) {
 	return &ProcessResolver{
 		probe:      probe,
 		resolvers:  resolvers,
 		client:     client,
 		entryCache: make(map[uint32]*ProcessCacheEntry),
+		opts:       opts,
 	}, nil
 }
