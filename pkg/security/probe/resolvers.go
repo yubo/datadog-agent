@@ -8,6 +8,7 @@
 package probe
 
 import (
+	"context"
 	"os"
 	"sort"
 
@@ -67,8 +68,8 @@ func NewResolvers(probe *Probe, client *statsd.Client) (*Resolvers, error) {
 }
 
 // Start the resolvers
-func (r *Resolvers) Start() error {
-	if err := r.ProcessResolver.Start(); err != nil {
+func (r *Resolvers) Start(ctx context.Context) error {
+	if err := r.ProcessResolver.Start(ctx); err != nil {
 		return err
 	}
 
