@@ -358,7 +358,7 @@ func Test_resultToColumnValues(t *testing.T) {
 			},
 		},
 		{
-			"no such object error case",
+			"no such object is skipped",
 			[]string{"1.3.6.1.2.1.2.2.1.14", "1.3.6.1.2.1.2.2.1.2"},
 			&gosnmp.SnmpPacket{
 				Variables: []gosnmp.SnmpPDU{

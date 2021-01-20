@@ -80,8 +80,7 @@ func hasNonPrintableByte(bytesValue []byte) bool {
 func resultToScalarValues(result *gosnmp.SnmpPacket) scalarResultValuesType {
 	returnValues := make(map[string]snmpValueType)
 	for _, pduVariable := range result.Variables {
-		switch pduVariable.Type {
-		case gosnmp.EndOfContents, gosnmp.EndOfMibView, gosnmp.NoSuchInstance, gosnmp.NoSuchObject:
+		if shouldSkip(pduVariable.Type) {
 			continue
 		}
 		name, value, err := getValueFromPDU(pduVariable)
@@ -101,7 +100,10 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (c
 	returnValues := make(columnResultValuesType)
 	nextOidsMap := make(map[string]string)
 	for i, pduVariable := range snmpPacket.Variables {
-		// TODO: Skip in valid types like NoSuchObject NoSuchInstance EndOfMibView ?
+		if shouldSkip(pduVariable.Type) {
+			continue
+		}
+
 		oid, value, err := getValueFromPDU(pduVariable)
 		if err != nil {
 			log.Debugf("Cannot get value for variable `%v` with type `%v` and value `%v`", pduVariable.Name, pduVariable.Type, pduVariable.Value)
@@ -125,6 +127,14 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (c
 		}
 	}
 	return returnValues, nextOidsMap
+}
+
+func shouldSkip(berType gosnmp.Asn1BER) bool {
+	switch berType {
+	case gosnmp.EndOfContents, gosnmp.EndOfMibView, gosnmp.NoSuchInstance, gosnmp.NoSuchObject:
+		return true
+	}
+	return false
 }
 
 // getSubmissionType converts gosnmp.Asn1BER type to submission type
