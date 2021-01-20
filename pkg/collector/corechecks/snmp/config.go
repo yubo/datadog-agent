@@ -102,6 +102,7 @@ func (c *snmpConfig) getStaticTags() []string {
 	return tags
 }
 
+// toString used for logging, it will hide sensitive information
 func (c *snmpConfig) toString() string {
 	configCopy := *c
 	configCopy.communityString = "***"

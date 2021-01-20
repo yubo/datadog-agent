@@ -115,12 +115,12 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 
 	err := c.CommonConfigure(rawInstance, source)
 	if err != nil {
-		return err
+		return fmt.Errorf("common configure failed: %s", err)
 	}
 
 	config, err := buildConfig(rawInstance, rawInitConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("build config failed: %s", err)
 	}
 
 	log.Debugf("SNMP configuration: %s", config.toString())
@@ -128,7 +128,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	c.config = config
 	err = c.session.Configure(c.config)
 	if err != nil {
-		return err
+		return fmt.Errorf("session configure failed: %s", err)
 	}
 
 	return nil

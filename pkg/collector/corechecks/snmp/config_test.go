@@ -461,3 +461,37 @@ func Test_snmpConfig_toString(t *testing.T) {
 	assert.Equal(t, "my_authKey", c.authKey)
 	assert.Equal(t, "my_privKey", c.privKey)
 }
+
+func Test_Configure_invalidYaml(t *testing.T) {
+	check := Check{session: &snmpSession{}}
+
+	tests := []struct {
+		name              string
+		rawInstanceConfig []byte
+		rawInitConfig     []byte
+		expectedErr       string
+	}{
+		{
+			name: "invalid rawInitConfig",
+			// language=yaml
+			rawInstanceConfig: []byte(``),
+			// language=yaml
+			rawInitConfig: []byte(`::x`),
+			expectedErr:   "build config failed: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `::x` into snmp.snmpInitConfig",
+		},
+		{
+			name: "invalid rawInstanceConfig",
+			// language=yaml
+			rawInstanceConfig: []byte(`::x`),
+			// language=yaml
+			rawInitConfig: []byte(``),
+			expectedErr:   "common configure failed: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `::x` into integration.CommonInstanceConfig",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := check.Configure(tt.rawInstanceConfig, tt.rawInitConfig, "test")
+			assert.EqualError(t, err, tt.expectedErr)
+		})
+	}
+}
