@@ -6,6 +6,7 @@
 package snmp
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -352,6 +353,95 @@ profiles:
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := buildConfig(tt.rawInstanceConfig, tt.rawInitConfig)
 			assert.EqualError(t, err, tt.expectedErr)
+		})
+	}
+}
+
+func Test_getProfileForSysObjectID(t *testing.T) {
+	mockProfiles := profileDefinitionMap{
+		"profile1": profileDefinition{
+			Metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.3.4.*"},
+		},
+		"profile2": profileDefinition{
+			Metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.3.4.10"},
+		},
+		"profile3": profileDefinition{
+			Metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.3.4.5.*"},
+		},
+	}
+	mockProfilesWithPatternError := profileDefinitionMap{
+		"profile1": profileDefinition{
+			Metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.3.***.*"},
+		},
+	}
+	mockProfilesWithInvalidPatternError := profileDefinitionMap{
+		"profile1": profileDefinition{
+			Metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.3.[.*"},
+		},
+	}
+	tests := []struct {
+		name            string
+		profiles        profileDefinitionMap
+		sysObjectID     string
+		expectedProfile string
+		expectedError   error
+	}{
+		{
+			name:            "found matching profile",
+			profiles:        mockProfiles,
+			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.1",
+			expectedProfile: "profile1",
+			expectedError:   nil,
+		},
+		{
+			name:            "found more precise matching profile",
+			profiles:        mockProfiles,
+			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.10",
+			expectedProfile: "profile2",
+			expectedError:   nil,
+		},
+		{
+			name:            "found even more precise matching profile",
+			profiles:        mockProfiles,
+			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.5.11",
+			expectedProfile: "profile3",
+			expectedError:   nil,
+		},
+		{
+			name:            "failed to get most specific profile for sysObjectID",
+			profiles:        mockProfilesWithPatternError,
+			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.5.11",
+			expectedProfile: "",
+			expectedError:   fmt.Errorf("failed to get most specific profile for sysObjectID `1.3.6.1.4.1.3375.2.1.3.4.5.11`, for matched oids [1.3.6.1.4.1.3375.2.1.3.***.*]: error parsing part `***` for pattern `1.3.6.1.4.1.3375.2.1.3.***.*`: strconv.Atoi: parsing \"***\": invalid syntax"),
+		},
+		{
+			name:            "invalid pattern", // profiles with invalid patterns are skipped, leading to: cannot get most specific oid from empty list of oids
+			profiles:        mockProfilesWithInvalidPatternError,
+			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.5.11",
+			expectedProfile: "",
+			expectedError:   fmt.Errorf("failed to get most specific profile for sysObjectID `1.3.6.1.4.1.3375.2.1.3.4.5.11`, for matched oids []: cannot get most specific oid from empty list of oids"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			profile, err := getProfileForSysObjectID(tt.profiles, tt.sysObjectID)
+			assert.Equal(t, err, tt.expectedError)
+			assert.Equal(t, tt.expectedProfile, profile)
 		})
 	}
 }

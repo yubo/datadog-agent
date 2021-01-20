@@ -6,7 +6,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"gopkg.in/yaml.v2"
 	"path/filepath"
-	"strings"
 )
 
 var defaultOidBatchSize = 60
@@ -163,11 +162,9 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	if instance.UseGlobalMetrics {
 		c.metrics = append(c.metrics, initConfig.GlobalMetrics...)
 	}
-	// TODO: Validate c.metrics
 	normalizeMetrics(c.metrics)
 
 	c.metricTags = instance.MetricTags
-	// TODO: Validate c.metricTags
 
 	c.oidConfig.scalarOids = parseScalarOids(c.metrics, c.metricTags)
 	c.oidConfig.columnOids = parseColumnOids(c.metrics)
@@ -197,6 +194,9 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 		}
 	}
 
+	// TODO: Check for duplicate profile sysobjectid
+	//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L142-L144
+
 	// TODO: Add missing error handling by looking at
 	//   https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py
 
@@ -217,12 +217,12 @@ func getUptimeMetricConfig() metricsConfig {
 func parseScalarOids(metrics []metricsConfig, metricTags []metricTagConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		if metric.Symbol.OID != "" { // TODO: test me
+		if metric.Symbol.OID != "" { // TODO: need validation
 			oids = append(oids, metric.Symbol.OID)
 		}
 	}
 	for _, metricTag := range metricTags {
-		if metricTag.OID != "" { // TODO: test me
+		if metricTag.OID != "" { // TODO: need validation
 			oids = append(oids, metricTag.OID)
 		}
 	}
@@ -232,7 +232,7 @@ func parseScalarOids(metrics []metricsConfig, metricTags []metricTagConfig) []st
 func parseColumnOids(metrics []metricsConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		if metric.Table.OID != "" { // TODO: test me
+		if metric.Table.OID != "" { // TODO: need validation
 			for _, symbol := range metric.Symbols {
 				oids = append(oids, symbol.OID)
 			}
@@ -247,25 +247,18 @@ func parseColumnOids(metrics []metricsConfig) []string {
 }
 
 func getProfileForSysObjectID(profiles profileDefinitionMap, sysObjectID string) (string, error) {
-	sysOidToProfile := map[string]string{}
+	tmpSysOidToProfile := map[string]string{}
 	var matchedOids []string
 
-	// TODO: Test me
-	sysObjectID = strings.TrimLeft(sysObjectID, ".")
-
-	// TODO: Test me
 	for profile, definition := range profiles {
-		// TODO: Check for duplicate profile sysobjectid
-		//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L142-L144
 		for _, oidPattern := range definition.SysObjectIds {
-
 			found, err := filepath.Match(oidPattern, sysObjectID)
 			if err != nil {
 				log.Debugf("pattern error: %s", err)
 				continue
 			}
 			if found {
-				sysOidToProfile[oidPattern] = profile
+				tmpSysOidToProfile[oidPattern] = profile
 				matchedOids = append(matchedOids, oidPattern)
 			}
 		}
@@ -274,5 +267,5 @@ func getProfileForSysObjectID(profiles profileDefinitionMap, sysObjectID string)
 	if err != nil {
 		return "", fmt.Errorf("failed to get most specific profile for sysObjectID `%s`, for matched oids %v: %s", sysObjectID, matchedOids, err)
 	}
-	return sysOidToProfile[oid], nil
+	return tmpSysOidToProfile[oid], nil
 }
