@@ -28,7 +28,6 @@ func (ms *metricSender) getCheckInstanceMetricTags(metricTags []metricTagConfig,
 	for _, metricTag := range metricTags {
 		value, err := values.getScalarValues(metricTag.OID)
 		if err != nil {
-			// TODO: test me
 			log.Warnf("metric tags: error getting scalar value: %v", err)
 			continue
 		}

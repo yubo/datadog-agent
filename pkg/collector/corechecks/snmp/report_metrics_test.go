@@ -239,11 +239,59 @@ func Test_metricSender_reportMetrics(t *testing.T) {
 
 			mockSender := mocksender.NewMockSender("foo")
 			metricSender := metricSender{sender: mockSender}
-			mockSender.On("MonotonicCount", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
-			mockSender.On("Gauge", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
-			mockSender.On("Rate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 
 			metricSender.reportMetrics(tt.metrics, tt.values, tt.tags)
+
+			w.Flush()
+			logs := b.String()
+
+			for _, aLogCount := range tt.expectedLogs {
+				assert.Equal(t, strings.Count(logs, aLogCount.log), aLogCount.count, logs)
+			}
+		})
+	}
+}
+
+func Test_metricSender_getCheckInstanceMetricTags(t *testing.T) {
+	type logCount struct {
+		log   string
+		count int
+	}
+	tests := []struct {
+		name         string
+		metricsTags  []metricTagConfig
+		values       *resultValueStore
+		expectedTags []string
+		expectedLogs []logCount
+	}{
+		{
+			name: "report scalar error",
+			metricsTags: []metricTagConfig{
+				{Tag: "my_symbol", OID: "1.2.3", Name: "mySymbol"},
+				{Tag: "snmp_host", OID: "1.3.6.1.2.1.1.5.0", Name: "sysName"},
+			},
+			values: &resultValueStore{},
+			expectedLogs: []logCount{
+				{"[WARN] getCheckInstanceMetricTags: metric tags: error getting scalar value: value for Scalar OID `1.2.3` not found in `map[]`", 1},
+				{"[WARN] getCheckInstanceMetricTags: metric tags: error getting scalar value: value for Scalar OID `1.3.6.1.2.1.1.5.0` not found in `map[]`", 1},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b bytes.Buffer
+			w := bufio.NewWriter(&b)
+
+			l, err := seelog.LoggerFromWriterWithMinLevelAndFormat(w, seelog.DebugLvl, "[%LEVEL] %FuncShort: %Msg")
+			assert.Nil(t, err)
+			log.SetupLogger(l, "debug")
+
+			mockSender := mocksender.NewMockSender("foo")
+			metricSender := metricSender{sender: mockSender}
+
+			tags := metricSender.getCheckInstanceMetricTags(tt.metricsTags, tt.values)
+
+			assert.ElementsMatch(t, tt.expectedTags, tags)
 
 			w.Flush()
 			logs := b.String()
