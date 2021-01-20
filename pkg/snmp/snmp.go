@@ -142,7 +142,6 @@ func (c *Config) BuildSNMPParams() (*gosnmp.GoSNMP, error) {
 		return nil, fmt.Errorf("SNMP version not supported: %s", c.Version)
 	}
 
-
 	var authProtocol gosnmp.SnmpV3AuthProtocol
 	lowerAuthProtocol := strings.ToLower(c.AuthProtocol)
 	if lowerAuthProtocol == "" {
