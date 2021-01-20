@@ -120,3 +120,29 @@ func Test_getMostSpecificOid(t *testing.T) {
 		})
 	}
 }
+
+func Test_resolveProfileDefinitionPath(t *testing.T) {
+	setConfdPath()
+	tests := []struct {
+		name               string
+		definitionFilePath string
+		expectedPath       string
+	}{
+		{
+			name:               "abs path",
+			definitionFilePath: "/tmp/myfile.yaml",
+			expectedPath:       "/tmp/myfile.yaml",
+		},
+		{
+			name:               "relative path",
+			definitionFilePath: "myfile.yaml",
+			expectedPath:       filepath.Join(config.Datadog.Get("confd_path").(string), "/snmp.d/profiles/myfile.yaml"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := resolveProfileDefinitionPath(tt.definitionFilePath)
+			assert.Equal(t, tt.expectedPath, path)
+		})
+	}
+}

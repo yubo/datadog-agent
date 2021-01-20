@@ -49,9 +49,6 @@ func getDefaultProfilesDefinitionFiles() profileConfigMap {
 }
 
 func loadProfiles(pConfig profileConfigMap) (profileDefinitionMap, error) {
-	// TODO: profiles
-	//   - Load default profiles
-	//   - Load config profiles
 	profiles := make(map[string]profileDefinition)
 
 	for name, profile := range pConfig {
@@ -89,7 +86,7 @@ func readProfileDefinition(definitionFile string) (*profileDefinition, error) {
 
 func resolveProfileDefinitionPath(definitionFile string) string {
 	// See https://github.com/DataDog/integrations-core/blob/d7f4d42a4721aea683056901cf2053395ff48173/snmp/datadog_checks/snmp/utils.py#L64-L73
-	// TODO: If definitionFile is abs file, return definitionFile
+	// TODO: Test with absolute files
 	if filepath.IsAbs(definitionFile) {
 		return definitionFile
 	}
