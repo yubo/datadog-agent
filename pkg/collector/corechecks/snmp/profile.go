@@ -59,7 +59,7 @@ func loadProfiles(pConfig profileConfigMap) (profileDefinitionMap, error) {
 			return nil, fmt.Errorf("failed to read profile definition `%s`: %s", name, err)
 		}
 
-		err = recursivelyExpandBaseProfiles(profileDefinition, profileDefinition.Extends)
+		err = recursivelyExpandBaseProfiles(profileDefinition, profileDefinition.Extends, []string{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to expand profile `%s`: %s", name, err)
 		}
@@ -96,8 +96,13 @@ func getProfileConfdRoot() string {
 	return filepath.Join(confdPath, "snmp.d", "profiles")
 }
 
-func recursivelyExpandBaseProfiles(definition *profileDefinition, extends []string) error {
+func recursivelyExpandBaseProfiles(definition *profileDefinition, extends []string, extendsHistory []string) error {
 	for _, basePath := range extends {
+		for _, extend := range extendsHistory {
+			if extend == basePath {
+				return fmt.Errorf("cyclic profile extend detected, `%s` has already been extended, extendsHistory=`%v`", basePath, extendsHistory)
+			}
+		}
 		baseDefinition, err := readProfileDefinition(basePath)
 		if err != nil {
 			return err
@@ -105,10 +110,8 @@ func recursivelyExpandBaseProfiles(definition *profileDefinition, extends []stri
 		definition.Metrics = append(definition.Metrics, baseDefinition.Metrics...)
 		definition.MetricTags = append(definition.MetricTags, baseDefinition.MetricTags...)
 
-		// TODO: Protect against infinite extend loop
-		err = recursivelyExpandBaseProfiles(definition, baseDefinition.Extends)
+		err = recursivelyExpandBaseProfiles(definition, baseDefinition.Extends, append([]string{basePath}, extendsHistory...))
 		if err != nil {
-			// TODO: Test me
 			return err
 		}
 	}

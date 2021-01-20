@@ -54,7 +54,8 @@ func Test_loadProfiles(t *testing.T) {
 	config.Datadog.Set("confd_path", defaultTestConfdPath)
 	defaultProfilesDef := getDefaultProfilesDefinitionFiles()
 
-	profilesWithInvalidExtendConfdPath, _ := filepath.Abs(filepath.Join(".", "test", "invalid_ext_confd_conf.d"))
+	profilesWithInvalidExtendConfdPath, _ := filepath.Abs(filepath.Join(".", "test", "invalid_ext_conf.d"))
+	invalidCyclicConfdPath, _ := filepath.Abs(filepath.Join(".", "test", "invalid_cyclic_conf.d"))
 
 	profileWithInvalidExtends, _ := filepath.Abs(filepath.Join(".", "test", "test_profiles", "profile_with_invalid_extends.yaml"))
 	invalidYamlProfile, _ := filepath.Abs(filepath.Join(".", "test", "test_profiles", "invalid_yaml_file.yaml"))
@@ -103,6 +104,17 @@ func Test_loadProfiles(t *testing.T) {
 			},
 			expectedProfileDefMap: nil,
 			expectedIncludeErrors: []string{"failed to expand profile `f5-big-ip`", "invalid.yaml"},
+		},
+		{
+			name:      "invalid cyclic extends",
+			confdPath: invalidCyclicConfdPath,
+			inputProfileConfigMap: profileConfigMap{
+				"f5-big-ip": {
+					"f5-big-ip.yaml",
+				},
+			},
+			expectedProfileDefMap: nil,
+			expectedIncludeErrors: []string{"failed to expand profile `f5-big-ip`: cyclic profile extend detected, `_extend1.yaml` has already been extended, extendsHistory=`[_extend2.yaml _extend1.yaml]`"},
 		},
 		{
 			name: "invalid yaml profile",
