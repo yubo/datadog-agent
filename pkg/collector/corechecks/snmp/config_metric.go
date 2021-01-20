@@ -71,7 +71,7 @@ func (m *metricsConfig) getTags(fullIndex string, values *valueStoreType) []stri
 	indexes := strings.Split(fullIndex, ".")
 	for _, metricTag := range m.MetricTags {
 		// get tag using `index` field
-		if (metricTag.Index > 0) && (metricTag.Index <= uint(len(indexes))) {
+		if metricTag.Index > 0 {
 			index := metricTag.Index - 1 // `index` metric config is 1-based
 			if index >= uint(len(indexes)) {
 				log.Debugf("error getting tags. index `%d` not found in indexes `%v`", metricTag.Index, indexes)
@@ -99,7 +99,6 @@ func (m *metricsConfig) getTags(fullIndex string, values *valueStoreType) []stri
 				continue
 			}
 
-			// TODO: Test me (index transform code in getTags)
 			var newIndexes []string
 			if len(metricTag.IndexTransform) > 0 {
 				newIndexes = transformIndex(indexes, metricTag.IndexTransform)
@@ -110,7 +109,6 @@ func (m *metricsConfig) getTags(fullIndex string, values *valueStoreType) []stri
 
 			tagValue, ok := stringValues[newFullIndex]
 			if !ok {
-				// TODO: Test me
 				log.Debugf("index not found for column value: tag=%v, index=%v", metricTag.Tag, newFullIndex)
 			} else {
 				rowTags = append(rowTags, metricTag.getTags(tagValue.toString())...)

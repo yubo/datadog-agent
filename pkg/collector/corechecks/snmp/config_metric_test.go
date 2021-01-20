@@ -219,6 +219,119 @@ metric_tags:
 			},
 			[]string(nil),
 		},
+		{
+			"missing index value",
+			[]byte(`
+table:
+  OID:  1.2.3.4.5
+  name: cpiPduBranchTable
+symbols:
+  - OID: 1.2.3.4.5.1.2
+    name: cpiPduBranchCurrent
+metric_tags:
+  - column:
+      OID:  1.2.3.4.8.1.2
+      name: cpiPduName
+    table: cpiPduTable
+    tag: abc
+`),
+			"1.2.3.4.5.6.7.8",
+			&valueStoreType{
+				columnValues: map[string]map[string]snmpValueType{
+					"1.2.3.4.8.1.2": {
+						"999": snmpValueType{
+							value: "abc.",
+						},
+					},
+				},
+			},
+			[]string(nil),
+		},
+		{
+			"missing column value",
+			[]byte(`
+table:
+  OID:  1.2.3.4.5
+  name: cpiPduBranchTable
+symbols:
+  - OID: 1.2.3.4.5.1.2
+    name: cpiPduBranchCurrent
+metric_tags:
+  - column:
+      OID:  1.2.3.4.8.1.2
+      name: cpiPduName
+    table: cpiPduTable
+    tag: abc
+`),
+			"1.2.3.4.5.6.7.8",
+			&valueStoreType{
+				columnValues: map[string]map[string]snmpValueType{
+					"999": {
+						"1.2.3.4.5.6.7.8": snmpValueType{
+							value: "abc.",
+						},
+					},
+				},
+			},
+			[]string(nil),
+		},
+		{
+			"mapping does not exist",
+			[]byte(`
+table:
+  OID:  1.2.3.4.5
+  name: cpiPduBranchTable
+symbols:
+  - OID: 1.2.3.4.5.1.2
+    name: cpiPduBranchCurrent
+metric_tags:
+  - index: 1
+    tag: abc
+    mapping:
+      0: unknown
+      1: ipv4
+      2: ipv6
+      3: ipv4z
+      4: ipv6z
+      16: dns
+`),
+			"20",
+			&valueStoreType{
+				columnValues: map[string]map[string]snmpValueType{
+					"1.2.3.4.8.1.2": {
+						"20": snmpValueType{
+							value: "abc.",
+						},
+					},
+				},
+			},
+			[]string(nil),
+		},
+		{
+			"index not found",
+			[]byte(`
+table:
+  OID:  1.2.3.4.5
+  name: cpiPduBranchTable
+symbols:
+  - OID: 1.2.3.4.5.1.2
+    name: cpiPduBranchCurrent
+metric_tags:
+  - index: 100
+    tag: abc
+`),
+			"1",
+			&valueStoreType{
+				columnValues: map[string]map[string]snmpValueType{
+					"1.2.3.4.8.1.2": {
+						"1": snmpValueType{
+							value: "abc.",
+						},
+					},
+				},
+			},
+			[]string(nil),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
