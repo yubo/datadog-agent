@@ -12,7 +12,7 @@ type metricSender struct {
 	submittedMetrics int
 }
 
-func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *valueStoreType, tags []string) {
+func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *resultValueStore, tags []string) {
 	for _, metric := range metrics {
 		if metric.Symbol.OID != "" {
 			ms.reportScalarMetrics(metric, values, tags)
@@ -22,7 +22,7 @@ func (ms *metricSender) reportMetrics(metrics []metricsConfig, values *valueStor
 	}
 }
 
-func (ms *metricSender) getCheckInstanceMetricTags(metricTags []metricTagConfig, values *valueStoreType) []string {
+func (ms *metricSender) getCheckInstanceMetricTags(metricTags []metricTagConfig, values *resultValueStore) []string {
 	var globalTags []string
 
 	for _, metricTag := range metricTags {
@@ -36,7 +36,7 @@ func (ms *metricSender) getCheckInstanceMetricTags(metricTags []metricTagConfig,
 	return globalTags
 }
 
-func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *valueStoreType, tags []string) {
+func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *resultValueStore, tags []string) {
 	value, err := values.getScalarValues(metric.Symbol.OID)
 	if err != nil {
 		log.Warnf("error getting scalar value: %v", err)
@@ -48,7 +48,7 @@ func (ms *metricSender) reportScalarMetrics(metric metricsConfig, values *valueS
 	ms.sendMetric(metric.Symbol.Name, value, scalarTags, metric.ForcedType, metric.Options)
 }
 
-func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *valueStoreType, tags []string) {
+func (ms *metricSender) reportColumnMetrics(metricConfig metricsConfig, values *resultValueStore, tags []string) {
 	for _, symbol := range metricConfig.Symbols {
 		metricValues, err := values.getColumnValues(symbol.OID)
 		if err != nil {

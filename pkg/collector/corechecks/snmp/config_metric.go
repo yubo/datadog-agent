@@ -66,7 +66,7 @@ type metricsConfig struct {
 }
 
 // getTags retrieve tags using the metric config and values
-func (m *metricsConfig) getTags(fullIndex string, values *valueStoreType) []string {
+func (m *metricsConfig) getTags(fullIndex string, values *resultValueStore) []string {
 	var rowTags []string
 	indexes := strings.Split(fullIndex, ".")
 	for _, metricTag := range m.MetricTags {

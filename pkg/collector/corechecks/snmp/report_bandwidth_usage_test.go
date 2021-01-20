@@ -18,7 +18,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 		name           string
 		symbol         symbolConfig
 		fullIndex      string
-		values         *valueStoreType
+		values         *resultValueStore
 		expectedMetric []Metric
 		expectedError  error
 	}{
@@ -26,7 +26,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 			"snmp.ifBandwidthInUsage.rate submitted",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.6", Name: "ifHCInOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCInOctets
 					"1.3.6.1.2.1.31.1.1.1.6": map[string]snmpValueType{
@@ -61,7 +61,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 			"snmp.ifBandwidthOutUsage.rate submitted",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.10", Name: "ifHCOutOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCInOctets
 					"1.3.6.1.2.1.31.1.1.1.6": map[string]snmpValueType{
@@ -96,7 +96,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 			"not a bandwidth metric",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.99", Name: "notABandwidthMetric"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{},
 			},
 			[]Metric{},
@@ -106,7 +106,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 			"missing ifHighSpeed",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.6", Name: "ifHCInOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCInOctets
 					"1.3.6.1.2.1.31.1.1.1.6": map[string]snmpValueType{
@@ -131,7 +131,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 			"missing ifHCInOctets",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.6", Name: "ifHCInOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCOutOctets
 					"1.3.6.1.2.1.31.1.1.1.10": map[string]snmpValueType{
@@ -156,7 +156,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 			"missing ifHCOutOctets",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.6", Name: "ifHCOutOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCOutOctets
 					"1.3.6.1.2.1.31.1.1.1.10": map[string]snmpValueType{
@@ -181,7 +181,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 			"missing ifHCInOctets value",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.6", Name: "ifHCInOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCInOctets
 					"1.3.6.1.2.1.31.1.1.1.6": map[string]snmpValueType{
@@ -213,7 +213,7 @@ func Test_metricSender_sendBandwidthUsageMetric(t *testing.T) {
 			"missing ifHighSpeed value",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.6", Name: "ifHCInOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCInOctets
 					"1.3.6.1.2.1.31.1.1.1.6": map[string]snmpValueType{
@@ -269,14 +269,14 @@ func Test_metricSender_trySendBandwidthUsageMetric(t *testing.T) {
 		name           string
 		symbol         symbolConfig
 		fullIndex      string
-		values         *valueStoreType
+		values         *resultValueStore
 		expectedMetric []Metric
 	}{
 		{
 			"snmp.ifBandwidthInUsage.rate submitted",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.6", Name: "ifHCInOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCInOctets
 					"1.3.6.1.2.1.31.1.1.1.6": map[string]snmpValueType{
@@ -310,7 +310,7 @@ func Test_metricSender_trySendBandwidthUsageMetric(t *testing.T) {
 			"should complete even on error",
 			symbolConfig{OID: "1.3.6.1.2.1.31.1.1.1.6", Name: "ifHCInOctets"},
 			"9",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: columnResultValuesType{
 					// ifHCInOctets
 					"1.3.6.1.2.1.31.1.1.1.6": map[string]snmpValueType{

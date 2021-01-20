@@ -4,14 +4,14 @@ import (
 	"fmt"
 )
 
-type valueStoreType struct {
+type resultValueStore struct {
 	scalarValues scalarResultValuesType
 	columnValues columnResultValuesType
 }
 
-// getScalarValues look for oid and returns the value and boolean
+// getScalarValues look for oid in resultValueStore and returns the value and boolean
 // weather valid value has been found
-func (v *valueStoreType) getScalarValues(oid string) (snmpValueType, error) {
+func (v *resultValueStore) getScalarValues(oid string) (snmpValueType, error) {
 	value, ok := v.scalarValues[oid]
 	if !ok {
 		return snmpValueType{}, fmt.Errorf("value for Scalar OID not found: %s", oid)
@@ -19,7 +19,7 @@ func (v *valueStoreType) getScalarValues(oid string) (snmpValueType, error) {
 	return value, nil
 }
 
-func (v *valueStoreType) getColumnValues(oid string) (map[string]snmpValueType, error) {
+func (v *resultValueStore) getColumnValues(oid string) (map[string]snmpValueType, error) {
 	retValues := make(map[string]snmpValueType)
 	values, ok := v.columnValues[oid]
 	if !ok {

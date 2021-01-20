@@ -15,11 +15,11 @@ type columnResultValuesType map[string]map[string]snmpValueType
 // - the instance oid value (suffixed with `.0`)
 type scalarResultValuesType map[string]snmpValueType
 
-func fetchValues(session sessionAPI, config snmpConfig) (*valueStoreType, error) {
+func fetchValues(session sessionAPI, config snmpConfig) (*resultValueStore, error) {
 	// fetch scalar values
 	scalarResults, err := fetchScalarOidsWithBatching(session, config.oidConfig.scalarOids, config.oidBatchSize)
 	if err != nil {
-		return &valueStoreType{}, fmt.Errorf("failed to fetch scalar oids with batching: %v", err)
+		return &resultValueStore{}, fmt.Errorf("failed to fetch scalar oids with batching: %v", err)
 	}
 
 	// fetch column values
@@ -29,8 +29,8 @@ func fetchValues(session sessionAPI, config snmpConfig) (*valueStoreType, error)
 	}
 	columnResults, err := fetchColumnOidsWithBatching(session, oids, config.oidBatchSize)
 	if err != nil {
-		return &valueStoreType{}, fmt.Errorf("failed to fetch oids with batching: %v", err)
+		return &resultValueStore{}, fmt.Errorf("failed to fetch oids with batching: %v", err)
 	}
 
-	return &valueStoreType{scalarResults, columnResults}, nil
+	return &resultValueStore{scalarResults, columnResults}, nil
 }

@@ -66,7 +66,7 @@ func Test_metricsConfig_getTags(t *testing.T) {
 		name            string
 		rawMetricConfig []byte
 		fullIndex       string
-		values          *valueStoreType
+		values          *resultValueStore
 		expectedTags    []string
 	}{
 		{
@@ -91,7 +91,7 @@ metric_tags:
     tag: pdu_name
 `),
 			"1.2.3.4.5.6.7.8",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
 						"2.3.7.8": snmpValueType{
@@ -123,7 +123,7 @@ metric_tags:
       16: dns
 `),
 			"3",
-			&valueStoreType{},
+			&resultValueStore{},
 			[]string{"ipversion:ipv4z"},
 		},
 		{
@@ -146,7 +146,7 @@ metric_tags:
       suffix: '$2'
 `),
 			"1.2.3.4.5.6.7.8",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
 						"1.2.3.4.5.6.7.8": snmpValueType{
@@ -177,7 +177,7 @@ metric_tags:
       suffix: '$2'
 `),
 			"1.2.3.4.5.6.7.8",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
 						"1.2.3.4.5.6.7.8": snmpValueType{
@@ -208,7 +208,7 @@ metric_tags:
       suffix: '$2'
 `),
 			"1.2.3.4.5.6.7.8",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
 						"1.2.3.4.5.6.7.8": snmpValueType{
@@ -236,7 +236,7 @@ metric_tags:
     tag: abc
 `),
 			"1.2.3.4.5.6.7.8",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
 						"999": snmpValueType{
@@ -264,7 +264,7 @@ metric_tags:
     tag: abc
 `),
 			"1.2.3.4.5.6.7.8",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"999": {
 						"1.2.3.4.5.6.7.8": snmpValueType{
@@ -296,7 +296,7 @@ metric_tags:
       16: dns
 `),
 			"20",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
 						"20": snmpValueType{
@@ -321,7 +321,7 @@ metric_tags:
     tag: abc
 `),
 			"1",
-			&valueStoreType{
+			&resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
 						"1": snmpValueType{
