@@ -209,3 +209,10 @@ func Test_snmpSession_Configure(t *testing.T) {
 		})
 	}
 }
+
+func Test_snmpSession_GetBulk_emptyOids(t *testing.T) {
+	s := &snmpSession{}
+	packet, err := s.GetBulk([]string{})
+	assert.Nil(t, err)
+	assert.Equal(t, packet, &gosnmp.SnmpPacket{})
+}

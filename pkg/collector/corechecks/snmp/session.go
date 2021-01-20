@@ -2,7 +2,6 @@ package snmp
 
 import (
 	"fmt"
-	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/soniah/gosnmp"
 	"time"
 )
@@ -71,7 +70,6 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 		}
 	}
 	s.gosnmpInst = gosnmpInst
-	log.Warnf("gosnmp Instance: %#v", s.gosnmpInst) // TODO: Remove me
 	return nil
 }
 
@@ -88,7 +86,7 @@ func (s *snmpSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) 
 }
 
 func (s *snmpSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error) {
-	if len(oids) == 0 { // TODO: test me
+	if len(oids) == 0 {
 		return &gosnmp.SnmpPacket{}, nil
 	}
 	return s.gosnmpInst.GetBulk(oids, 0, 10)

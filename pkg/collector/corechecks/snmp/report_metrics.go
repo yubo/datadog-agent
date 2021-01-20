@@ -88,8 +88,7 @@ func (ms *metricSender) sendMetric(metricName string, value snmpValueType, tags 
 			}
 			ms.gauge(metricFullName+"."+options.MetricSuffix, floatValue, "", tags)
 		default:
-			// TODO: test me
-			log.Warnf("metric `%s`: unsupported forcedType: %s", metricFullName, forcedType)
+			log.Debugf("metric `%s`: unsupported forcedType: %s", metricFullName, forcedType)
 		}
 	} else {
 		switch value.submissionType {
