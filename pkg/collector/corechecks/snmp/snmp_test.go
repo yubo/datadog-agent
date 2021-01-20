@@ -48,7 +48,7 @@ func (s *mockSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err err
 }
 
 func setConfdPath() {
-	file, _ := filepath.Abs("./test/conf.d")
+	file, _ := filepath.Abs(filepath.Join(".", "test", "conf.d"))
 	config.Datadog.Set("confd_path", file)
 }
 

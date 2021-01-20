@@ -56,12 +56,12 @@ func loadProfiles(pConfig profileConfigMap) (profileDefinitionMap, error) {
 
 		profileDefinition, err := readProfileDefinition(definitionFile)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to read profile definition `%s`: %s", name, err)
 		}
 
 		err = recursivelyExpandBaseProfiles(profileDefinition, profileDefinition.Extends)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to expand profile `%s`: %s", name, err)
 		}
 
 		profiles[name] = *profileDefinition
@@ -73,20 +73,18 @@ func readProfileDefinition(definitionFile string) (*profileDefinition, error) {
 	filePath := resolveProfileDefinitionPath(definitionFile)
 	buf, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read file `%s`: %s", filePath, err)
 	}
 
 	profileDefinition := &profileDefinition{}
 	err = yaml.Unmarshal(buf, profileDefinition)
 	if err != nil {
-		return nil, fmt.Errorf("in file %q: %v", filePath, err)
+		return nil, fmt.Errorf("failed to unmarshall `%q`: %v", filePath, err)
 	}
 	return profileDefinition, nil
 }
 
 func resolveProfileDefinitionPath(definitionFile string) string {
-	// See https://github.com/DataDog/integrations-core/blob/d7f4d42a4721aea683056901cf2053395ff48173/snmp/datadog_checks/snmp/utils.py#L64-L73
-	// TODO: Test with absolute files
 	if filepath.IsAbs(definitionFile) {
 		return definitionFile
 	}
@@ -102,7 +100,6 @@ func recursivelyExpandBaseProfiles(definition *profileDefinition, extends []stri
 	for _, basePath := range extends {
 		baseDefinition, err := readProfileDefinition(basePath)
 		if err != nil {
-			// TODO: Test me
 			return err
 		}
 		definition.Metrics = append(definition.Metrics, baseDefinition.Metrics...)

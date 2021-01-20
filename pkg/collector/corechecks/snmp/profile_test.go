@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	assert "github.com/stretchr/testify/require"
-	"path/filepath"
+	filepath "path/filepath"
 	"testing"
 )
 
@@ -50,16 +50,91 @@ func Test_getDefaultProfilesDefinitionFiles(t *testing.T) {
 }
 
 func Test_loadProfiles(t *testing.T) {
-	setConfdPath()
-	files := getDefaultProfilesDefinitionFiles()
-	profiles, err := loadProfiles(files)
-	assert.Nil(t, err)
 
-	for _, profile := range profiles {
-		normalizeMetrics(profile.Metrics)
+}
+
+func Test_loadProfiles1(t *testing.T) {
+	defaultTestConfdPath, _ := filepath.Abs(filepath.Join(".", "test", "conf.d"))
+	config.Datadog.Set("confd_path", defaultTestConfdPath)
+	defaultProfilesDef := getDefaultProfilesDefinitionFiles()
+
+	profilesWithInvalidExtendConfdPath, _ := filepath.Abs(filepath.Join(".", "test", "invalid_ext_confd", "conf.d"))
+
+	profileWithInvalidExtends, _ := filepath.Abs(filepath.Join(".", "test", "test_profiles", "profile_with_invalid_extends.yaml"))
+	invalidYamlProfile, _ := filepath.Abs(filepath.Join(".", "test", "test_profiles", "invalid_yaml_file.yaml"))
+
+	tests := []struct {
+		name                  string
+		confdPath             string
+		inputProfileConfigMap profileConfigMap
+		expectedProfileDefMap profileDefinitionMap
+		expectedIncludeErrors []string
+	}{
+		{
+			name:                  "default",
+			confdPath:             defaultTestConfdPath,
+			inputProfileConfigMap: defaultProfilesDef,
+			expectedProfileDefMap: mockProfilesDefinitions(),
+			expectedIncludeErrors: []string{},
+		},
+		{
+			name: "failed to read profile",
+			inputProfileConfigMap: profileConfigMap{
+				"f5-big-ip": {
+					"/does/not/exist",
+				},
+			},
+			expectedProfileDefMap: nil,
+			expectedIncludeErrors: []string{"failed to read profile definition `f5-big-ip`: failed to read file `/does/not/exist`: open /does/not/exist: no such file or directory"},
+		},
+		{
+			name: "invalid extends",
+			inputProfileConfigMap: profileConfigMap{
+				"f5-big-ip": {
+					profileWithInvalidExtends,
+				},
+			},
+			expectedProfileDefMap: nil,
+			expectedIncludeErrors: []string{"failed to expand profile `f5-big-ip`: failed to read file `/tmp/does/not/exist.yaml`: open /tmp/does/not/exist.yaml: no such file or directory"},
+		},
+		{
+			name:      "invalid recursive extends",
+			confdPath: profilesWithInvalidExtendConfdPath,
+			inputProfileConfigMap: profileConfigMap{
+				"f5-big-ip": {
+					"f5-big-ip.yaml",
+				},
+			},
+			expectedProfileDefMap: nil,
+			expectedIncludeErrors: []string{"failed to expand profile `f5-big-ip`", "invalid.yaml"},
+		},
+		{
+			name: "invalid yaml profile",
+			inputProfileConfigMap: profileConfigMap{
+				"f5-big-ip": {
+					invalidYamlProfile,
+				},
+			},
+			expectedProfileDefMap: nil,
+			expectedIncludeErrors: []string{"failed to read profile definition `f5-big-ip`: failed to unmarshall"},
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config.Datadog.Set("confd_path", tt.confdPath)
 
-	assert.Equal(t, mockProfilesDefinitions(), profiles)
+			profiles, err := loadProfiles(tt.inputProfileConfigMap)
+			for _, errorMsg := range tt.expectedIncludeErrors {
+				assert.Contains(t, err.Error(), errorMsg)
+			}
+
+			for _, profile := range profiles {
+				normalizeMetrics(profile.Metrics)
+			}
+
+			assert.Equal(t, tt.expectedProfileDefMap, profiles)
+		})
+	}
 }
 
 func Test_getMostSpecificOid(t *testing.T) {
