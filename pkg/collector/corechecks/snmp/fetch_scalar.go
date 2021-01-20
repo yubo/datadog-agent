@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/soniah/gosnmp"
+	"sort"
 	"strings"
 )
 
@@ -54,6 +55,7 @@ func retryScalarOids(session sessionAPI, results *gosnmp.SnmpPacket, valuesToUpd
 		for _, oid := range retryOids {
 			fetchOids = append(fetchOids, oid)
 		}
+		sort.Strings(fetchOids) // needed for stable tests since fetchOids order (from a map values) is undefined
 		retryResults, err := doFetchScalarOids(session, fetchOids)
 		if err != nil {
 			log.Debugf("failed to oids `%v` on retry: %v", retryOids, err)
