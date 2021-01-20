@@ -66,7 +66,7 @@ type snmpConfig struct {
 
 func (c *snmpConfig) refreshWithProfile(profile string) error {
 	if _, ok := c.profiles[profile]; !ok {
-		return fmt.Errorf("unknown profile '%s'", profile)
+		return fmt.Errorf("unknown profile `%s`", profile)
 	}
 	log.Debugf("Refreshing with profile `%s` with content: %#v", profile, c.profiles[profile])
 	tags := []string{"snmp_profile:" + profile}
@@ -193,8 +193,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	if profile != "" {
 		err = c.refreshWithProfile(profile)
 		if err != nil {
-			// TODO: test me
-			return snmpConfig{}, fmt.Errorf("failed to refresh with profile: %s", err)
+			return snmpConfig{}, fmt.Errorf("failed to refresh with profile `%s`: %s", profile, err)
 		}
 	}
 

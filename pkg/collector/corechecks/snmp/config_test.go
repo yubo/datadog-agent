@@ -322,3 +322,36 @@ func Test_oidConfig_hasOids(t *testing.T) {
 		})
 	}
 }
+
+func Test_buildConfig(t *testing.T) {
+	setConfdPath()
+
+	tests := []struct {
+		name              string
+		rawInstanceConfig []byte
+		rawInitConfig     []byte
+		expectedErr       string
+	}{
+		{
+			name: "unknown profile",
+			// language=yaml
+			rawInstanceConfig: []byte(`
+ip_address: 1.2.3.4
+profile: does-not-exist
+`),
+			// language=yaml
+			rawInitConfig: []byte(`
+profiles:
+  f5-big-ip:
+    definition_file: f5-big-ip.yaml
+`),
+			expectedErr: "failed to refresh with profile `does-not-exist`: unknown profile `does-not-exist`",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := buildConfig(tt.rawInstanceConfig, tt.rawInitConfig)
+			assert.EqualError(t, err, tt.expectedErr)
+		})
+	}
+}

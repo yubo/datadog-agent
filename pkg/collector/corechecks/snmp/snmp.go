@@ -86,7 +86,7 @@ func (c *Check) doRun(staticTags []string) (retTags []string, retErr error) {
 		err = c.config.refreshWithProfile(profile)
 		if err != nil {
 			// Should not happen since the profile is one of those we matched in getProfileForSysObjectID
-			retErr = fmt.Errorf("failed to refresh with profile: %s", err)
+			retErr = fmt.Errorf("failed to refresh with profile `%s` detected using sysObjectID `%s`: %s", profile, sysObjectID, err)
 			return
 		}
 	}
