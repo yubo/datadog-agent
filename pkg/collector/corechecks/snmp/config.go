@@ -184,6 +184,8 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	} else {
 		pConfig = getDefaultProfilesDefinitionFiles()
 	}
+	// TODO: [PERFORMANCE] Load default profiles once for all integrations
+	//   That should reduce memory usage.
 	profiles, err := loadProfiles(pConfig)
 	if err != nil {
 		return snmpConfig{}, fmt.Errorf("failed to load profiles: %s", err)
