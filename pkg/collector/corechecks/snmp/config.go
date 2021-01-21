@@ -67,7 +67,6 @@ func (c *snmpConfig) refreshWithProfile(profile string) error {
 	tags := []string{"snmp_profile:" + profile}
 	definition := c.profiles[profile]
 
-	// https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py#L181-L200
 	c.metrics = append(c.metrics, definition.Metrics...)
 	c.metricTags = append(c.metricTags, definition.MetricTags...)
 	c.oidConfig.scalarOids = append(c.oidConfig.scalarOids, parseScalarOids(definition.Metrics, definition.MetricTags)...)
