@@ -110,7 +110,7 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	instance := snmpInstanceConfig{}
 	initConfig := snmpInitConfig{}
 
-	// Set default before parsing
+	// Set defaults before unmarshalling
 	instance.UseGlobalMetrics = true
 
 	err := yaml.Unmarshal(rawInitConfig, &initConfig)
