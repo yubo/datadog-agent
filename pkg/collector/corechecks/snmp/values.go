@@ -20,11 +20,11 @@ func (v *resultValueStore) getScalarValues(oid string) (snmpValueType, error) {
 }
 
 func (v *resultValueStore) getColumnValues(oid string) (map[string]snmpValueType, error) {
-	retValues := make(map[string]snmpValueType)
 	values, ok := v.columnValues[oid]
 	if !ok {
 		return nil, fmt.Errorf("value for Column OID `%s` not found in `%v`", oid, v.columnValues)
 	}
+	retValues := make(map[string]snmpValueType, len(values))
 	for index, value := range values {
 		retValues[index] = value
 	}

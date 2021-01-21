@@ -50,7 +50,7 @@ func getDefaultProfilesDefinitionFiles() profileConfigMap {
 }
 
 func loadProfiles(pConfig profileConfigMap) (profileDefinitionMap, error) {
-	profiles := make(map[string]profileDefinition)
+	profiles := make(map[string]profileDefinition, len(pConfig))
 
 	for name, profile := range pConfig {
 		definitionFile := profile.DefinitionFile

@@ -7,7 +7,7 @@ import (
 )
 
 func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oidBatchSize int) (columnResultValuesType, error) {
-	retValues := make(columnResultValuesType)
+	retValues := make(columnResultValuesType, len(oids))
 
 	columnOids := getOidsMapKeys(oids)
 	batches, err := createStringBatches(columnOids, oidBatchSize)
@@ -16,7 +16,7 @@ func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oid
 	}
 
 	for _, batchColumnOids := range batches {
-		oidsToFetch := make(map[string]string)
+		oidsToFetch := make(map[string]string, len(batchColumnOids))
 		for _, oid := range batchColumnOids {
 			oidsToFetch[oid] = oids[oid]
 		}
@@ -43,7 +43,7 @@ func fetchColumnOidsWithBatching(session sessionAPI, oids map[string]string, oid
 // the key of the map is the column oid, and the value is the oid used to fetch the next value for the column.
 // The value oid might be equal to column oid or a row oid of the same column.
 func fetchColumnOids(session sessionAPI, oids map[string]string) (columnResultValuesType, error) {
-	returnValues := make(columnResultValuesType)
+	returnValues := make(columnResultValuesType, len(oids))
 	curOids := oids
 	for {
 		log.Debugf("fetch column request oids: %v", curOids)

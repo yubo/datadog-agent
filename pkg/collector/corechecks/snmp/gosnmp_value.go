@@ -5,6 +5,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/gosnmp/gosnmp"
+	"math"
 	"strings"
 )
 
@@ -78,7 +79,7 @@ func hasNonPrintableByte(bytesValue []byte) bool {
 }
 
 func resultToScalarValues(result *gosnmp.SnmpPacket) scalarResultValuesType {
-	returnValues := make(map[string]snmpValueType)
+	returnValues := make(map[string]snmpValueType, len(result.Variables))
 	for _, pduVariable := range result.Variables {
 		if shouldSkip(pduVariable.Type) {
 			continue
@@ -97,8 +98,9 @@ func resultToScalarValues(result *gosnmp.SnmpPacket) scalarResultValuesType {
 // - columnResultValuesType: column values
 // - nextOidsMap: represent the oids that can be used to retrieve following rows/values
 func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (columnResultValuesType, map[string]string) {
-	returnValues := make(columnResultValuesType)
-	nextOidsMap := make(map[string]string)
+	returnValues := make(columnResultValuesType, len(columnOids))
+	nextOidsMap := make(map[string]string, len(columnOids))
+	maxRowsPerCol := int(math.Ceil(float64(len(snmpPacket.Variables)) / float64(len(columnOids))))
 	for i, pduVariable := range snmpPacket.Variables {
 		if shouldSkip(pduVariable.Type) {
 			continue
@@ -113,7 +115,7 @@ func resultToColumnValues(columnOids []string, snmpPacket *gosnmp.SnmpPacket) (c
 		// and the columnOid can be derived from the index of the PDU variable.
 		columnOid := columnOids[i%len(columnOids)]
 		if _, ok := returnValues[columnOid]; !ok {
-			returnValues[columnOid] = make(map[string]snmpValueType)
+			returnValues[columnOid] = make(map[string]snmpValueType, maxRowsPerCol)
 		}
 
 		prefix := columnOid + "."

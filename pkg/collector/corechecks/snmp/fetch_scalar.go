@@ -9,7 +9,7 @@ import (
 )
 
 func fetchScalarOidsWithBatching(session sessionAPI, oids []string, oidBatchSize int) (scalarResultValuesType, error) {
-	retValues := make(scalarResultValuesType)
+	retValues := make(scalarResultValuesType, len(oids))
 
 	batches, err := createStringBatches(oids, oidBatchSize)
 	if err != nil {

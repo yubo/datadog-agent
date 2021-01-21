@@ -23,7 +23,7 @@ func fetchValues(session sessionAPI, config snmpConfig) (*resultValueStore, erro
 	}
 
 	// fetch column values
-	oids := make(map[string]string)
+	oids := make(map[string]string, len(config.oidConfig.columnOids))
 	for _, value := range config.oidConfig.columnOids {
 		oids[value] = value
 	}
