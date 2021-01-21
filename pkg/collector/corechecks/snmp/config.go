@@ -91,6 +91,9 @@ func (c *snmpConfig) addUptimeMetric() {
 
 func (c *snmpConfig) getStaticTags() []string {
 	tags := []string{"snmp_device:" + c.ipAddress}
+
+	// TODO: Remove Telemetry tag
+	tags = append(tags, "loader:core")
 	return tags
 }
 

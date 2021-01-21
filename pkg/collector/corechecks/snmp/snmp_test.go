@@ -190,7 +190,7 @@ tags:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	snmpTags := []string{"snmp_device:1.2.3.4"}
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
 	snmpGlobalTags := append(copyStrings(snmpTags), "snmp_host:foo_sys_name")
 	row1Tags := append(copyStrings(snmpGlobalTags), "if_index:1", "if_desc:desc1")
 	row2Tags := append(copyStrings(snmpGlobalTags), "if_index:2", "if_desc:desc2")
@@ -268,7 +268,7 @@ metrics:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	tags := []string{"snmp_device:1.2.3.4"}
+	tags := []string{"loader:core", "snmp_device:1.2.3.4"}
 	sender.AssertMetric(t, "Gauge", "snmp.devices_monitored", float64(1), "", tags)
 	sender.AssertMetric(t, "Gauge", "snmp.sysUpTimeInstance", float64(20), "", tags)
 	sender.AssertMetric(t, "Gauge", "snmp.SomeGaugeMetric", float64(30), "", tags)
@@ -392,7 +392,7 @@ profiles:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	snmpTags := []string{"snmp_device:1.2.3.4", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
 	row1Tags := append(copyStrings(snmpTags), "interface:nameRow1", "interface_alias:descRow1")
 	row2Tags := append(copyStrings(snmpTags), "interface:nameRow2", "interface_alias:descRow2")
 
@@ -533,7 +533,7 @@ profiles:
 	err = check.Run()
 	assert.Nil(t, err)
 
-	snmpTags := []string{"snmp_device:1.2.3.4", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core", "snmp_profile:f5-big-ip", "device_vendor:f5", "snmp_host:foo_sys_name"}
 	row1Tags := append(copyStrings(snmpTags), "interface:nameRow1", "interface_alias:descRow1")
 	row2Tags := append(copyStrings(snmpTags), "interface:nameRow2", "interface_alias:descRow2")
 
@@ -569,7 +569,7 @@ ip_address: 1.2.3.4
 	err = check.Run()
 	assert.Error(t, err, "snmp connection error: can't connect")
 
-	snmpTags := []string{"snmp_device:1.2.3.4"}
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
 
 	sender.AssertMetric(t, "Gauge", "datadog.snmp.submitted_metrics", 0.0, "", snmpTags)
 	sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.check_duration", snmpTags)
@@ -729,7 +729,7 @@ ip_address: 1.2.3.4
 			err = check.Run()
 			assert.EqualError(t, err, tt.expectedErr)
 
-			snmpTags := []string{"snmp_device:1.2.3.4"}
+			snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
 
 			sender.AssertMetric(t, "Gauge", "datadog.snmp.submitted_metrics", 0.0, "", snmpTags)
 			sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.check_duration", snmpTags)
@@ -782,7 +782,7 @@ metrics:
 	w.Flush()
 	logs := b.String()
 
-	snmpTags := []string{"snmp_device:1.2.3.4"}
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
 	sender.AssertMetric(t, "Gauge", "datadog.snmp.submitted_metrics", 0.0, "", snmpTags)
 	sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.check_duration", snmpTags)
 	sender.AssertMetricTaggedWith(t, "MonotonicCount", "datadog.snmp.check_interval", snmpTags)
