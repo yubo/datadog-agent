@@ -23,6 +23,7 @@ import (
 type mockSession struct {
 	mock.Mock
 	connectErr error
+	closeErr   error
 }
 
 func (s *mockSession) Configure(config snmpConfig) error {
@@ -34,7 +35,7 @@ func (s *mockSession) Connect() error {
 }
 
 func (s *mockSession) Close() error {
-	return nil
+	return s.closeErr
 }
 
 func (s *mockSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) {
@@ -667,6 +668,10 @@ func TestCheck_Run(t *testing.T) {
 			expectedErr:      "failed to fetching sysobjectid: cannot get sysobjectid: no sysobjectid",
 		},
 		{
+			name:        "unexpected values count",
+			expectedErr: "failed to fetching sysobjectid: expected 1 value, but for 0: variables=[]",
+		},
+		{
 			name:              "failed to fetching sysobjectid with invalid value",
 			sysObjectIDPacket: sysObjectIDPacketInvalidValueMock,
 			expectedErr:       "failed to fetching sysobjectid: error getting value from pdu: oid 1.3.6.1.2.1.1.2.0: ObjectIdentifier should be string type but got float64 type: gosnmp.SnmpPDU{Name:\"1.3.6.1.2.1.1.2.0\", Type:0x6, Value:1}",
@@ -728,4 +733,43 @@ ip_address: 1.2.3.4
 			sender.AssertServiceCheck(t, "snmp.can_check", metrics.ServiceCheckCritical, "", snmpTags, tt.expectedErr)
 		})
 	}
+}
+
+func TestCheck_Run_sessionCloseError(t *testing.T) {
+	setConfdPath()
+	session := &mockSession{}
+	session.closeErr = fmt.Errorf("close error")
+	check := Check{session: session}
+
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+metrics:
+- symbol:
+    OID: 1.2.3
+    name: myMetric
+`)
+
+	err := check.Configure(rawInstanceConfig, []byte(``), "test")
+	assert.Nil(t, err)
+
+	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
+
+	mocksender.SetSender(sender, check.ID())
+
+	packet := gosnmp.SnmpPacket{
+		Variables: []gosnmp.SnmpPDU{},
+	}
+	session.On("Get", []string{"1.2.3", "1.3.6.1.2.1.1.3.0"}).Return(&packet, nil)
+	sender.SetupAcceptAll()
+
+	err = check.Run()
+	assert.EqualError(t, err, "close error")
+
+	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
+	sender.AssertMetric(t, "Gauge", "datadog.snmp.submitted_metrics", 0.0, "", snmpTags)
+	sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.check_duration", snmpTags)
+	sender.AssertMetricTaggedWith(t, "MonotonicCount", "datadog.snmp.check_interval", snmpTags)
+
+	sender.AssertServiceCheck(t, "snmp.can_check", metrics.ServiceCheckCritical, "", snmpTags, "close error")
 }

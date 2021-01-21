@@ -66,7 +66,12 @@ func (c *Check) doRun(staticTags []string) (retTags []string, retErr error) {
 	}
 	defer func() {
 		err := c.session.Close()
-		if err != nil && retErr != nil {
+		if err == nil {
+			return
+		}
+		log.Debugf("failed to close session: %v", err)
+		// return session close error only if `retErr` is not set yet
+		if retErr == nil {
 			retErr = err
 		}
 	}()
