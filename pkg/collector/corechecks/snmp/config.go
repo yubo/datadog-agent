@@ -173,14 +173,14 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 	c.oidConfig.columnOids = parseColumnOids(c.metrics)
 
 	// Profile Configs
+	// TODO: [PERFORMANCE] Load default profiles once for all integrations
+	//   That should reduce memory usage.
 	var pConfig profileConfigMap
 	if len(initConfig.Profiles) > 0 {
 		pConfig = initConfig.Profiles
 	} else {
 		pConfig = getDefaultProfilesDefinitionFiles()
 	}
-	// TODO: [PERFORMANCE] Load default profiles once for all integrations
-	//   That should reduce memory usage.
 	profiles, err := loadProfiles(pConfig)
 	if err != nil {
 		return snmpConfig{}, fmt.Errorf("failed to load profiles: %s", err)
