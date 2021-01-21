@@ -22,6 +22,19 @@ func Test_snmpSession_Configure(t *testing.T) {
 		expectedSecurityParameters gosnmp.SnmpV3SecurityParameters
 	}{
 		{
+			name: "invalid version",
+			config: snmpConfig{
+				ipAddress:       "1.2.3.4",
+				port:            uint16(1234),
+				snmpVersion:     "x",
+				timeout:         4,
+				retries:         3,
+				communityString: "abc",
+			},
+			expectedVersion: gosnmp.Version1,
+			expectedError:   fmt.Errorf("invalid snmp version `x`. Valid versions are: 1, 2, 2c, 3"),
+		},
+		{
 			name: "valid v1 config",
 			config: snmpConfig{
 				ipAddress:       "1.2.3.4",
