@@ -71,10 +71,9 @@ func retryScalarOids(session sessionAPI, results *gosnmp.SnmpPacket, valuesToUpd
 }
 
 func doFetchScalarOids(session sessionAPI, oids []string) (*gosnmp.SnmpPacket, error) {
-	// Get results
-	log.Debugf("fetchScalarOidsWithBatching() oids: %v", oids)
+	log.Debugf("fetch scalar: request oids: %v", oids)
 	results, err := session.Get(oids)
-	log.Debugf("fetchScalarOidsWithBatching() results: %v", results)
+	log.Debugf("fetch scalar: results: %v", results)
 	if err != nil {
 		return nil, fmt.Errorf("error getting oids: %s", err.Error())
 	}
