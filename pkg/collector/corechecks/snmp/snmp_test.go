@@ -6,16 +6,21 @@
 package snmp
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/mocksender"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/cihub/seelog"
 	"github.com/gosnmp/gosnmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -737,6 +742,14 @@ ip_address: 1.2.3.4
 
 func TestCheck_Run_sessionCloseError(t *testing.T) {
 	setConfdPath()
+
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+
+	l, err := seelog.LoggerFromWriterWithMinLevelAndFormat(w, seelog.DebugLvl, "[%LEVEL] %FuncShort: %Msg")
+	assert.Nil(t, err)
+	log.SetupLogger(l, "debug")
+
 	session := &mockSession{}
 	session.closeErr = fmt.Errorf("close error")
 	check := Check{session: session}
@@ -750,7 +763,7 @@ metrics:
     name: myMetric
 `)
 
-	err := check.Configure(rawInstanceConfig, []byte(``), "test")
+	err = check.Configure(rawInstanceConfig, []byte(``), "test")
 	assert.Nil(t, err)
 
 	sender := mocksender.NewMockSender(check.ID()) // required to initiate aggregator
@@ -764,12 +777,17 @@ metrics:
 	sender.SetupAcceptAll()
 
 	err = check.Run()
-	assert.EqualError(t, err, "close error")
+	assert.Nil(t, err)
+
+	w.Flush()
+	logs := b.String()
 
 	snmpTags := []string{"snmp_device:1.2.3.4", "loader:core"}
 	sender.AssertMetric(t, "Gauge", "datadog.snmp.submitted_metrics", 0.0, "", snmpTags)
 	sender.AssertMetricTaggedWith(t, "Gauge", "datadog.snmp.check_duration", snmpTags)
 	sender.AssertMetricTaggedWith(t, "MonotonicCount", "datadog.snmp.check_interval", snmpTags)
 
-	sender.AssertServiceCheck(t, "snmp.can_check", metrics.ServiceCheckCritical, "", snmpTags, "close error")
+	sender.AssertServiceCheck(t, "snmp.can_check", metrics.ServiceCheckOK, "", snmpTags, "")
+
+	assert.Equal(t, strings.Count(logs, "failed to close session"), 1, logs)
 }
