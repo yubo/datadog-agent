@@ -176,25 +176,30 @@ bool CustomActionData::parseSysprobeData()
 
 bool CustomActionData::updateYamlConfig()
 {
-    // Read config in memory. The config should be small enough
-    // and we control its source - so it's fine to allocate up front.
-    std::wifstream inputConfigStream(datadogyamlfile);
     std::wstring inputConfig;
 
-    inputConfigStream.seekg(0, std::ios::end);
-    size_t fileSize = inputConfigStream.tellg();
-    if (fileSize <= 0)
+    // Read config in memory. The config should be small enough
+    // and we control its source - so it's fine to allocate up front.
     {
-        WcaLog(LOGMSG_STANDARD, "ERROR: datadog.yaml file empty !");
-        return false;
+        std::wifstream inputConfigStream(datadogyamlfile);
+
+        inputConfigStream.seekg(0, std::ios::end);
+        size_t fileSize = inputConfigStream.tellg();
+        if (fileSize <= 0)
+        {
+            WcaLog(LOGMSG_STANDARD, "ERROR: datadog.yaml file empty !");
+            return false;
+        }
+        inputConfig.reserve(fileSize);
+        inputConfigStream.seekg(0, std::ios::beg);
+
+        inputConfig.assign(std::istreambuf_iterator<wchar_t>(inputConfigStream), std::istreambuf_iterator<wchar_t>());
     }
-    inputConfig.reserve(fileSize);
-    inputConfigStream.seekg(0, std::ios::beg);
-
-    inputConfig.assign(std::istreambuf_iterator<wchar_t>(inputConfigStream), std::istreambuf_iterator<wchar_t>());
-
-
- 
+    inputConfig = replace_yaml_properties(inputConfig, values);
+    {
+        std::wofstream inputConfigStream(datadogyamlfile);
+        inputConfigStream << inputConfig;
+    }
     return true;
 }
 
