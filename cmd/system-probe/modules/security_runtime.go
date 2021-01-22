@@ -10,6 +10,7 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	"github.com/DataDog/datadog-agent/cmd/system-probe/api"
+	cfg "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/ebpf"
 	"github.com/DataDog/datadog-agent/pkg/process/config"
 	sconfig "github.com/DataDog/datadog-agent/pkg/security/config"
@@ -36,7 +37,7 @@ var SecurityRuntime = api.Factory{
 			profiler.WithService("system-probe"),
 			profiler.WithEnv("staging"),
 			profiler.WithTags("service:runtime-security-agent"),
-			profiler.WithAPIKey(agentConfig.ProfilingAPIKey),
+			profiler.WithAPIKey(cfg.Datadog.GetString("api_key")),
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to start the profiler")
