@@ -1,0 +1,116 @@
+---
+# Child pipeline to run Agent 6 docker release jobs
+
+include:
+  - /.gitlab/docker_common/tag_job_templates.yml
+
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - unknown_failure
+      - api_failure
+
+stages:
+  - release_tag
+  - release_latest
+
+.if_not_master_branch: &if_not_master_branch
+  if: $CI_COMMIT_BRANCH != "master"
+
+#
+# Image tagging & manifest publication
+#
+
+test-a6:
+  extends: 
+    - .docker_tag_job_definition
+  stage: release_tag
+  dependencies: []
+  variables:
+    REPOSITORY: $AGENT_DH_REPOSITORY
+    SIGNING_ARGS: --signed-push
+  before_script: []
+  script:
+    - echo "$DEPLOY_AGENT, $CI_COMMIT_BRANCH, $RELEASE_VERSION_6, $RELEASE_VERSION_7"
+
+.deploy_docker-a6:
+  stage: release_tag
+  dependencies: []
+  script:
+    - VERSION=$(inv -e agent.version --major-version 6 --url-safe)
+    - echo "Working on repsoitory ${REPOSITORY}"
+    # Platform-specific agent images
+    - inv -e docker.publish-bulk ${SIGNING_ARGS} --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_AGENT}:${SRC_TAG}-6-ARCH      --dst-template ${REPOSITORY}-ARCH:${VERSION}
+    - inv -e docker.publish-bulk ${SIGNING_ARGS} --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_AGENT}:${SRC_TAG}-6-jmx-ARCH  --dst-template ${REPOSITORY}-ARCH:${VERSION}-jmx
+
+    # Manifests
+    - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag ${VERSION} --image ${REPOSITORY}-amd64:${VERSION},linux/amd64 --image ${REPOSITORY}-arm64:${VERSION},linux/arm64
+    - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag ${VERSION}-jmx  --image ${REPOSITORY}-amd64:${VERSION}-jmx,linux/amd64 --image ${REPOSITORY}-arm64:${VERSION}-jmx,linux/arm64
+
+deploy_docker_hub-a6:
+  extends: 
+    - .docker_tag_job_definition
+    - .deploy_docker-a6
+  rules:
+    - when: manual
+      allow_failure: true
+  variables:
+    REPOSITORY: $AGENT_DH_REPOSITORY
+    SIGNING_ARGS: --signed-push
+
+deploy_google_container_registry-a6:
+  extends: 
+    - .google_container_registry_tag_job_definition
+    - .deploy_docker-a6
+  rules:
+    - when: manual
+      allow_failure: true  
+  variables:
+    REPOSITORY: $AGENT_GCR_REPOSITORY
+    SIGNING_ARGS: ""
+
+
+#
+# Latest publication
+#
+
+.deploy_latest-a6:
+  stage: release_latest
+  dependencies: []
+  script:
+    - VERSION=$(inv -e agent.version --major-version 6 --url-safe)
+    - echo "Working on repsoitory ${REPOSITORY}"
+    - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag latest-py2 --image ${REPOSITORY}-amd64:${VERSION},linux/amd64 --image ${REPOSITORY}-arm64:${VERSION},linux/arm64
+    - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag latest-py2-jmx --image ${REPOSITORY}-amd64:${VERSION}-jmx,linux/amd64 --image ${REPOSITORY}-arm64:${VERSION}-jmx,linux/arm64
+    - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag 6 --image ${REPOSITORY}-amd64:${VERSION},linux/amd64 --image ${REPOSITORY}-arm64:${VERSION},linux/arm64
+    - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag 6-jmx --image ${REPOSITORY}-amd64:${VERSION}-jmx,linux/amd64 --image ${REPOSITORY}-arm64:${VERSION}-jmx,linux/arm64
+
+deploy_latest_docker_hub-a6:
+  extends:
+    - .docker_tag_job_definition
+    - .deploy_latest-a6
+  rules:
+    - <<: *if_not_master_branch
+      when: never
+    - when: manual
+      allow_failure: true
+  variables:
+    REPOSITORY: $AGENT_DH_REPOSITORY
+    SIGNING_ARGS: --signed-push
+
+deploy_latest_google_container_registry-a6:
+  extends:
+    - .google_container_registry_tag_job_definition
+    - .deploy_latest-a6
+  rules:
+    - <<: *if_not_master_branch
+      when: never
+    - when: manual
+      allow_failure: true
+  variables:
+    REPOSITORY: $AGENT_GCR_REPOSITORY
+    SIGNING_ARGS: ""
+
