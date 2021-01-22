@@ -17,6 +17,7 @@ import (
 	coreconfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/pidfile"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
+	"github.com/DataDog/datadog-agent/pkg/tagger/remote"
 	"github.com/DataDog/datadog-agent/pkg/trace/config"
 	"github.com/DataDog/datadog-agent/pkg/trace/flags"
 	"github.com/DataDog/datadog-agent/pkg/trace/info"
@@ -124,6 +125,7 @@ func Run(ctx context.Context) {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
+	tagger.SetDefaultTagger(remote.NewTagger())
 	tagger.Init()
 	defer tagger.Stop()
 

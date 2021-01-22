@@ -19,6 +19,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/process/util/api"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
+	"github.com/DataDog/datadog-agent/pkg/tagger/remote"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
@@ -108,6 +109,7 @@ func runAgent(exit chan struct{}) {
 	log.Infof("running version: %s", versionString(", "))
 
 	// Tagger must be initialized after agent config has been setup
+	tagger.SetDefaultTagger(remote.NewTagger())
 	tagger.Init()
 	defer tagger.Stop() //nolint:errcheck
 
