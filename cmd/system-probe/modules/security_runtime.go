@@ -34,9 +34,8 @@ var SecurityRuntime = api.Factory{
 
 		// start profiler
 		err = profiler.Start(
-			profiler.WithService("system-probe"),
+			profiler.WithService("runtime-security-agent"),
 			profiler.WithEnv("staging"),
-			profiler.WithTags("service:runtime-security-agent"),
 			profiler.WithAPIKey(cfg.Datadog.GetString("api_key")),
 		)
 		if err != nil {
