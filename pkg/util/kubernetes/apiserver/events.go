@@ -106,6 +106,7 @@ func (c *APIClient) RunEventCollection(resVer string, lastListTime time.Time, ev
 				// should not be happening, it means the object is not correctly formatted in etcd.
 				return added, resVer, lastListTime, err
 			}
+			log.Infof("CHC resource version of EVENT is %s", evResVer)
 			added = append(added, ev)
 			i, err := strconv.Atoi(resVer)
 			if err != nil {
@@ -154,7 +155,9 @@ func (c *APIClient) listForEventResync(eventReadTimeout int64, eventCardinalityL
 	}
 	for id := range evList.Items {
 		// List call returns a different type than the Watch call.
+		log.Infof("CHC resource version of EVENT is %s", evList.Items[id].ResourceVersion)
 		added = append(added, &evList.Items[id])
 	}
+	log.Infof("CHC resource version of EVENTLIST is %s", evList.ResourceVersion)
 	return added, evList.ResourceVersion, time.Now(), nil
 }

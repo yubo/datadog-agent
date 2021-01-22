@@ -51,6 +51,9 @@ func newKubernetesEventBundler(event *v1.Event) *kubernetesEventBundle {
 func (b *kubernetesEventBundle) addEvent(event *v1.Event) error {
 	// As some fields are optional, we want to avoid evaluating empty values.
 	if event == nil || event.InvolvedObject.Kind == "" {
+		if event.InvolvedObject.Kind == "" {
+			log.Infof("CHC logging event.InvolvedObject %v", event.InvolvedObject)
+		}
 		return errors.New("could not retrieve some parent attributes of the event")
 	}
 	if event.Reason == "" || event.Message == "" || event.InvolvedObject.Name == "" {

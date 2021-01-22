@@ -200,12 +200,23 @@ func (k *KubeASCheck) Run() error {
 		return nil
 	}
 
+	// CHC the problem could be here, in event collection
 	// Get the events from the API server
 	events, err := k.eventCollectionCheck()
 	if err != nil {
 		return err
 	}
 
+	// CHC TODO check if any of the events are nil
+	nilCount := 0
+	for _, e := range events {
+		if e == nil {
+			nilCount++
+		}
+	}
+	log.Infof("CHC nilCount is %v of %v events", nilCount, len(events))
+
+	// CHC the problem could also be here, in event processing
 	// Process the events to have a Datadog format.
 	err = k.processEvents(sender, events)
 	if err != nil {
@@ -316,7 +327,7 @@ func (k *KubeASCheck) processEvents(sender aggregator.Sender, events []*v1.Event
 		}
 		err := bundle.addEvent(event)
 		if err != nil {
-			k.Warnf("Error while bundling events, %s.", err.Error()) //nolint:errcheck
+			k.Warnf("Error while bundling events, CHC bundle ID %s, %s.", id, err.Error()) //nolint:errcheck
 		}
 	}
 	hostname, _ := util.GetHostname()
