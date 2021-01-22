@@ -3,6 +3,7 @@ Dogstatsd tasks
 """
 from __future__ import absolute_import, print_function
 
+import datetime
 import os
 import shutil
 import sys
@@ -204,7 +205,10 @@ def omnibus_build(
     Build the Dogstatsd packages with Omnibus Installer.
     """
     if not skip_deps:
+        deps_start = datetime.datetime.now()
         deps(ctx)
+        deps_end = datetime.datetime.now()
+        deps_elapsed = deps_end - deps_start
 
     # omnibus config overrides
     overrides = []
@@ -223,7 +227,12 @@ def omnibus_build(
         cmd = "bundle install"
         if gem_path:
             cmd += " --path {}".format(gem_path)
+
+        bundle_start = datetime.datetime.now()
         ctx.run(cmd, env=env)
+        bundle_end = datetime.datetime.now()
+        bundle_elapsed = bundle_end - bundle_start
+
         omnibus = "bundle exec omnibus.bat" if sys.platform == 'win32' else "bundle exec omnibus"
         cmd = "{omnibus} build dogstatsd --log-level={log_level} {populate_s3_cache} {overrides}"
         args = {"omnibus": omnibus, "log_level": log_level, "overrides": overrides_cmd, "populate_s3_cache": ""}
@@ -233,7 +242,19 @@ def omnibus_build(
             ctx, include_git=True, url_safe=True, git_sha_length=7, major_version=major_version
         )
         env['MAJOR_VERSION'] = major_version
+
+        omnibus_start = datetime.datetime.now()
         ctx.run(cmd.format(**args), env=env)
+        omnibus_end = datetime.datetime.now()
+        omnibus_elapsed = omnibus_end - omnibus_start
+
+        cmd = "{omnibus} graph dogstatsd --log-level={log_level} {populate_s3_cache} {overrides}"
+
+        print("Build compoonent timing:")
+        if not skip_deps:
+            print("Deps:    {}".format(deps_elapsed))
+        print("Bundle:  {}".format(bundle_elapsed))
+        print("Omnibus: {}".format(omnibus_elapsed))
 
 
 @task
