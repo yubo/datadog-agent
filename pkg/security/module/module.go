@@ -22,6 +22,7 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	"github.com/DataDog/datadog-agent/cmd/system-probe/api"
 	sapi "github.com/DataDog/datadog-agent/pkg/security/api"
@@ -52,6 +53,16 @@ type Module struct {
 
 // Register the runtime security agent module
 func (m *Module) Register(httpMux *http.ServeMux) error {
+	// start profiler
+	err := profiler.Start(
+		profiler.WithService("system-probe"),
+		profiler.WithEnv("staging"),
+		profiler.WithTags("service:runtime-security-agent"),
+	)
+	if err != nil {
+		return err
+	}
+
 	// force socket cleanup of previous socket not cleanup
 	os.Remove(m.config.SocketPath)
 
@@ -177,6 +188,7 @@ func (m *Module) Close() {
 	}
 
 	m.probe.Close()
+	profiler.Stop()
 }
 
 // EventDiscarderFound is called by the ruleset when a new discarder discovered
