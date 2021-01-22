@@ -7,6 +7,7 @@ package modules
 
 import (
 	"github.com/pkg/errors"
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	"github.com/DataDog/datadog-agent/cmd/system-probe/api"
 	"github.com/DataDog/datadog-agent/pkg/ebpf"
@@ -28,6 +29,17 @@ var SecurityRuntime = api.Factory{
 		if !config.Enabled {
 			log.Infof("security runtime module disabled")
 			return nil, api.ErrNotEnabled
+		}
+
+		// start profiler
+		err = profiler.Start(
+			profiler.WithService("system-probe"),
+			profiler.WithEnv("staging"),
+			profiler.WithTags("service:runtime-security-agent"),
+			profiler.WithAPIKey(agentConfig.ProfilingAPIKey),
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to start the profiler")
 		}
 
 		module, err := secmodule.NewModule(config)

@@ -53,16 +53,6 @@ type Module struct {
 
 // Register the runtime security agent module
 func (m *Module) Register(httpMux *http.ServeMux) error {
-	// start profiler
-	err := profiler.Start(
-		profiler.WithService("system-probe"),
-		profiler.WithEnv("staging"),
-		profiler.WithTags("service:runtime-security-agent"),
-	)
-	if err != nil {
-		return err
-	}
-
 	// force socket cleanup of previous socket not cleanup
 	os.Remove(m.config.SocketPath)
 
