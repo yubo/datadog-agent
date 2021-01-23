@@ -25,6 +25,17 @@ bool CustomActionData::init(MSIHANDLE hi)
     return init(data);
 }
 
+std::wstring trim(const std::wstring &str, const std::wstring &whitespace = L" \t\r\n")
+{
+    const auto strBegin = str.find_first_not_of(whitespace);
+    if (strBegin == std::string::npos)
+        return L""; // no content
+
+    const auto strEnd = str.find_last_not_of(whitespace);
+    const auto strRange = strEnd - strBegin + 1;
+
+    return str.substr(strBegin, strRange);
+}
 bool CustomActionData::init(const std::wstring &data)
 {
     DWORD errCode = machine.Detect();
@@ -51,6 +62,8 @@ bool CustomActionData::init(const std::wstring &data)
 
         if (val.length() > 0)
         {
+            key = trim(key);
+            val = trim(val);
             this->values[key] = val;
         }
     }
