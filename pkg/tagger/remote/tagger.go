@@ -72,6 +72,7 @@ func (t *Tagger) Init() error {
 		InsecureSkipVerify: true,
 	})
 
+	var err error
 	t.conn, err = grpc.DialContext(
 		t.ctx,
 		fmt.Sprintf(":%v", config.Datadog.GetInt("cmd_port")),
