@@ -2,7 +2,7 @@
     "nightly": {
         "INTEGRATIONS_CORE_VERSION": "master",
         "OMNIBUS_SOFTWARE_VERSION": "master",
-        "OMNIBUS_RUBY_VERSION": "datadog-5.5.0",
+        "OMNIBUS_RUBY_VERSION": "kserrania/show-deps",
         "JMXFETCH_VERSION": "0.42.0",
         "JMXFETCH_HASH": "3102eb76aa973e4ac08f9727130979d95eda734876424ca4d92b1c4c43081a1f",
         "MACOS_BUILD_VERSION": "master",
@@ -13,7 +13,7 @@
     "nightly-a7": {
         "INTEGRATIONS_CORE_VERSION": "master",
         "OMNIBUS_SOFTWARE_VERSION": "master",
-        "OMNIBUS_RUBY_VERSION": "datadog-5.5.0",
+        "OMNIBUS_RUBY_VERSION": "kserrania/show-deps",
         "JMXFETCH_VERSION": "0.42.0",
         "JMXFETCH_HASH": "3102eb76aa973e4ac08f9727130979d95eda734876424ca4d92b1c4c43081a1f",
         "MACOS_BUILD_VERSION": "master",
