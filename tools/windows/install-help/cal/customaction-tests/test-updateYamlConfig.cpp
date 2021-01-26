@@ -29,6 +29,20 @@ class UpdateYamlConfigTests : public testing::Test
     };
  */
 
+typedef std::map<std::wstring, std::wstring> value_map;
+property_retriever propertyRetriever(value_map const &values)
+{
+    return [values](std::wstring const &propertyName) -> std::optional<std::wstring>
+    {
+        auto it = values.find(propertyName);
+        if (it != values.end())
+        {
+            return it->second;
+        }
+        return std::nullopt;
+    };
+}
+
 TEST_F(UpdateYamlConfigTests, When_APIKEY_Present_Replace_It)
 {
     value_map values = {{L"APIKEY", L"1234567890"}};
@@ -38,7 +52,8 @@ LR"(
 ## The Datadog API key to associate your Agent's data with your organization.
 ## Create a new API key here: https://app.datadoghq.com/account/settings
 #
-api_key:)", values);
+api_key:)",
+                                                  propertyRetriever(values));
 
     EXPECT_EQ(result,
 LR"(
@@ -69,7 +84,7 @@ TEST_F(UpdateYamlConfigTests, When_Optional_Proxy_Values_Present_Dont_Do_Anythin
 #   no_proxy:
 #     - <HOSTNAME-1>
 #     - <HOSTNAME-2>)",
-                                                  values);
+                                                  propertyRetriever(values));
 
     EXPECT_EQ(result, LR"(
 ## @param proxy - custom object - optional
@@ -104,7 +119,7 @@ TEST_F(UpdateYamlConfigTests, When_PROXY_HOST_Present_Replace_It)
 #   no_proxy:
 #     - <HOSTNAME-1>
 #     - <HOSTNAME-2>)",
-                                                  values);
+                                                  propertyRetriever(values));
 
     EXPECT_EQ(result, LR"(
 ## @param proxy - custom object - optional

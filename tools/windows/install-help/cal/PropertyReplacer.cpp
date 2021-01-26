@@ -10,9 +10,25 @@ namespace
         return it != m.end();
     }
 
-    std::wstring format_tags(std::map<std::wstring, std::wstring> &values)
+    typedef std::function<std::wstring(std::wstring const &, const property_retriever &)> formatter_func;
+
+    /// <summary>
+    /// Simply concatenates <paramref name="str"/> with the value of the matching property.
+    /// </summary>
+    /// <param name="str">The string to use as a replacement.</param>
+    /// <returns>A function that conforms to <see cref="formatter_func"> that when called with a property value,
+    /// will return a concatenated string of <paramref name="str"/> and the property value. </returns>
+    formatter_func format_simple_value(const std::wstring &str)
     {
-        std::wistringstream valueStream(values[L"TAGS"]);
+        return [str](std::wstring const &propertyValue, const property_retriever &)
+        {
+            return str + propertyValue;
+        };
+    }
+
+    std::wstring format_tags(const std::wstring &tags, const property_retriever &)
+    {
+        std::wistringstream valueStream(tags);
         std::wstringstream result;
         std::wstring token;
         result << L"tags: ";
@@ -23,26 +39,25 @@ namespace
         return result.str();
     };
 
-    std::wstring format_proxy(std::map<std::wstring, std::wstring> &values)
+    std::wstring format_proxy(const std::wstring &proxyHost, const property_retriever &propertyRetriever)
     {
-        const auto &proxyHost = values.find(L"PROXY_HOST");
-        const auto &proxyPort = values.find(L"PROXY_PORT");
-        const auto &proxyUser = values.find(L"PROXY_USER");
-        const auto &proxyPassword = values.find(L"PROXY_PASSWORD");
+        const auto &proxyPort = propertyRetriever(L"PROXY_PORT");
+        const auto &proxyUser = propertyRetriever(L"PROXY_USER");
+        const auto &proxyPassword = propertyRetriever(L"PROXY_PASSWORD");
         std::wstringstream proxy;
-        if (proxyUser != values.end())
+        if (proxyUser)
         {
-            proxy << proxyUser->second;
-            if (proxyPassword != values.end())
+            proxy << *proxyUser;
+            if (proxyPassword)
             {
-                proxy << L":" << proxyPassword->second;
+                proxy << L":" << *proxyPassword;
             }
             proxy << L"@";
         }
-        proxy << proxyHost->second;
-        if (proxyPort != values.end())
+        proxy << proxyHost;
+        if (proxyPort)
         {
-            proxy << L":" << proxyPort->second;
+            proxy << L":" << *proxyPort;
         }
         std::wstringstream newValue;
         newValue << L"proxy:" << std::endl
@@ -56,7 +71,7 @@ namespace
 PropertyReplacer::PropertyReplacer(std::wstring &input, std::wstring const &match)
     : _input(input)
 {
-    _matches.push_back(std::wregex(match));
+    _matches.emplace_back(match);
 }
 
 bool PropertyReplacer::replace_with(std::wstring const &replacement)
@@ -86,7 +101,7 @@ bool PropertyReplacer::replace_with(std::wstring const &replacement)
 
 PropertyReplacer &PropertyReplacer::then(std::wstring const &match)
 {
-    _matches.push_back(std::wregex(match));
+    _matches.emplace_back(match);
     return *this;
 }
 
@@ -95,7 +110,7 @@ PropertyReplacer PropertyReplacer::match(std::wstring &input, std::wstring const
     return PropertyReplacer(input, match);
 }
 
-std::wstring replace_yaml_properties(std::wstring input, value_map &values)
+std::wstring replace_yaml_properties(std::wstring input, const property_retriever &propertyRetriever)
 {
     enum PropId
     {
@@ -103,40 +118,42 @@ std::wstring replace_yaml_properties(std::wstring input, value_map &values)
         Regex,
         Replacement
     };
-    typedef std::function<std::wstring(value_map &)> formatter_func;
     typedef std::vector<std::tuple<std::wstring, std::wstring, formatter_func>> prop_list;
     for (auto prop : prop_list{
-        {L"APIKEY",       L"^[ #]*api_key:.*",        [](auto &v) { return L"api_key: " + v[L"APIKEY"]; }},
-        {L"SITE",         L"^[ #]*site:.*",           [](auto &v) { return L"site: " + v[L"SITE"]; }},
-        {L"HOSTNAME",     L"^[ #]*hostname:.*",       [](auto &v) { return L"hostname: " + v[L"HOSTNAME"]; }},
-        {L"LOGS_ENABLED", L"^[ #]*logs_enabled:.*",   [](auto &v) { return L"logs_enabled: " + v[L"LOGS_ENABLED"]; }},
-        {L"CMD_PORT",     L"^[ #]*cmd_port:.*",       [](auto &v) { return L"cmd_port: " + v[L"CMD_PORT"]; }},
-        {L"DD_URL",       L"^[ #]*dd_url:.*",         [](auto &v) { return L"dd_url: " + v[L"DD_URL"]; }},
-        {L"PYVER",        L"^[ #]*python_version:.*", [](auto &v) { return L"python_version:" + v[L"PYVER"]; }},
+        {L"APIKEY",       L"^[ #]*api_key:.*",        format_simple_value(L"api_key: ") },
+        {L"SITE",         L"^[ #]*site:.*",           format_simple_value(L"site: ") },
+        {L"HOSTNAME",     L"^[ #]*hostname:.*",       format_simple_value(L"hostname: ") },
+        {L"LOGS_ENABLED", L"^[ #]*logs_enabled:.*",   format_simple_value(L"logs_enabled: ") },
+        {L"CMD_PORT",     L"^[ #]*cmd_port:.*",       format_simple_value(L"cmd_port: ") },
+        {L"DD_URL",       L"^[ #]*dd_url:.*",         format_simple_value(L"dd_url: ") },
+        {L"PYVER",        L"^[ #]*python_version:.*", format_simple_value(L"python_version: ") },
         // This replacer will uncomment the logs_config section if LOGS_DD_URL is specified, regardless of its value
-        {L"LOGS_DD_URL",  L"^[ #]*logs_config:.*",    [](auto &v) { return L"logs_config:"; }},
+        {L"LOGS_DD_URL",  L"^[ #]*logs_config:.*",    [](auto const &v, auto const &) { return L"logs_config:"; }},
         // logs_dd_url and apm_dd_url are indented so override default formatter to specify correct indentation
-        {L"LOGS_DD_URL",  L"^[ #]*logs_dd_url:.*",    [](auto &v) { return L"  logs_dd_url:" + v[L"LOGS_DD_URL"]; }},
-        {L"TRACE_DD_URL", L"^[ #]*apm_dd_url:.*",     [](auto &v) { return L"  apm_dd_url:" + v[L"TRACE_DD_URL"]; }},
+        {L"LOGS_DD_URL",  L"^[ #]*logs_dd_url:.*",    format_simple_value(L"  logs_dd_url:") },
+        {L"TRACE_DD_URL", L"^[ #]*apm_dd_url:.*",     format_simple_value(L"  apm_dd_url:") },
         {L"TAGS",         L"^[ #]*tags:(?:(?:.|\n)*?)^[ #]*- <TAG_KEY>:<TAG_VALUE>", format_tags},
-        {L"PROXY_HOST",   L"^[ #]*proxy:.*", format_proxy},
-        {L"HOSTNAME_FQDN_ENABLED", L"^[ #]*hostname_fqdn:.*", [](auto &v) { return L"hostname_fqdn:" + v[L"hostname_fqdn"]; }},
+        {L"PROXY_HOST",   L"^[ #]*proxy:.*",          format_proxy},
+        {L"HOSTNAME_FQDN_ENABLED", L"^[ #]*hostname_fqdn:.*", format_simple_value(L"hostname_fqdn:") },
     })
     {
-        if (has_key(values, std::get<WxsKey>(prop)))
+        auto propValue = propertyRetriever(std::get<WxsKey>(prop));
+        if (propValue)
         {
-            PropertyReplacer::match(input, std::get<Regex>(prop)).replace_with(std::get<Replacement>(prop)(values));
+            WcaLog(LOGMSG_STANDARD, "Found %S=%S in MSI install database\n", std::get<WxsKey>(prop).c_str(), *propValue->c_str());
+            PropertyReplacer::match(input, std::get<Regex>(prop)).replace_with(std::get<Replacement>(prop)(*propValue, propertyRetriever));
         }
     }
 
     // Special cases
-    if (has_key(values, L"PROCESS_ENABLED"))
+    auto processEnabled = propertyRetriever(L"PROCESS_ENABLED");
+    if (processEnabled)
     {
-
-        if (has_key(values, L"PROCESS_DD_URL"))
+        auto processDdUrl = propertyRetriever(L"PROCESS_DD_URL");
+        if (processDdUrl)
         {
             PropertyReplacer::match(input, L"^[ #]*process_config:")
-                .replace_with(L"process_config:\n  process_dd_url: " + values[L"PROCESS_DD_URL"]);
+                .replace_with(L"process_config:\n  process_dd_url: " + *processDdUrl);
         }
         else
         {
@@ -146,15 +163,16 @@ std::wstring replace_yaml_properties(std::wstring input, value_map &values)
         PropertyReplacer::match(input, L"process_config:")
             .then(L"^[ #]*enabled:.*")
             // Note that this is a string, and should be between ""
-            .replace_with(L"  enabled: \"" + values[L"PROCESS_ENABLED"] + L"\"");
+            .replace_with(L"  enabled: \"" + *processEnabled + L"\"");
     }
 
-    if (has_key(values, L"APM_ENABLED"))
+    auto apmEnabled = propertyRetriever(L"APM_ENABLED");
+    if (apmEnabled)
     {
         PropertyReplacer::match(input, L"^[ #]*apm_config:").replace_with(L"apm_config:");
         PropertyReplacer::match(input, L"apm_config:")
             .then(L"^[ #]*enabled:.*")
-            .replace_with(L"  enabled: " + values[L"APM_ENABLED"]);
+            .replace_with(L"  enabled: " + *apmEnabled);
     }
 
     return input;
