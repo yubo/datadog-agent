@@ -29,7 +29,7 @@ func (c *APIClient) RunEventCollection(resVer string, lastListTime time.Time, ev
 	diffTime := time.Now().Sub(lastListTime)
 	if resVer == "" || diffTime > syncTimeout {
 		log.Debugf("Return listForEventResync diffTime: %d/%d", diffTime, syncTimeout)
-		listed, lastResVer, lastTime, err := c.listForEventResync(eventReadTimeout, eventCardinalityLimit, filter)
+		listed, lastResVer, lastTime, err := c.listForEventResync(eventReadTimeout, eventCardinalityLimit, filter, resVer)
 		if err != nil {
 			return nil, "", time.Now(), err
 		}
@@ -70,7 +70,7 @@ func (c *APIClient) RunEventCollection(resVer string, lastListTime time.Time, ev
 				// Using a switch as there are a lot of different types and we might want to explore adapting the behaviour for certain ones in the future.
 				case "Expired":
 					log.Debugf("Resource Version is too old, listing all events and collecting only the new ones")
-					evList, resVer, lastListTime, err := c.listForEventResync(eventReadTimeout, eventCardinalityLimit, filter)
+					evList, resVer, lastListTime, err := c.listForEventResync(eventReadTimeout, eventCardinalityLimit, filter, resVer)
 					if err != nil {
 						return added, resVer, lastListTime, err
 					}
@@ -106,7 +106,7 @@ func (c *APIClient) RunEventCollection(resVer string, lastListTime time.Time, ev
 				// should not be happening, it means the object is not correctly formatted in etcd.
 				return added, resVer, lastListTime, err
 			}
-			log.Infof("CHC resource version of EVENT is %s", evResVer)
+			log.Infof("CHC resource version of EVENT is %v", evResVer)
 			added = append(added, ev)
 			i, err := strconv.Atoi(resVer)
 			if err != nil {
@@ -143,11 +143,13 @@ func diffEvents(latestStoredRV int, fullList []*v1.Event) []*v1.Event {
 	return diffEvents
 }
 
-func (c *APIClient) listForEventResync(eventReadTimeout int64, eventCardinalityLimit int64, filter string) (added []*v1.Event, resVer string, lastListTime time.Time, err error) {
+func (c *APIClient) listForEventResync(eventReadTimeout int64, eventCardinalityLimit int64, filter, rv string) (added []*v1.Event, resVer string, lastListTime time.Time, err error) {
 	evList, err := c.Cl.CoreV1().Events(metav1.NamespaceAll).List(metav1.ListOptions{
 		TimeoutSeconds: &eventReadTimeout,
-		Limit:          eventCardinalityLimit,
-		FieldSelector:  filter,
+		// CHC remove limit and add ResourceVersion instead
+		// Limit:          eventCardinalityLimit,
+		ResourceVersion: rv,
+		FieldSelector:   filter,
 	})
 	if err != nil {
 		log.Errorf("Error Listing events: %s", err.Error())
