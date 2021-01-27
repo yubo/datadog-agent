@@ -95,7 +95,10 @@ func (p *ProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Mess
 		return nil, nil
 	}
 
-	procsByCtr := fmtProcesses(cfg, procs, p.lastProcs, ctrByProc, cpuTimes[0], p.lastCPUTime, p.lastRun)
+	// get tcp/udp connection count per process
+	tcpConns, udpConns := Connections.GetProcessConnectionCount()
+
+	procsByCtr := fmtProcesses(cfg, procs, p.lastProcs, ctrByProc, cpuTimes[0], p.lastCPUTime, p.lastRun, tcpConns, udpConns)
 	ctrs := fmtContainers(ctrList, p.lastCtrRates, p.lastRun)
 
 	messages, totalProcs, totalContainers := createProcCtrMessages(procsByCtr, ctrs, cfg, p.sysInfo, groupID, p.networkID)
@@ -209,6 +212,7 @@ func fmtProcesses(
 	ctrByProc map[int32]string,
 	syst2, syst1 cpu.TimesStat,
 	lastRun time.Time,
+	tcpConns, udpConns map[int32]uint64,
 ) map[string][]*model.Process {
 	procsByCtr := make(map[string][]*model.Process)
 
@@ -234,6 +238,8 @@ func fmtProcesses(
 			VoluntaryCtxSwitches:   uint64(fp.CtxSwitches.Voluntary),
 			InvoluntaryCtxSwitches: uint64(fp.CtxSwitches.Involuntary),
 			ContainerId:            ctrByProc[fp.Pid],
+			TcpConnections:         tcpConns[fp.Pid],
+			UdpConnections:         udpConns[fp.Pid],
 		}
 		_, ok := procsByCtr[proc.ContainerId]
 		if !ok {
@@ -259,7 +265,7 @@ func formatCommand(fp *process.FilledProcess) *model.Command {
 }
 
 func formatIO(fp *process.FilledProcess, lastIO *process.IOCountersStat, before time.Time) *model.IOStat {
-	// This will be nill for Mac
+	// This will be nil for Mac
 	if fp.IOStat == nil {
 		return &model.IOStat{}
 	}

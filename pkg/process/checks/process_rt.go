@@ -65,8 +65,10 @@ func (r *RTProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Me
 		return nil, nil
 	}
 
-	chunkedStats := fmtProcessStats(cfg, procs, r.lastProcs,
-		ctrList, cpuTimes[0], r.lastCPUTime, r.lastRun)
+	// get tcp/udp connection count per process
+	tcpConns, udpConns := Connections.GetProcessConnectionCount()
+
+	chunkedStats := fmtProcessStats(cfg, procs, r.lastProcs, ctrList, cpuTimes[0], r.lastCPUTime, r.lastRun, tcpConns, udpConns)
 	groupSize := len(chunkedStats)
 	chunkedCtrStats := fmtContainerStats(ctrList, r.lastCtrRates, r.lastRun, groupSize)
 	messages := make([]model.MessageBody, 0, groupSize)
@@ -100,6 +102,7 @@ func fmtProcessStats(
 	ctrList []*containers.Container,
 	syst2, syst1 cpu.TimesStat,
 	lastRun time.Time,
+	tcpConns, udpConns map[int32]uint64,
 ) [][]*model.ProcessStat {
 	cidByPid := make(map[int32]string, len(ctrList))
 	for _, c := range ctrList {
@@ -128,6 +131,8 @@ func fmtProcessStats(
 			VoluntaryCtxSwitches:   uint64(fp.CtxSwitches.Voluntary),
 			InvoluntaryCtxSwitches: uint64(fp.CtxSwitches.Involuntary),
 			ContainerId:            cidByPid[fp.Pid],
+			TcpConnections:         tcpConns[fp.Pid],
+			UdpConnections:         udpConns[fp.Pid],
 		})
 		if len(chunk) == cfg.MaxPerMessage {
 			chunked = append(chunked, chunk)

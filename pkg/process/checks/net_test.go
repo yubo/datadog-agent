@@ -9,18 +9,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeConnection(pid int32) *model.Connection {
+func makeConnection(pid int32, connType model.ConnectionType) *model.Connection {
 	return &model.Connection{
 		Pid:   pid,
 		Laddr: &model.Addr{},
 		Raddr: &model.Addr{},
+		Type:  connType,
 	}
 }
 
 func makeConnections(n int) []*model.Connection {
 	conns := make([]*model.Connection, 0)
 	for i := 1; i <= n; i++ {
-		c := makeConnection(int32(i))
+		connType := model.ConnectionType_tcp
+		if i%2 == 0 {
+			connType = model.ConnectionType_udp
+		}
+		c := makeConnection(int32(i), connType)
 		c.Laddr = &model.Addr{ContainerId: fmt.Sprintf("%d", c.Pid)}
 
 		conns = append(conns, c)
@@ -215,4 +220,25 @@ func TestNetworkConnectionBatchingWithDomains(t *testing.T) {
 		}
 	}
 	assert.Equal(t, 4, total)
+}
+
+func TestUpdateProcessConnectionCount(t *testing.T) {
+	conns := makeConnections(10)
+	Connections.updateProcessConnectionCount(&model.Connections{Conns: conns})
+
+	tcpConns, udpConns := Connections.GetProcessConnectionCount()
+	tcpCount, udpCount := 0, 0
+	for _, conn := range conns {
+		switch conn.Type {
+		case model.ConnectionType_tcp:
+			assert.Contains(t, tcpConns, conn.Pid)
+			assert.Equal(t, uint64(1), tcpConns[conn.Pid])
+			tcpCount++
+		case model.ConnectionType_udp:
+			assert.Contains(t, udpConns, conn.Pid)
+			assert.Equal(t, uint64(1), udpConns[conn.Pid])
+			udpCount++
+		}
+	}
+	assert.Len(t, conns, tcpCount+udpCount)
 }

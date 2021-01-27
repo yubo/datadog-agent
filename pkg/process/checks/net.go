@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	model "github.com/DataDog/agent-payload/process"
@@ -36,6 +37,10 @@ type ConnectionsCheck struct {
 	networkID              string
 	notInitializedLogLimit *procutil.LogLimit
 	lastTelemetry          *model.CollectorConnectionsTelemetry
+	// procTCPConns/procUDPConns records how many tcp/udp connections are there per process,
+	// they are updated every time the check runs and store data in the format of map[int32]uint64
+	procTCPConns atomic.Value
+	procUDPConns atomic.Value
 }
 
 // Init initializes a ConnectionsCheck instance.
@@ -82,6 +87,9 @@ func (c *ConnectionsCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.
 		return nil, err
 	}
 
+	// update connection count by process
+	c.updateProcessConnectionCount(conns)
+
 	// Filter out (in-place) connection data associated with docker-proxy
 	dockerproxy.NewFilter().Filter(conns)
 	// Resolve the Raddr side of connections for local containers
@@ -91,6 +99,21 @@ func (c *ConnectionsCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.
 
 	log.Debugf("collected connections in %s", time.Since(start))
 	return batchConnections(cfg, groupID, c.enrichConnections(conns.Conns), conns.Dns, c.networkID, tel, conns.Domains), nil
+}
+
+// GetProcessConnectionCount returns the stored value for tcp/udp connection count per process
+func (c *ConnectionsCheck) GetProcessConnectionCount() (tcpConns, udpConns map[int32]uint64) {
+	if tcp := c.procTCPConns.Load(); tcp != nil {
+		tcpConns = tcp.(map[int32]uint64)
+	} else {
+		tcpConns = map[int32]uint64{}
+	}
+	if udp := c.procUDPConns.Load(); udp != nil {
+		udpConns = udp.(map[int32]uint64)
+	} else {
+		udpConns = map[int32]uint64{}
+	}
+	return
 }
 
 func (c *ConnectionsCheck) getConnections() (*model.Connections, error) {
@@ -157,6 +180,24 @@ func (c *ConnectionsCheck) saveTelemetry(tel *model.ConnectionsTelemetry) {
 	c.lastTelemetry.ConnsClosed = tel.MonotonicConnsClosed
 	c.lastTelemetry.UdpSendsProcessed = tel.MonotonicUdpSendsProcessed
 	c.lastTelemetry.UdpSendsMissed = tel.MonotonicUdpSendsMissed
+}
+
+// updateProcessConnectionCount takes a list of connections that the network check collects,
+// and count the number of tcp/udp connections per process and store the result.
+func (c *ConnectionsCheck) updateProcessConnectionCount(conns *model.Connections) {
+	tcpConns := make(map[int32]uint64)
+	udpConns := make(map[int32]uint64)
+
+	for _, conn := range conns.Conns {
+		switch conn.Type {
+		case model.ConnectionType_tcp:
+			tcpConns[conn.Pid]++
+		case model.ConnectionType_udp:
+			udpConns[conn.Pid]++
+		}
+	}
+	c.procTCPConns.Store(tcpConns)
+	c.procUDPConns.Store(udpConns)
 }
 
 // Connections are split up into a chunks of a configured size conns per message to limit the message size on intake.

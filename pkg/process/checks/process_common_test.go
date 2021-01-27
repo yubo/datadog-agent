@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"fmt"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -140,6 +141,8 @@ func TestProcessChunking(t *testing.T) {
 		blacklist      []string
 		expectedTotal  int
 		expectedChunks int
+		tcpConns       map[int32]uint64
+		udpConns       map[int32]uint64
 	}{
 		{
 			cur:            []*process.FilledProcess{p[0], p[1], p[2]},
@@ -148,6 +151,8 @@ func TestProcessChunking(t *testing.T) {
 			blacklist:      []string{},
 			expectedTotal:  3,
 			expectedChunks: 3,
+			tcpConns:       map[int32]uint64{1: 5, 2: 6},
+			udpConns:       map[int32]uint64{3: 2},
 		},
 		{
 			cur:            []*process.FilledProcess{p[0], p[1], p[2]},
@@ -156,6 +161,8 @@ func TestProcessChunking(t *testing.T) {
 			blacklist:      []string{},
 			expectedTotal:  2,
 			expectedChunks: 2,
+			tcpConns:       map[int32]uint64{1: 3, 2: 7},
+			udpConns:       map[int32]uint64{3: 2},
 		},
 		{
 			cur:            []*process.FilledProcess{p[0], p[1], p[2], p[3]},
@@ -164,6 +171,8 @@ func TestProcessChunking(t *testing.T) {
 			blacklist:      []string{"git", "datadog"},
 			expectedTotal:  2,
 			expectedChunks: 1,
+			tcpConns:       map[int32]uint64{1: 5, 2: 6},
+			udpConns:       map[int32]uint64{3: 2, 4: 1},
 		},
 		{
 			cur:            []*process.FilledProcess{p[0], p[1], p[2], p[3]},
@@ -172,6 +181,8 @@ func TestProcessChunking(t *testing.T) {
 			blacklist:      []string{"git", "datadog", "foo", "mine"},
 			expectedTotal:  0,
 			expectedChunks: 0,
+			tcpConns:       map[int32]uint64{2: 5, 3: 6, 4: 10},
+			udpConns:       map[int32]uint64{1: 2},
 		},
 	} {
 		bl := make([]*regexp.Regexp, 0, len(tc.blacklist))
@@ -189,21 +200,39 @@ func TestProcessChunking(t *testing.T) {
 		for _, c := range tc.last {
 			last[c.Pid] = c
 		}
-		procs := fmtProcesses(cfg, cur, last, containersByPid(containers), syst2, syst1, lastRun)
+		procs := fmtProcesses(cfg, cur, last, containersByPid(containers), syst2, syst1, lastRun, tc.tcpConns, tc.udpConns)
 		// only deal with non-container processes
 		chunked := chunkProcesses(procs[emptyCtrID], cfg.MaxPerMessage)
 		assert.Len(t, chunked, tc.expectedChunks, "len %d", i)
 		total := 0
 		for _, c := range chunked {
 			total += len(c)
+			for _, p := range c {
+				if count, ok := tc.tcpConns[p.Pid]; ok {
+					assert.Equal(t, count, p.TcpConnections)
+				} else if count, ok := tc.udpConns[p.Pid]; ok {
+					assert.Equal(t, count, p.UdpConnections)
+				} else {
+					assert.Fail(t, fmt.Sprintf("PID %d is not containing any connections", p.Pid))
+				}
+			}
 		}
 		assert.Equal(t, tc.expectedTotal, total, "total test %d", i)
 
-		chunkedStat := fmtProcessStats(cfg, cur, last, containers, syst2, syst1, lastRun)
+		chunkedStat := fmtProcessStats(cfg, cur, last, containers, syst2, syst1, lastRun, tc.tcpConns, tc.udpConns)
 		assert.Len(t, chunkedStat, tc.expectedChunks, "len stat %d", i)
 		total = 0
 		for _, c := range chunkedStat {
 			total += len(c)
+			for _, p := range c {
+				if count, ok := tc.tcpConns[p.Pid]; ok {
+					assert.Equal(t, count, p.TcpConnections)
+				} else if count, ok := tc.udpConns[p.Pid]; ok {
+					assert.Equal(t, count, p.UdpConnections)
+				} else {
+					assert.Fail(t, fmt.Sprintf("PID %d is not containing any connections", p.Pid))
+				}
+			}
 		}
 		assert.Equal(t, tc.expectedTotal, total, "total stat test %d", i)
 	}

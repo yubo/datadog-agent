@@ -86,10 +86,11 @@ func TestRandomizeMessages(t *testing.T) {
 			cfg := config.NewDefaultAgentConfig(false)
 			sysInfo := &model.SystemInfo{}
 			lastCtrRates := util.ExtractContainerRateMetric(ctrs)
+			tcpConns, udpConns := map[int32]uint64{}, map[int32]uint64{}
 
 			cfg.MaxPerMessage = tc.maxSize
 			cfg.ContainerHostType = tc.containerHostType
-			processes := fmtProcesses(cfg, procsByPid, procsByPid, containersByPid(ctrs), syst2, syst1, lastRun)
+			processes := fmtProcesses(cfg, procsByPid, procsByPid, containersByPid(ctrs), syst2, syst1, lastRun, tcpConns, udpConns)
 			containers := fmtContainers(ctrs, lastCtrRates, lastRun)
 			messages, totalProcs, totalContainers := createProcCtrMessages(processes, containers, cfg, sysInfo, int32(i), "nid")
 
@@ -206,8 +207,9 @@ func TestBasicProcessMessages(t *testing.T) {
 			}
 			cfg.Blacklist = bl
 			cfg.MaxPerMessage = tc.maxSize
+			tcpConns, udpConns := map[int32]uint64{}, map[int32]uint64{}
 
-			procs := fmtProcesses(cfg, tc.cur, tc.last, containersByPid(tc.containers), syst2, syst1, lastRun)
+			procs := fmtProcesses(cfg, tc.cur, tc.last, containersByPid(tc.containers), syst2, syst1, lastRun, tcpConns, udpConns)
 			containers := fmtContainers(tc.containers, lastCtrRates, lastRun)
 			messages, totalProcs, totalContainers := createProcCtrMessages(procs, containers, cfg, sysInfo, int32(i), "nid")
 
