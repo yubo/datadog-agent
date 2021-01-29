@@ -9,6 +9,9 @@ import (
 type MyStringArray struct {
 	SomeIds StringArray `yaml:"my_field"`
 }
+type MyNumber struct {
+	SomeNum Number `yaml:"my_field"`
+}
 
 func TestStringArray_UnmarshalYAML_array(t *testing.T) {
 	myStruct := MyStringArray{}
@@ -56,4 +59,41 @@ metric_tags:
 `), &myStruct)
 
 	assert.Equal(t, expected, myStruct)
+}
+
+func Test_Number_UnmarshalYAML(t *testing.T) {
+	tests := []struct {
+		name   string
+		data   []byte
+		result MyNumber
+	}{
+		{
+			name: "integer number",
+			data: []byte(`
+my_field: 99
+`),
+			result: MyNumber{SomeNum: 99},
+		},
+		{
+			name: "string number",
+			data: []byte(`
+my_field: "88"
+`),
+			result: MyNumber{SomeNum: 88},
+		},
+		{
+			name: "empty string",
+			data: []byte(`
+my_field: ""
+`),
+			result: MyNumber{SomeNum: 0},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			myStruct := MyNumber{}
+			yaml.Unmarshal(tt.data, &myStruct)
+			assert.Equal(t, tt.result, myStruct)
+		})
+	}
 }

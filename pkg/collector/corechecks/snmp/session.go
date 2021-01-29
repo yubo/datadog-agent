@@ -6,12 +6,16 @@ import (
 	"time"
 )
 
+const sysObjectIDOid = "1.3.6.1.2.1.1.2.0"
+
 type sessionAPI interface {
 	Configure(config snmpConfig) error
 	Connect() error
 	Close() error
 	Get(oids []string) (result *gosnmp.SnmpPacket, err error)
 	GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error)
+	GetNext(oids []string) (result *gosnmp.SnmpPacket, err error)
+	GetVersion() gosnmp.SnmpVersion
 }
 
 type snmpSession struct {
@@ -19,19 +23,18 @@ type snmpSession struct {
 }
 
 func (s *snmpSession) Configure(config snmpConfig) error {
-	maxOids := gosnmp.MaxOids
 	if config.oidBatchSize > gosnmp.MaxOids {
-		return fmt.Errorf("config oidBatchSize (%d) cannot higher than gosnmp.MaxOids: %d", config.oidBatchSize, maxOids)
-	}
-	snmpVersion, err := parseVersion(config.snmpVersion)
-	if err != nil {
-		return err
+		return fmt.Errorf("config oidBatchSize (%d) cannot be higher than gosnmp.MaxOids: %d", config.oidBatchSize, gosnmp.MaxOids)
 	}
 
-	switch snmpVersion {
-	case gosnmp.Version2c, gosnmp.Version1:
+	if config.communityString != "" {
+		if config.snmpVersion == "1" {
+			s.gosnmpInst.Version = gosnmp.Version1
+		} else {
+			s.gosnmpInst.Version = gosnmp.Version2c
+		}
 		s.gosnmpInst.Community = config.communityString
-	case gosnmp.Version3:
+	} else if config.user != "" {
 		authProtocol, err := getAuthProtocol(config.authProtocol)
 		if err != nil {
 			return err
@@ -44,11 +47,15 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 
 		msgFlags := gosnmp.NoAuthNoPriv
 		if privProtocol != gosnmp.NoPriv {
+			// Auth is needed if privacy is used.
+			// "The User-based Security Model also prescribes that a message needs to be authenticated if privacy is in use."
+			// https://tools.ietf.org/html/rfc3414#section-1.4.3
 			msgFlags = gosnmp.AuthPriv
 		} else if authProtocol != gosnmp.NoAuth {
 			msgFlags = gosnmp.AuthNoPriv
 		}
 
+		s.gosnmpInst.Version = gosnmp.Version3
 		s.gosnmpInst.MsgFlags = msgFlags
 		s.gosnmpInst.ContextName = config.contextName
 		s.gosnmpInst.SecurityModel = gosnmp.UserSecurityModel
@@ -59,17 +66,17 @@ func (s *snmpSession) Configure(config snmpConfig) error {
 			PrivacyProtocol:          privProtocol,
 			PrivacyPassphrase:        config.privKey,
 		}
+	} else {
+		return fmt.Errorf("an authentication method needs to be provided")
 	}
 
 	s.gosnmpInst.Target = config.ipAddress
 	s.gosnmpInst.Port = config.port
-	s.gosnmpInst.Version = snmpVersion
 	s.gosnmpInst.Timeout = time.Duration(config.timeout) * time.Second
 	s.gosnmpInst.Retries = config.retries
-	s.gosnmpInst.MaxOids = maxOids
 
 	// Uncomment following line for debugging
-	// s.gosnmpInst.Logger:  defaultLog.New(os.Stdout, "", 0),
+	// s.gosnmpInst.Logger = log.New(os.Stdout, "", 0)
 	return nil
 }
 
@@ -86,19 +93,24 @@ func (s *snmpSession) Get(oids []string) (result *gosnmp.SnmpPacket, err error) 
 }
 
 func (s *snmpSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err error) {
-	if len(oids) == 0 {
-		return &gosnmp.SnmpPacket{}, nil
-	}
 	return s.gosnmpInst.GetBulk(oids, 0, 10)
 }
 
+func (s *snmpSession) GetNext(oids []string) (result *gosnmp.SnmpPacket, err error) {
+	return s.gosnmpInst.GetNext(oids)
+}
+
+func (s *snmpSession) GetVersion() gosnmp.SnmpVersion {
+	return s.gosnmpInst.Version
+}
+
 func fetchSysObjectID(session sessionAPI) (string, error) {
-	result, err := session.Get([]string{"1.3.6.1.2.1.1.2.0"})
+	result, err := session.Get([]string{sysObjectIDOid})
 	if err != nil {
 		return "", fmt.Errorf("cannot get sysobjectid: %s", err)
 	}
 	if len(result.Variables) != 1 {
-		return "", fmt.Errorf("expected 1 value, but for %d: variables=%v", len(result.Variables), result.Variables)
+		return "", fmt.Errorf("expected 1 value, but got %d: variables=%v", len(result.Variables), result.Variables)
 	}
 	pduVar := result.Variables[0]
 	_, value, err := getValueFromPDU(pduVar)

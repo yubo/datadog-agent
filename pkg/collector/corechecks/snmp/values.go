@@ -9,9 +9,9 @@ type resultValueStore struct {
 	columnValues columnResultValuesType
 }
 
-// getScalarValues look for oid in resultValueStore and returns the value and boolean
+// getScalarValue look for oid in resultValueStore and returns the value and boolean
 // weather valid value has been found
-func (v *resultValueStore) getScalarValues(oid string) (snmpValueType, error) {
+func (v *resultValueStore) getScalarValue(oid string) (snmpValueType, error) {
 	value, ok := v.scalarValues[oid]
 	if !ok {
 		return snmpValueType{}, fmt.Errorf("value for Scalar OID `%s` not found in `%v`", oid, v.scalarValues)
@@ -19,6 +19,10 @@ func (v *resultValueStore) getScalarValues(oid string) (snmpValueType, error) {
 	return value, nil
 }
 
+// getColumnValues look for oid in resultValueStore and returns a map[<fullIndex>]snmpValueType
+// where `fullIndex` refer to the entire index part of the instance OID.
+// For example if the row oid (instance oid) is `1.3.6.1.4.1.1.2.3.10.11.12`,
+// the column oid is `1.3.6.1.4.1.1.2.3`, the fullIndex is `10.11.12`.
 func (v *resultValueStore) getColumnValues(oid string) (map[string]snmpValueType, error) {
 	values, ok := v.columnValues[oid]
 	if !ok {

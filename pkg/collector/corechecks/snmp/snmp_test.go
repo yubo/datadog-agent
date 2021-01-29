@@ -29,6 +29,7 @@ type mockSession struct {
 	mock.Mock
 	connectErr error
 	closeErr   error
+	version    gosnmp.SnmpVersion
 }
 
 func (s *mockSession) Configure(config snmpConfig) error {
@@ -53,6 +54,21 @@ func (s *mockSession) GetBulk(oids []string) (result *gosnmp.SnmpPacket, err err
 	return args.Get(0).(*gosnmp.SnmpPacket), args.Error(1)
 }
 
+func (s *mockSession) GetNext(oids []string) (result *gosnmp.SnmpPacket, err error) {
+	args := s.Mock.Called(oids)
+	return args.Get(0).(*gosnmp.SnmpPacket), args.Error(1)
+}
+
+func (s *mockSession) GetVersion() gosnmp.SnmpVersion {
+	return s.version
+}
+
+func createMockSession() *mockSession {
+	session := &mockSession{}
+	session.version = gosnmp.Version2c
+	return session
+}
+
 func setConfdPath() {
 	file, _ := filepath.Abs(filepath.Join(".", "test", "conf.d"))
 	config.Datadog.Set("confd_path", file)
@@ -60,7 +76,7 @@ func setConfdPath() {
 
 func TestBasicSample(t *testing.T) {
 	setConfdPath()
-	session := &mockSession{}
+	session := createMockSession()
 	check := Check{session: session}
 	aggregator.InitAggregatorWithFlushInterval(nil, "", 1*time.Hour)
 
@@ -211,7 +227,7 @@ tags:
 
 func TestSupportedMetricTypes(t *testing.T) {
 	setConfdPath()
-	session := &mockSession{}
+	session := createMockSession()
 	check := Check{session: session}
 	// language=yaml
 	rawInstanceConfig := []byte(`
@@ -278,7 +294,7 @@ metrics:
 
 func TestProfile(t *testing.T) {
 	setConfdPath()
-	session := &mockSession{}
+	session := createMockSession()
 	check := Check{session: session}
 	// language=yaml
 	rawInstanceConfig := []byte(`
@@ -409,7 +425,7 @@ profiles:
 
 func TestProfileWithSysObjectIdDetection(t *testing.T) {
 	setConfdPath()
-	session := &mockSession{}
+	session := createMockSession()
 	check := Check{session: session}
 	// language=yaml
 	rawInstanceConfig := []byte(`
@@ -548,7 +564,7 @@ profiles:
 
 func TestServiceCheckFailures(t *testing.T) {
 	setConfdPath()
-	session := &mockSession{}
+	session := createMockSession()
 	session.connectErr = fmt.Errorf("can't connect")
 	check := Check{session: session}
 
@@ -584,10 +600,12 @@ func TestCheckID(t *testing.T) {
 	// language=yaml
 	rawInstanceConfig1 := []byte(`
 ip_address: 1.1.1.1
+community_string: abc
 `)
 	// language=yaml
 	rawInstanceConfig2 := []byte(`
 ip_address: 2.2.2.2
+community_string: abc
 `)
 
 	err := check1.Configure(rawInstanceConfig1, []byte(``), "test")
@@ -596,8 +614,8 @@ ip_address: 2.2.2.2
 	err = check2.Configure(rawInstanceConfig2, []byte(``), "test")
 	assert.Nil(t, err)
 
-	assert.Equal(t, check.ID("snmp:efc9e7e750047b05"), check1.ID())
-	assert.Equal(t, check.ID("snmp:f22c3d8b3858f07d"), check2.ID())
+	assert.Equal(t, check.ID("snmp:ed97702503abb6ec"), check1.ID())
+	assert.Equal(t, check.ID("snmp:e4bdb13416d918f4"), check2.ID())
 	assert.NotEqual(t, check1.ID(), check2.ID())
 }
 
@@ -674,7 +692,7 @@ func TestCheck_Run(t *testing.T) {
 		},
 		{
 			name:        "unexpected values count",
-			expectedErr: "failed to fetching sysobjectid: expected 1 value, but for 0: variables=[]",
+			expectedErr: "failed to fetching sysobjectid: expected 1 value, but got 0: variables=[]",
 		},
 		{
 			name:              "failed to fetching sysobjectid with invalid value",
@@ -691,13 +709,13 @@ func TestCheck_Run(t *testing.T) {
 			sysObjectIDPacket: sysObjectIDPacketOkMock,
 			valuesPacket:      valuesPacketErrMock,
 			valuesError:       fmt.Errorf("no value"),
-			expectedErr:       "failed to fetch values: failed to fetch scalar oids with batching: failed to fetch scalar oids: error getting oids: no value",
+			expectedErr:       "failed to fetch values: failed to fetch scalar oids with batching: failed to fetch scalar oids: fetch scalar: error getting oids `[1.3.6.1.4.1.3375.2.1.1.2.1.44.0 1.3.6.1.4.1.3375.2.1.1.2.1.44.999 1.2.3.4.5 1.3.6.1.2.1.1.5.0 1.3.6.1.2.1.1.3.0]`: no value",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setConfdPath()
-			session := &mockSession{}
+			session := createMockSession()
 			session.connectErr = tt.sessionConnError
 			check := Check{session: session}
 
@@ -750,7 +768,7 @@ func TestCheck_Run_sessionCloseError(t *testing.T) {
 	assert.Nil(t, err)
 	log.SetupLogger(l, "debug")
 
-	session := &mockSession{}
+	session := createMockSession()
 	session.closeErr = fmt.Errorf("close error")
 	check := Check{session: session}
 

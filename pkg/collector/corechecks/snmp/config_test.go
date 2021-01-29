@@ -179,6 +179,7 @@ func TestDefaultConfigurations(t *testing.T) {
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
+community_string: abc
 `)
 	// language=yaml
 	rawInitConfig := []byte(``)
@@ -200,11 +201,13 @@ ip_address: 1.2.3.4
 }
 
 func TestPortConfiguration(t *testing.T) {
+	setConfdPath()
 	// TEST Default port
 	check := Check{session: &snmpSession{}}
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
+community_string: abc
 `)
 	err := check.Configure(rawInstanceConfig, []byte(``), "test")
 	assert.Nil(t, err)
@@ -216,6 +219,7 @@ ip_address: 1.2.3.4
 	rawInstanceConfig = []byte(`
 ip_address: 1.2.3.4
 port: 1234
+community_string: abc
 `)
 	err = check.Configure(rawInstanceConfig, []byte(``), "test")
 	assert.Nil(t, err)
@@ -229,6 +233,7 @@ func TestGlobalMetricsConfigurations(t *testing.T) {
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
+community_string: abc
 metrics:
 - symbol:
     OID: 1.3.6.1.2.1.2.1
@@ -258,6 +263,7 @@ func TestUseGlobalMetricsFalse(t *testing.T) {
 	// language=yaml
 	rawInstanceConfig := []byte(`
 ip_address: 1.2.3.4
+community_string: abc
 metrics:
 - symbol:
     OID: 1.3.6.1.2.1.2.1
@@ -494,4 +500,23 @@ func Test_Configure_invalidYaml(t *testing.T) {
 			assert.EqualError(t, err, tt.expectedErr)
 		})
 	}
+}
+
+func TestNumberConfigsUsingStrings(t *testing.T) {
+	setConfdPath()
+	check := Check{session: &snmpSession{}}
+	// language=yaml
+	rawInstanceConfig := []byte(`
+ip_address: 1.2.3.4
+community_string: abc
+port: "123"
+timeout: "15"
+retries: "5"
+`)
+	err := check.Configure(rawInstanceConfig, []byte(``), "test")
+	assert.Nil(t, err)
+	assert.Equal(t, uint16(123), check.config.port)
+	assert.Equal(t, 15, check.config.timeout)
+	assert.Equal(t, 5, check.config.retries)
+
 }
