@@ -350,6 +350,127 @@ def integration_tests(ctx, install_deps=False, race=False, remote_docker=False, 
     for prefix in prefixes:
         ctx.run("{} {}".format(go_cmd, prefix))
 
+def do_omnibus_command(
+    ctx,
+    command,
+    project,
+    omnibus_overrides,
+    log_level,
+    bundle_gem_path,
+    skip_deps,
+    skip_sign,
+    release_version,
+    major_version,
+    python_runtimes,
+    omnibus_s3_cache,
+    hardened_runtime,
+    system_probe_bin,
+    libbcc_tarball,
+    with_bcc,
+):
+    """
+    Build the Agent packages with Omnibus Installer.
+    """
+    deps_elapsed = None
+    bundle_elapsed = None
+    omnibus_elapsed = None
+    if not skip_deps:
+        deps_start = datetime.datetime.now()
+        deps(ctx)
+        deps_end = datetime.datetime.now()
+        deps_elapsed = deps_end - deps_start
+
+    # Add omnibus config overrides
+    overrides_cmd = ""
+    if omnibus_overrides:
+        overrides_cmd = "--override=" + " ".join(omnibus_overrides)
+
+    with ctx.cd("omnibus"):
+        # make sure bundle install starts from a clean state
+        try:
+            os.remove("Gemfile.lock")
+        except Exception:
+            pass
+
+        cmd = "bundle install"
+        if gem_path:
+            cmd += " --path {}".format(gem_path)
+
+        bundle_start = datetime.datetime.now()
+        ctx.run(cmd, env=env)
+        bundle_done = datetime.datetime.now()
+        bundle_elapsed = bundle_done - bundle_start
+
+        omnibus = "bundle exec omnibus"
+        if sys.platform == 'win32':
+            omnibus = "bundle exec omnibus.bat"
+        elif sys.platform == 'darwin':
+            # HACK: This is an ugly hack to fix another hack made by python3 on MacOS
+            # The full explanation is available on this PR: https://github.com/DataDog/datadog-agent/pull/5010.
+            omnibus = "unset __PYVENV_LAUNCHER__ && bundle exec omnibus"
+
+        pfxfile = None
+        try:
+            if sys.platform == 'win32' and os.environ.get('SIGN_WINDOWS'):
+                # get certificate and password from ssm
+                pfxfile = get_signing_cert(ctx)
+                pfxpass = get_pfx_pass(ctx)
+                # hack for now.  Remove `sign_windows, and set sign_pfx`
+                env['SIGN_PFX'] = "{}".format(pfxfile)
+                env['SIGN_PFX_PW'] = "{}".format(pfxpass)
+
+            if sys.platform == 'darwin':
+                # Target MacOS 10.12
+                env['MACOSX_DEPLOYMENT_TARGET'] = '10.12'
+
+            if skip_sign:
+                env['SKIP_SIGN_MAC'] = 'true'
+            if hardened_runtime:
+                env['HARDENED_RUNTIME_MAC'] = 'true'
+
+            env['PACKAGE_VERSION'] = get_version(
+                ctx, include_git=True, url_safe=True, major_version=major_version, env=env
+            )
+            env['MAJOR_VERSION'] = major_version
+            env['PY_RUNTIMES'] = python_runtimes
+            if with_bcc:
+                env['WITH_BCC'] = 'true'
+            if system_probe_bin is not None:
+                env['SYSTEM_PROBE_BIN'] = system_probe_bin
+            if libbcc_tarball is not None:
+                env['LIBBCC_TARBALL'] = libbcc_tarball
+
+            cmd = "{omnibus} {command} {project_name} --log-level={log_level} {populate_s3_cache} {overrides}"
+            args = {
+                "omnibus": omnibus,
+                "command": command,
+                "project_name": target_project,
+                "log_level": log_level,
+                "overrides": overrides_cmd,
+                "populate_s3_cache": "",
+            }
+
+            if omnibus_s3_cache:
+                args['populate_s3_cache'] = " --populate-s3-cache "
+
+            omnibus_start = datetime.datetime.now()
+            ctx.run(cmd.format(**args), env=env)
+            omnibus_done = datetime.datetime.now()
+            omnibus_elapsed = omnibus_done - omnibus_start
+
+        except Exception:
+            if pfxfile:
+                os.remove(pfxfile)
+            raise
+
+        if pfxfile:
+            os.remove(pfxfile)
+
+        print("Build compoonent timing:")
+        if not skip_deps:
+            print("Deps:    {}".format(deps_elapsed))
+        print("Bundle:  {}".format(bundle_elapsed))
+        print("Omnibus {}: {}".format(command, omnibus_elapsed))
 
 # hardened-runtime needs to be set to False to build on MacOS < 10.13.6, as the -o runtime option is not supported.
 @task(
@@ -379,117 +500,118 @@ def omnibus_build(
     """
     Build the Agent packages with Omnibus Installer.
     """
-    deps_elapsed = None
-    bundle_elapsed = None
-    omnibus_elapsed = None
-    if not skip_deps:
-        deps_start = datetime.datetime.now()
-        deps(ctx)
-        deps_end = datetime.datetime.now()
-        deps_elapsed = deps_end - deps_start
 
-    # omnibus config overrides
-    overrides = []
+    target_project = "agent"
+    if iot:
+        target_project = "iot-agent"
+    elif agent_binaries:
+        target_project = "agent-binaries"
 
+    omnibus_overrides = []
     # base dir (can be overridden through env vars, command line takes precedence)
     base_dir = base_dir or os.environ.get("OMNIBUS_BASE_DIR")
     if base_dir:
-        overrides.append("base_dir:{}".format(base_dir))
+        omnibus_overrides.append("base_dir:{}".format(base_dir))
 
-    overrides_cmd = ""
-    if overrides:
-        overrides_cmd = "--override=" + " ".join(overrides)
+    env = load_release_versions(ctx, release_version)
 
-    with ctx.cd("omnibus"):
-        # make sure bundle install starts from a clean state
-        try:
-            os.remove("Gemfile.lock")
-        except Exception:
-            pass
+    try:
+        if sys.platform == 'win32' and os.environ.get('SIGN_WINDOWS'):
+            # get certificate and password from ssm
+            pfxfile = get_signing_cert(ctx)
+            pfxpass = get_pfx_pass(ctx)
+            # hack for now.  Remove `sign_windows, and set sign_pfx`
+            env['SIGN_PFX'] = "{}".format(pfxfile)
+            env['SIGN_PFX_PW'] = "{}".format(pfxpass)
 
-        env = load_release_versions(ctx, release_version)
+        if sys.platform == 'darwin':
+            # Target MacOS 10.12
+            env['MACOSX_DEPLOYMENT_TARGET'] = '10.12'
 
-        cmd = "bundle install"
-        if gem_path:
-            cmd += " --path {}".format(gem_path)
+        if skip_sign:
+            env['SKIP_SIGN_MAC'] = 'true'
+        if hardened_runtime:
+            env['HARDENED_RUNTIME_MAC'] = 'true'
 
-        bundle_start = datetime.datetime.now()
-        ctx.run(cmd, env=env)
+        env['PACKAGE_VERSION'] = get_version(
+            ctx, include_git=True, url_safe=True, major_version=major_version, env=env
+        )
+        env['MAJOR_VERSION'] = major_version
+        env['PY_RUNTIMES'] = python_runtimes
+        if with_bcc:
+            env['WITH_BCC'] = 'true'
+        if system_probe_bin is not None:
+            env['SYSTEM_PROBE_BIN'] = system_probe_bin
+        if libbcc_tarball is not None:
+            env['LIBBCC_TARBALL'] = libbcc_tarball
 
-        bundle_done = datetime.datetime.now()
-        bundle_elapsed = bundle_done - bundle_start
-        target_project = "agent"
-        if iot:
-            target_project = "iot-agent"
-        elif agent_binaries:
-            target_project = "agent-binaries"
+    do_omnibus_command(
+        ctx,
+        command="build",
+        project=target_project,
+        omnibus_overrides=omnibus_overrides,
+        log_level=log_level,
+        env=env
+        gem_path=gem_path,
+        skip_deps=skip_deps,
+        skip_sign=skip_sign,
+        release_version=release_version,
+        major_version=major_version,
+        python_runtimes=python_runtimes,
+        omnibus_s3_cache=omnibus_s3_cache,
+        hardened_runtime=hardened_runtime,
+        system_probe_bin=system_probe_bin,
+        libbcc_tarball=libbcc_tarball,
+        with_bcc=with_bcc
+    )
 
-        omnibus = "bundle exec omnibus"
-        if sys.platform == 'win32':
-            omnibus = "bundle exec omnibus.bat"
-        elif sys.platform == 'darwin':
-            # HACK: This is an ugly hack to fix another hack made by python3 on MacOS
-            # The full explanation is available on this PR: https://github.com/DataDog/datadog-agent/pull/5010.
-            omnibus = "unset __PYVENV_LAUNCHER__ && bundle exec omnibus"
-
-        cmd = "{omnibus} build {project_name} --log-level={log_level} {populate_s3_cache} {overrides}"
-        args = {
-            "omnibus": omnibus,
-            "project_name": target_project,
-            "log_level": log_level,
-            "overrides": overrides_cmd,
-            "populate_s3_cache": "",
-        }
-        pfxfile = None
-        try:
-            if sys.platform == 'win32' and os.environ.get('SIGN_WINDOWS'):
-                # get certificate and password from ssm
-                pfxfile = get_signing_cert(ctx)
-                pfxpass = get_pfx_pass(ctx)
-                # hack for now.  Remove `sign_windows, and set sign_pfx`
-                env['SIGN_PFX'] = "{}".format(pfxfile)
-                env['SIGN_PFX_PW'] = "{}".format(pfxpass)
-
-            if sys.platform == 'darwin':
-                # Target MacOS 10.12
-                env['MACOSX_DEPLOYMENT_TARGET'] = '10.12'
-
-            if omnibus_s3_cache:
-                args['populate_s3_cache'] = " --populate-s3-cache "
-            if skip_sign:
-                env['SKIP_SIGN_MAC'] = 'true'
-            if hardened_runtime:
-                env['HARDENED_RUNTIME_MAC'] = 'true'
-
-            env['PACKAGE_VERSION'] = get_version(
-                ctx, include_git=True, url_safe=True, major_version=major_version, env=env
-            )
-            env['MAJOR_VERSION'] = major_version
-            env['PY_RUNTIMES'] = python_runtimes
-            if with_bcc:
-                env['WITH_BCC'] = 'true'
-            if system_probe_bin is not None:
-                env['SYSTEM_PROBE_BIN'] = system_probe_bin
-            if libbcc_tarball is not None:
-                env['LIBBCC_TARBALL'] = libbcc_tarball
-            omnibus_start = datetime.datetime.now()
-            ctx.run(cmd.format(**args), env=env)
-            omnibus_done = datetime.datetime.now()
-            omnibus_elapsed = omnibus_done - omnibus_start
-
-        except Exception:
-            if pfxfile:
-                os.remove(pfxfile)
-            raise
-
-        if pfxfile:
-            os.remove(pfxfile)
-
-        print("Build compoonent timing:")
-        if not skip_deps:
-            print("Deps:    {}".format(deps_elapsed))
-        print("Bundle:  {}".format(bundle_elapsed))
-        print("Omnibus: {}".format(omnibus_elapsed))
+# hardened-runtime needs to be set to False to build on MacOS < 10.13.6, as the -o runtime option is not supported.
+@task(
+    help={
+        'skip-sign': "On macOS, use this option to build an unsigned package if you don't have Datadog's developer keys.",
+        'hardened-runtime': "On macOS, use this option to enforce the hardened runtime setting, adding '-o runtime' to all codesign commands",
+    }
+)
+def omnibus_manifest(
+    ctx,
+    iot=False,
+    agent_binaries=False,
+    log_level="info",
+    base_dir=None,
+    gem_path=None,
+    skip_deps=False,
+    skip_sign=False,
+    release_version="nightly",
+    major_version='7',
+    python_runtimes='3',
+    omnibus_s3_cache=False,
+    hardened_runtime=False,
+    system_probe_bin=None,
+    libbcc_tarball=None,
+    with_bcc=True,
+):
+    """
+    Build the Agent packages with Omnibus Installer.
+    """
+    do_omnibus_command(
+        ctx,
+        command="manifest",
+        iot=iot,
+        agent_binaries=agent_binaries,
+        log_level=log_level,
+        base_dir=base_dir,
+        gem_path=gem_path,
+        skip_deps=skip_deps,
+        skip_sign=skip_sign,
+        release_version=release_version,
+        major_version=major_version,
+        python_runtimes=python_runtimes,
+        omnibus_s3_cache=omnibus_s3_cache,
+        hardened_runtime=hardened_runtime,
+        system_probe_bin=system_probe_bin,
+        libbcc_tarball=libbcc_tarball,
+        with_bcc=with_bcc
+    )
 
 
 @task
