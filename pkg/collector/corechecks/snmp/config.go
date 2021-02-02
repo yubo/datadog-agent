@@ -6,6 +6,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"gopkg.in/yaml.v2"
 	"path/filepath"
+	"strings"
 )
 
 var defaultOidBatchSize = 60
@@ -201,19 +202,11 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 			return snmpConfig{}, fmt.Errorf("failed to refresh with profile `%s`: %s", profile, err)
 		}
 	}
-
-	// TODO: [VALIDATION] Check for duplicate profile sysobjectid
-	//   https://github.com/DataDog/integrations-core/blob/df2bc0d17af490491651d7578e67d9928941df62/snmp/datadog_checks/snmp/snmp.py#L142-L144
-
-	// TODO: [VALIDATION] Add missing error handling by looking at
-	//   https://github.com/DataDog/integrations-core/blob/e64e2d18529c6c106f02435c5fdf2621667c16ad/snmp/datadog_checks/snmp/config.py
-
-	// TODO: [VALIDATION] Validate metrics
-	//  - metrics
-	//  - metricTags
-	//  Cases:
-	//   - index transform:
-	//     https://github.com/DataDog/integrations-core/blob/d31d3532e16cf8418a8b112f47359f14be5ecae1/snmp/datadog_checks/snmp/parsing/metrics.py#L523-L537
+	errors := validateEnrichMetrics(c.metrics)
+	errors = append(errors, validateEnrichMetricTags(c.metricTags)...)
+	if len(errors) > 0 {
+		return snmpConfig{}, fmt.Errorf("validation errors: %s", strings.Join(errors, "\n"))
+	}
 	return c, err
 }
 
@@ -225,12 +218,12 @@ func getUptimeMetricConfig() metricsConfig {
 func parseScalarOids(metrics []metricsConfig, metricTags []metricTagConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		if metric.Symbol.OID != "" { // TODO: [VALIDATION] need validation
+		if metric.Symbol.OID != "" {
 			oids = append(oids, metric.Symbol.OID)
 		}
 	}
 	for _, metricTag := range metricTags {
-		if metricTag.OID != "" { // TODO: [VALIDATION] need validation
+		if metricTag.OID != "" {
 			oids = append(oids, metricTag.OID)
 		}
 	}
@@ -240,14 +233,12 @@ func parseScalarOids(metrics []metricsConfig, metricTags []metricTagConfig) []st
 func parseColumnOids(metrics []metricsConfig) []string {
 	var oids []string
 	for _, metric := range metrics {
-		if metric.Table.OID != "" { // TODO: [VALIDATION] need validation
-			for _, symbol := range metric.Symbols {
-				oids = append(oids, symbol.OID)
-			}
-			for _, metricTag := range metric.MetricTags {
-				if metricTag.Column.OID != "" {
-					oids = append(oids, metricTag.Column.OID)
-				}
+		for _, symbol := range metric.Symbols {
+			oids = append(oids, symbol.OID)
+		}
+		for _, metricTag := range metric.MetricTags {
+			if metricTag.Column.OID != "" {
+				oids = append(oids, metricTag.Column.OID)
 			}
 		}
 	}
@@ -265,10 +256,14 @@ func getProfileForSysObjectID(profiles profileDefinitionMap, sysObjectID string)
 				log.Debugf("pattern error: %s", err)
 				continue
 			}
-			if found {
-				tmpSysOidToProfile[oidPattern] = profile
-				matchedOids = append(matchedOids, oidPattern)
+			if !found {
+				continue
 			}
+			if matchedProfile, ok := tmpSysOidToProfile[oidPattern]; ok {
+				return "", fmt.Errorf("profile %s has the same sysObjectID (%s) as %s", profile, oidPattern, matchedProfile)
+			}
+			tmpSysOidToProfile[oidPattern] = profile
+			matchedOids = append(matchedOids, oidPattern)
 		}
 	}
 	oid, err := getMostSpecificOid(matchedOids)

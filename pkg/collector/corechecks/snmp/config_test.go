@@ -6,7 +6,7 @@
 package snmp
 
 import (
-	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -85,6 +85,12 @@ metric_tags:
   - OID: 1.2.3
     symbol: mySymbol
     tag: my_symbol
+  - OID: 1.2.3
+    symbol: mySymbol
+    match: '(\w)(\w+)'
+    tags:
+      prefix: '\1'
+      suffix: '\2'
 profile: f5-big-ip
 `)
 	// language=yaml
@@ -119,7 +125,6 @@ global_metrics:
 		}},
 		{Symbol: symbolConfig{OID: "1.3.6.1.4.1.318.1.1.1.11.1.1.0", Name: "upsBasicStateOutputState"}, ForcedType: "flag_stream", Options: metricsConfigOption{Placement: 5, MetricSuffix: "ReplaceBattery"}},
 		{
-			Table: symbolConfig{OID: "1.3.6.1.2.1.2.2", Name: "ifTable"},
 			Symbols: []symbolConfig{
 				{OID: "1.3.6.1.2.1.2.2.1.14", Name: "ifInErrors"},
 				{OID: "1.3.6.1.2.1.2.2.1.20", Name: "ifOutErrors"},
@@ -151,7 +156,8 @@ global_metrics:
 						Name: "cpiPduName",
 						OID:  "1.2.3.4.8.1.2",
 					},
-					Match: "(\\w)(\\w+)",
+					Match:   "(\\w)(\\w+)",
+					pattern: regexp.MustCompile("(\\w)(\\w+)"),
 					Tags: map[string]string{
 						"prefix": "\\1",
 						"suffix": "\\2",
@@ -164,6 +170,16 @@ global_metrics:
 
 	metricsTags := []metricTagConfig{
 		{Tag: "my_symbol", OID: "1.2.3", Name: "mySymbol"},
+		{
+			OID:     "1.2.3",
+			Name:    "mySymbol",
+			Match:   "(\\w)(\\w+)",
+			pattern: regexp.MustCompile("(\\w)(\\w+)"),
+			Tags: map[string]string{
+				"prefix": "\\1",
+				"suffix": "\\2",
+			},
+		},
 		{Tag: "snmp_host", OID: "1.3.6.1.2.1.1.5.0", Name: "sysName"},
 	}
 
@@ -337,7 +353,7 @@ func Test_buildConfig(t *testing.T) {
 		name              string
 		rawInstanceConfig []byte
 		rawInitConfig     []byte
-		expectedErr       string
+		expectedErrors    []string
 	}{
 		{
 			name: "unknown profile",
@@ -352,13 +368,35 @@ profiles:
   f5-big-ip:
     definition_file: f5-big-ip.yaml
 `),
-			expectedErr: "failed to refresh with profile `does-not-exist`: unknown profile `does-not-exist`",
+			expectedErrors: []string{
+				"failed to refresh with profile `does-not-exist`: unknown profile `does-not-exist`",
+			},
+		},
+		{
+			name: "validation errors",
+			// language=yaml
+			rawInstanceConfig: []byte(`
+ip_address: 1.2.3.4
+metrics:
+- symbol:
+    OID: 1.2.3
+-
+`),
+			// language=yaml
+			rawInitConfig: []byte(`
+`),
+			expectedErrors: []string{
+				"validation errors: symbol name missing: name=`` oid=`1.2.3`",
+				"either a table symbol or a scalar symbol must be provided",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := buildConfig(tt.rawInstanceConfig, tt.rawInitConfig)
-			assert.EqualError(t, err, tt.expectedErr)
+			for _, errStr := range tt.expectedErrors {
+				assert.Contains(t, err.Error(), errStr)
+			}
 		})
 	}
 }
@@ -400,53 +438,91 @@ func Test_getProfileForSysObjectID(t *testing.T) {
 			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.3.[.*"},
 		},
 	}
+	mockProfilesWithDuplicateSysobjectid := profileDefinitionMap{
+		"profile1": profileDefinition{
+			Metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.3"},
+		},
+		"profile2": profileDefinition{
+			Metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.3"},
+		},
+		"profile3": profileDefinition{
+			Metrics: []metricsConfig{
+				{Symbol: symbolConfig{OID: "1.2.3.4.5", Name: "someMetric"}},
+			},
+			SysObjectIds: StringArray{"1.3.6.1.4.1.3375.2.1.4"},
+		},
+	}
 	tests := []struct {
 		name            string
 		profiles        profileDefinitionMap
 		sysObjectID     string
 		expectedProfile string
-		expectedError   error
+		expectedError   string
 	}{
 		{
 			name:            "found matching profile",
 			profiles:        mockProfiles,
 			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.1",
 			expectedProfile: "profile1",
-			expectedError:   nil,
+			expectedError:   "",
 		},
 		{
 			name:            "found more precise matching profile",
 			profiles:        mockProfiles,
 			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.10",
 			expectedProfile: "profile2",
-			expectedError:   nil,
+			expectedError:   "",
 		},
 		{
 			name:            "found even more precise matching profile",
 			profiles:        mockProfiles,
 			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.5.11",
 			expectedProfile: "profile3",
-			expectedError:   nil,
+			expectedError:   "",
 		},
 		{
 			name:            "failed to get most specific profile for sysObjectID",
 			profiles:        mockProfilesWithPatternError,
 			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.5.11",
 			expectedProfile: "",
-			expectedError:   fmt.Errorf("failed to get most specific profile for sysObjectID `1.3.6.1.4.1.3375.2.1.3.4.5.11`, for matched oids [1.3.6.1.4.1.3375.2.1.3.***.*]: error parsing part `***` for pattern `1.3.6.1.4.1.3375.2.1.3.***.*`: strconv.Atoi: parsing \"***\": invalid syntax"),
+			expectedError:   "failed to get most specific profile for sysObjectID `1.3.6.1.4.1.3375.2.1.3.4.5.11`, for matched oids [1.3.6.1.4.1.3375.2.1.3.***.*]: error parsing part `***` for pattern `1.3.6.1.4.1.3375.2.1.3.***.*`: strconv.Atoi: parsing \"***\": invalid syntax",
 		},
 		{
 			name:            "invalid pattern", // profiles with invalid patterns are skipped, leading to: cannot get most specific oid from empty list of oids
 			profiles:        mockProfilesWithInvalidPatternError,
 			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3.4.5.11",
 			expectedProfile: "",
-			expectedError:   fmt.Errorf("failed to get most specific profile for sysObjectID `1.3.6.1.4.1.3375.2.1.3.4.5.11`, for matched oids []: cannot get most specific oid from empty list of oids"),
+			expectedError:   "failed to get most specific profile for sysObjectID `1.3.6.1.4.1.3375.2.1.3.4.5.11`, for matched oids []: cannot get most specific oid from empty list of oids",
+		},
+		{
+			name:            "duplicate sysobjectid",
+			profiles:        mockProfilesWithDuplicateSysobjectid,
+			sysObjectID:     "1.3.6.1.4.1.3375.2.1.3",
+			expectedProfile: "",
+			expectedError:   "has the same sysObjectID (1.3.6.1.4.1.3375.2.1.3) as",
+		},
+		{
+			name:            "unrelated duplicate sysobjectid should not raise error",
+			profiles:        mockProfilesWithDuplicateSysobjectid,
+			sysObjectID:     "1.3.6.1.4.1.3375.2.1.4",
+			expectedProfile: "profile3",
+			expectedError:   "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			profile, err := getProfileForSysObjectID(tt.profiles, tt.sysObjectID)
-			assert.Equal(t, err, tt.expectedError)
+			if tt.expectedError == "" {
+				assert.Nil(t, err)
+			} else {
+				assert.Contains(t, err.Error(), tt.expectedError)
+			}
 			assert.Equal(t, tt.expectedProfile, profile)
 		})
 	}

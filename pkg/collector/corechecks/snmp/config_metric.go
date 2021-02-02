@@ -31,6 +31,7 @@ type metricTagConfig struct {
 	Tags  map[string]string `yaml:"tags"`
 
 	symbolTag string
+	pattern   *regexp.Regexp
 }
 
 type metricTagConfigList []metricTagConfig
@@ -54,15 +55,12 @@ type metricsConfig struct {
 	Name string `yaml:"name"`
 
 	// Table configs
-	Table   symbolConfig   `yaml:"table"`
 	Symbols []symbolConfig `yaml:"symbols"`
 
 	MetricTags metricTagConfigList `yaml:"metric_tags"`
 
 	ForcedType string              `yaml:"forced_type"`
 	Options    metricsConfigOption `yaml:"options"`
-
-	// TODO: [VALIDATION] Validate Symbol and Table are not both used
 }
 
 // getTags retrieve tags using the metric config and values
@@ -92,8 +90,7 @@ func (m *metricsConfig) getTags(fullIndex string, values *resultValueStore) []st
 		}
 		// get tag using another column value
 		if metricTag.Column.OID != "" {
-			//tagValueOid := metricTag.Column.OID + "." + fullIndex
-			stringValues, err := values.getColumnValues(metricTag.Column.OID)
+			columnValues, err := values.getColumnValues(metricTag.Column.OID)
 			if err != nil {
 				log.Debugf("error getting column value: %v", err)
 				continue
@@ -107,12 +104,17 @@ func (m *metricsConfig) getTags(fullIndex string, values *resultValueStore) []st
 			}
 			newFullIndex := strings.Join(newIndexes, ".")
 
-			tagValue, ok := stringValues[newFullIndex]
+			tagValue, ok := columnValues[newFullIndex]
 			if !ok {
 				log.Debugf("index not found for column value: tag=%v, index=%v", metricTag.Tag, newFullIndex)
-			} else {
-				rowTags = append(rowTags, metricTag.getTags(tagValue.toString())...)
+				continue
 			}
+			strValue, err := tagValue.toString()
+			if err != nil {
+				log.Debugf("error converting tagValue (%#v) to string : %v", tagValue, err)
+				continue
+			}
+			rowTags = append(rowTags, metricTag.getTags(strValue)...)
 		}
 	}
 	return rowTags
@@ -126,20 +128,27 @@ func (m *metricsConfig) getSymbolTags() []string {
 	return symbolTags
 }
 
-func (mtc metricTagConfig) getTags(value string) []string {
+func (m *metricsConfig) isColumn() bool {
+	return len(m.Symbols) > 0
+}
+
+func (m *metricsConfig) isScalar() bool {
+	return m.Symbol.OID != "" && m.Symbol.Name != ""
+}
+
+func (mtc *metricTagConfig) getTags(value string) []string {
 	var tags []string
 	if mtc.Tag != "" {
 		tags = append(tags, mtc.Tag+":"+value)
 	} else if mtc.Match != "" {
-		pattern, err := regexp.Compile(mtc.Match) // TODO: [VALIDATION] may fail, compile in config validation
-		if err != nil {
-			log.Warnf("failed to compile `%v` from metric tag config `%v`", mtc.Match, mtc)
+		if mtc.pattern == nil {
+			log.Warnf("match pattern must be present: match=%s", mtc.Match)
 			return tags
 		}
-		if pattern.MatchString(value) {
+		if mtc.pattern.MatchString(value) {
 			for key, val := range mtc.Tags {
 				normalizedTemplate := normalizeRegexReplaceValue(val)
-				replacedVal := regexReplaceValue(value, pattern, normalizedTemplate)
+				replacedVal := regexReplaceValue(value, mtc.pattern, normalizedTemplate)
 				if replacedVal == "" {
 					log.Debugf("pattern `%v` failed to match `%v` with template `%v`", value, normalizedTemplate)
 					continue
@@ -148,7 +157,6 @@ func (mtc metricTagConfig) getTags(value string) []string {
 			}
 		}
 	}
-	// TODO: [VALIDATION] Handle error case in config validation
 	return tags
 }
 
