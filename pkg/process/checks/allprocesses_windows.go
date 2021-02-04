@@ -8,6 +8,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/DataDog/datadog-agent/pkg/process/net"
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -85,7 +86,7 @@ func getAllProcStats(probe *procutil.Probe, pids []int32) (map[int32]*process.Fi
 	return getAllProcesses(probe)
 }
 
-func getAllProcesses(probe *procutil.Probe) (map[int32]*process.FilledProcess, error) {
+func getAllProcesses(probe *procutil.Probe, pu *net.RemoteSysProbeUtil) (map[int32]*process.FilledProcess, error) {
 	allProcsSnap := w32.CreateToolhelp32Snapshot(w32.TH32CS_SNAPPROCESS, 0)
 	if allProcsSnap == 0 {
 		return nil, windows.GetLastError()

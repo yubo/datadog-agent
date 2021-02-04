@@ -8,6 +8,7 @@ import (
 
 	model "github.com/DataDog/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/config"
+	"github.com/DataDog/datadog-agent/pkg/process/net"
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 	"github.com/DataDog/datadog-agent/pkg/process/statsd"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
@@ -47,7 +48,7 @@ type ProcessCheck struct {
 }
 
 // Init initializes the singleton ProcessCheck.
-func (p *ProcessCheck) Init(_ *config.AgentConfig, info *model.SystemInfo) {
+func (p *ProcessCheck) Init(cfg *config.AgentConfig, info *model.SystemInfo) {
 	p.sysInfo = info
 
 	networkID, err := agentutil.GetNetworkID()
@@ -55,6 +56,9 @@ func (p *ProcessCheck) Init(_ *config.AgentConfig, info *model.SystemInfo) {
 		log.Infof("no network ID detected: %s", err)
 	}
 	p.networkID = networkID
+
+	// make sure system probe path is filled
+	net.SetSystemProbePath(cfg.SystemProbeAddress)
 }
 
 // Name returns the name of the ProcessCheck.
@@ -83,7 +87,11 @@ func (p *ProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Mess
 		return nil, errEmptyCPUTime
 	}
 
-	procs, err := getAllProcesses(p.probe)
+	var pu *net.RemoteSysProbeUtil
+	if p, err := net.GetRemoteSystemProbeUtil(); err == nil {
+		pu = p
+	}
+	procs, err := getAllProcesses(p.probe, pu)
 	if err != nil {
 		return nil, err
 	}

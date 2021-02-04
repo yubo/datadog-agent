@@ -3,11 +3,12 @@
 package checks
 
 import (
+	"github.com/DataDog/datadog-agent/pkg/process/net"
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 	"github.com/DataDog/gopsutil/process"
 )
 
-func getAllProcesses(probe *procutil.Probe) (map[int32]*process.FilledProcess, error) {
+func getAllProcesses(probe *procutil.Probe, pu *net.RemoteSysProbeUtil) (map[int32]*process.FilledProcess, error) {
 	return process.AllProcesses()
 }
 
