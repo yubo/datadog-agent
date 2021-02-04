@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +16,12 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/metadata/host"
 	"github.com/mholt/archiver/v3"
+
+	"github.com/lebauce/igor/apt"
+	"github.com/lebauce/igor/cos"
+	"github.com/lebauce/igor/rpm"
+	"github.com/lebauce/igor/types"
+	"github.com/lebauce/igor/wsl"
 )
 
 const sysfsHeadersPath = "/sys/kernel/kheaders.tar.xz"
@@ -178,4 +185,76 @@ func unloadKHeadersModule() error {
 		return fmt.Errorf("unable to unload kheaders module: %s", stderr.String())
 	}
 	return nil
+}
+
+func DownloadHeaders(outputDir string) error {
+	target, err := types.NewTarget()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve target information: %s", err)
+	}
+
+	if _, err := os.Stat("/run/WSL"); err == nil {
+		target.Distro.Display = "wsl"
+	} else if id := target.OSRelease["ID"]; target.Distro.Display == "" && id != "" {
+		target.Distro.Display = id
+	}
+
+	err = runDownloadHeaders(target, outputDir)
+	return err
+}
+
+func runDownloadHeaders(target types.Target, outputDir string) error {
+	log.Infof("Downloading kernel headers for target distribution %s, release %s, kernel %s, OSRelease %s\n",
+		target.Distro.Display,
+		target.Distro.Release,
+		target.Uname.Kernel,
+		target.OSRelease,
+	)
+
+	backend, err := getBackend(target)
+	if err != nil {
+		return fmt.Errorf("unable to get kernel header download backend: %s", err)
+	}
+
+	outputDirPath, err := filepath.Abs(outputDir)
+	if err != nil {
+		return fmt.Errorf("unable to get absolute path to %s: %s", outputDirPath, err)
+	}
+
+	err = os.MkdirAll(outputDirPath, 0755)
+	if err != nil {
+		return fmt.Errorf("unable create output directory %s: %s", outputDirPath, err)
+	}
+
+	if err = backend.GetKernelHeaders(outputDir); err != nil {
+		return fmt.Errorf("failed to download kernel headers: %s", err)
+	}
+	return nil
+}
+
+func getBackend(target types.Target) (types.Backend, error) {
+	var (
+		backend types.Backend
+		err     error
+	)
+
+	switch target.Distro.Display {
+	case "Fedora", "RHEL":
+		backend, err = rpm.NewRedHatBackend(&target)
+	case "CentOS":
+		backend, err = rpm.NewCentOSBackend(&target)
+	case "openSUSE":
+		backend, err = rpm.NewOpenSUSEBackend(&target)
+	case "SLE":
+		backend, err = rpm.NewSLESBackend(&target)
+	case "Debian", "Ubuntu":
+		backend, err = apt.NewBackend(&target)
+	case "cos":
+		backend, err = cos.NewBackend(&target)
+	case "wsl":
+		backend, err = wsl.NewBackend(&target)
+	default:
+		log.Fatalf("Unsupported distribution '%s'", target.Distro.Display)
+	}
+	return backend, err
 }
