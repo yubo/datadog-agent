@@ -175,6 +175,38 @@ func (p *Probe) ProcessesByPID(now time.Time) (map[int32]*Process, error) {
 	return procsByPID, nil
 }
 
+// StatsWithPermByPID returns the stats that require extra permission to collect for each process
+// the parameter `returnZeroVals` controls whether to include all zero stats or not in the return map,
+// not returning all zero stats would help process-agent to deserialize less data
+func (p *Probe) StatsWithPermByPID(returnZeroVals bool) (map[int32]*StatsWithPerm, error) {
+	pids, err := p.getActivePIDs()
+	if err != nil {
+		return nil, err
+	}
+
+	statsByPID := make(map[int32]*StatsWithPerm, len(pids))
+	for _, pid := range pids {
+		pathForPID := filepath.Join(p.procRootLoc, strconv.Itoa(int(pid)))
+		if !util.PathExists(pathForPID) {
+			log.Debugf("Unable to create new process %d, dir %s doesn't exist", pid, pathForPID)
+			continue
+		}
+
+		fds := p.getFDCount(pathForPID)
+		io := p.parseIO(pathForPID)
+
+		if !returnZeroVals && fds <= 0 && io.IsZeroValue() {
+			continue
+		}
+
+		statsByPID[pid] = &StatsWithPerm{
+			OpenFdCount: fds,
+			IOStat:      io,
+		}
+	}
+	return statsByPID, nil
+}
+
 func (p *Probe) getRootProcFile() (*os.File, error) {
 	if p.procRootFile != nil {
 		return p.procRootFile, nil

@@ -164,6 +164,12 @@ func (a *AgentConfig) loadSysProbeYamlConfig(path string) error {
 		a.EnabledChecks = append(a.EnabledChecks, "TCP queue length")
 	}
 
+	if config.Datadog.GetBool(key(spNS, "enable_process_tracer")) {
+		log.Info("system_probe_config.enable_process_tracer detected, will enable system-probe with process_tracer")
+		a.EnableSystemProbe = true
+		a.EnabledChecks = append(a.EnabledChecks, "Process Tracer")
+	}
+
 	if config.Datadog.GetBool(key(spNS, "enable_oom_kill")) {
 		log.Info("system_probe_config.enable_oom_kill detected, will enable system-probe with OOM Kill check")
 		a.EnableSystemProbe = true
@@ -209,6 +215,14 @@ func (a *AgentConfig) loadSysProbeYamlConfig(path string) error {
 		a.ProfilingURL = config.Datadog.GetString(key(spNS, "profiling.profile_dd_url"))
 		a.ProfilingAPIKey = config.Datadog.GetString(key(spNS, "profiling.api_key"))
 		a.ProfilingEnvironment = config.Datadog.GetString(key(spNS, "profiling.env"))
+	}
+	a.EnableRuntimeCompiler = config.Datadog.GetBool(key(spNS, "enable_runtime_compiler"))
+	if config.Datadog.IsSet(key(spNS, "kernel_header_dirs")) {
+		a.KernelHeadersDirs = config.Datadog.GetStringSlice(key(spNS, "kernel_header_dirs"))
+	}
+
+	if config.Datadog.IsSet(key(spNS, "runtime_compiler_output_dir")) {
+		a.RuntimeCompilerOutputDir = config.Datadog.GetString(key(spNS, "runtime_compiler_output_dir"))
 	}
 
 	return nil

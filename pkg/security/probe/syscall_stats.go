@@ -24,12 +24,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
-const (
-	syscallMetric            = MetricPrefix + ".syscalls"
-	execMetric               = MetricPrefix + ".exec"
-	concurrentSyscallsMetric = MetricPrefix + ".concurrent_syscalls"
-)
-
 // ProcessSyscall represents a syscall made by a process
 type ProcessSyscall struct {
 	Process string
@@ -116,7 +110,7 @@ func (s *SyscallStatsdCollector) CountSyscall(process string, syscallID Syscall,
 		fmt.Sprintf("syscall:%s", syscall),
 	}
 
-	return s.statsdClient.Count(syscallMetric, int64(count), tags, 1.0)
+	return s.statsdClient.Count(MetricSyscalls, int64(count), tags, 1.0)
 }
 
 // CountExec counts the number times a process was executed
@@ -125,13 +119,13 @@ func (s *SyscallStatsdCollector) CountExec(process string, count uint64) error {
 		fmt.Sprintf("process:%s", process),
 	}
 
-	return s.statsdClient.Count(execMetric, int64(count), tags, 1.0)
+	return s.statsdClient.Count(MetricExec, int64(count), tags, 1.0)
 }
 
 // CountConcurrentSyscalls counts the number of syscalls that are currently being executed
 func (s *SyscallStatsdCollector) CountConcurrentSyscalls(count int64) error {
 	if count > 0 {
-		return s.statsdClient.Count(concurrentSyscallsMetric, count, []string{}, 1.0)
+		return s.statsdClient.Count(MetricConcurrentSyscall, count, []string{}, 1.0)
 	}
 	return nil
 }
@@ -221,7 +215,7 @@ func (sm *SyscallMonitor) CollectStats(collector SyscallStatsCollector) error {
 	}
 
 	sm.activeKernelBuffer = 1 - sm.activeKernelBuffer
-	return sm.bufferSelector.Put(ebpf.ZeroUint32MapItem, sm.activeKernelBuffer)
+	return sm.bufferSelector.Put(ebpf.BufferSelectorSyscallMonitorKey, sm.activeKernelBuffer)
 }
 
 // NewSyscallMonitor instantiates a new syscall monitor
