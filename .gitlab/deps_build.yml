@@ -44,8 +44,8 @@ build_libbcc_arm64:
       allow_failure: true
   stage: deps_build
   script:
-    - wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang-11.0.0.src.tar.xz -O clang.src.tar.xz
-    - wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/llvm-11.0.0.src.tar.xz -O llvm.src.tar.xz
+    - wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.1/clang-11.0.1.src.tar.xz -O clang.src.tar.xz
+    - wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.1/llvm-11.0.1.src.tar.xz -O llvm.src.tar.xz
     - mkdir clang && tar xf clang.src.tar.xz --strip-components=1 --no-same-owner -C clang
     - mkdir llvm && tar xf llvm.src.tar.xz --strip-components=1 --no-same-owner -C llvm
     - mkdir build && cd build
