@@ -52,18 +52,21 @@ func NewCollector(paths ...string) *Collector {
 		state:          started,
 		checkInstances: int64(0),
 	}
-	pyVer, pyHome, pyPath := pySetup(paths...)
 
-	// print the Python info if the interpreter was embedded
-	if pyVer != "" {
-		log.Infof("Embedding Python %s", pyVer)
-		log.Debugf("Python Home: %s", pyHome)
-		log.Debugf("Python path: %s", pyPath)
-	}
+	if config.Datadog.GetBool("python_enabled") {
+		pyVer, pyHome, pyPath := pySetup(paths...)
 
-	// Prepare python environment if necessary
-	if err := pyPrepareEnv(); err != nil {
-		log.Errorf("Unable to perform additional configuration of the python environment: %v", err)
+		// print the Python info if the interpreter was embedded
+		if pyVer != "" {
+			log.Infof("Embedding Python %s", pyVer)
+			log.Debugf("Python Home: %s", pyHome)
+			log.Debugf("Python path: %s", pyPath)
+		}
+
+		// Prepare python environment if necessary
+		if err := pyPrepareEnv(); err != nil {
+			log.Errorf("Unable to perform additional configuration of the python environment: %v", err)
+		}
 	}
 
 	log.Debug("Collector up and running!")
