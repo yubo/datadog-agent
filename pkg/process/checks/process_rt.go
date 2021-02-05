@@ -5,6 +5,7 @@ import (
 
 	model "github.com/DataDog/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/config"
+	"github.com/DataDog/datadog-agent/pkg/process/net"
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
@@ -59,7 +60,12 @@ func (r *RTProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Me
 		return nil, nil
 	}
 
-	procs, err := getAllProcStats(r.probe, lastPIDs)
+	var pu *net.RemoteSysProbeUtil
+	if p, err := net.GetRemoteSystemProbeUtil(); err == nil {
+		pu = p
+	}
+
+	procs, err := getAllProcStats(r.probe, pu, lastPIDs)
 	if err != nil {
 		return nil, err
 	}

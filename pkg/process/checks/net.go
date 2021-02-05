@@ -14,8 +14,8 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/process/dockerproxy"
 	"github.com/DataDog/datadog-agent/pkg/process/net"
 	"github.com/DataDog/datadog-agent/pkg/process/net/resolver"
-	procutil "github.com/DataDog/datadog-agent/pkg/process/util"
-	"github.com/DataDog/datadog-agent/pkg/util"
+	"github.com/DataDog/datadog-agent/pkg/process/util"
+	agentutil "github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -34,13 +34,13 @@ var (
 type ConnectionsCheck struct {
 	tracerClientID         string
 	networkID              string
-	notInitializedLogLimit *procutil.LogLimit
+	notInitializedLogLimit *util.LogLimit
 	lastTelemetry          *model.CollectorConnectionsTelemetry
 }
 
 // Init initializes a ConnectionsCheck instance.
 func (c *ConnectionsCheck) Init(cfg *config.AgentConfig, _ *model.SystemInfo) {
-	c.notInitializedLogLimit = procutil.NewLogLimit(1, time.Minute*10)
+	c.notInitializedLogLimit = util.NewLogLimit(1, time.Minute*10)
 
 	// We use the current process PID as the system-probe client ID
 	c.tracerClientID = fmt.Sprintf("%d", os.Getpid())
@@ -49,7 +49,7 @@ func (c *ConnectionsCheck) Init(cfg *config.AgentConfig, _ *model.SystemInfo) {
 	net.SetSystemProbePath(cfg.SystemProbeAddress)
 	_, _ = net.GetRemoteSystemProbeUtil()
 
-	networkID, err := util.GetNetworkID()
+	networkID, err := agentutil.GetNetworkID()
 	if err != nil {
 		log.Infof("no network ID detected: %s", err)
 	}

@@ -28,7 +28,7 @@ func getAllProcesses(probe *procutil.Probe, pu *net.RemoteSysProbeUtil) (map[int
 		// this is also best effort, if system-probe query failed, just use what we have
 		stats, err := pu.GetProcStats()
 		if err == nil {
-			procs = mergeProcWithStats(procs, stats)
+			procs = mergeProcWithSysprobeStats(procs, stats)
 		}
 	} else {
 		procs, err = probe.ProcessesByPIDWithPerm(time.Now())
@@ -40,10 +40,25 @@ func getAllProcesses(probe *procutil.Probe, pu *net.RemoteSysProbeUtil) (map[int
 	return procutil.ConvertAllProcesses(procs), nil
 }
 
-func getAllProcStats(probe *procutil.Probe, pids []int32) (map[int32]*process.FilledProcess, error) {
-	stats, err := probe.StatsForPIDsWithPerm(pids, time.Now())
-	if err != nil {
-		return nil, err
+func getAllProcStats(probe *procutil.Probe, pu *net.RemoteSysProbeUtil, pids []int32) (map[int32]*process.FilledProcess, error) {
+	var stats map[int32]*procutil.Stats
+	var err error
+
+	if pu != nil {
+		stats, err = probe.StatsForPIDsWithoutPerm(pids, time.Now())
+		if err != nil {
+			return nil, err
+		}
+		// this is also best effort, if system-probe query failed, just use what we have
+		pStats, err := pu.GetProcStats()
+		if err == nil {
+			stats = mergeStatWithSysprobeStats(stats, pStats)
+		}
+	} else {
+		stats, err = probe.StatsForPIDsWithPerm(pids, time.Now())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	procs := make(map[int32]*process.FilledProcess, len(stats))
@@ -53,10 +68,10 @@ func getAllProcStats(probe *procutil.Probe, pids []int32) (map[int32]*process.Fi
 	return procs, nil
 }
 
-// mergeProcWithStats takes a process by PID map and fill the stats into the processes in the map
-func mergeProcWithStats(procs map[int32]*procutil.Process, stats *model.ProcStatsWithPermByPID) map[int32]*procutil.Process {
+// mergeProcWithSysprobeStats takes a process by PID map and fill the stats from system probe into the processes in the map
+func mergeProcWithSysprobeStats(procs map[int32]*procutil.Process, pStats *model.ProcStatsWithPermByPID) map[int32]*procutil.Process {
 	for pid, proc := range procs {
-		if s, ok := stats.StatsByPID[pid]; ok {
+		if s, ok := pStats.StatsByPID[pid]; ok {
 			proc.Stats.OpenFdCount = s.OpenFDCount
 			proc.Stats.IOStat.ReadCount = s.ReadCount
 			proc.Stats.IOStat.WriteCount = s.WriteCount
@@ -65,4 +80,18 @@ func mergeProcWithStats(procs map[int32]*procutil.Process, stats *model.ProcStat
 		}
 	}
 	return procs
+}
+
+// mergeStatWithSysprobeStats takes a stats by PID map and fill the stats from system probe into the stats in the map
+func mergeStatWithSysprobeStats(stats map[int32]*procutil.Stats, pStats *model.ProcStatsWithPermByPID) map[int32]*procutil.Stats {
+	for pid, stat := range stats {
+		if s, ok := pStats.StatsByPID[pid]; ok {
+			stat.OpenFdCount = s.OpenFDCount
+			stat.IOStat.ReadCount = s.ReadCount
+			stat.IOStat.WriteCount = s.WriteCount
+			stat.IOStat.ReadBytes = s.ReadBytes
+			stat.IOStat.WriteBytes = s.WriteBytes
+		}
+	}
+	return stats
 }

@@ -12,6 +12,6 @@ func getAllProcesses(probe *procutil.Probe, pu *net.RemoteSysProbeUtil) (map[int
 	return process.AllProcesses()
 }
 
-func getAllProcStats(probe *procutil.Probe, pids []int32) (map[int32]*process.FilledProcess, error) {
+func getAllProcStats(probe *procutil.Probe, pu *net.RemoteSysProbeUtil, pids []int32) (map[int32]*process.FilledProcess, error) {
 	return getAllProcesses(probe)
 }

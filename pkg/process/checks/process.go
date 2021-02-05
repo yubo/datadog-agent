@@ -42,6 +42,8 @@ type ProcessCheck struct {
 	lastRun         time.Time
 	networkID       string
 
+	notInitializedLogLimit *util.LogLimit
+
 	// lastPIDs is []int32 that holds PIDs that the check fetched last time,
 	// will be reused by RTProcessCheck to get stats
 	lastPIDs atomic.Value
@@ -49,6 +51,7 @@ type ProcessCheck struct {
 
 // Init initializes the singleton ProcessCheck.
 func (p *ProcessCheck) Init(cfg *config.AgentConfig, info *model.SystemInfo) {
+	p.notInitializedLogLimit = util.NewLogLimit(1, time.Minute*10)
 	p.sysInfo = info
 
 	networkID, err := agentutil.GetNetworkID()
@@ -88,8 +91,12 @@ func (p *ProcessCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.Mess
 	}
 
 	var pu *net.RemoteSysProbeUtil
-	if p, err := net.GetRemoteSystemProbeUtil(); err == nil {
-		pu = p
+	if putil, err := net.GetRemoteSystemProbeUtil(); err == nil {
+		pu = putil
+	} else {
+		if p.notInitializedLogLimit.ShouldLog() {
+			log.Warnf("could not initialize system-probe connection: %v (will only log every 10 minutes)", err)
+		}
 	}
 	procs, err := getAllProcesses(p.probe, pu)
 	if err != nil {
