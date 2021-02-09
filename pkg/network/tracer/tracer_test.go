@@ -2033,7 +2033,10 @@ func (l *tracePipeLogger) Start() {
 			case <-l.stop:
 				return
 			case event := <-channelEvents:
-				log.Debug(event.Raw)
+				// filter out sshd messages which have nothing to do with our tests
+				if !strings.HasPrefix(event.Task, "sshd-") {
+					log.Debug(event.Raw)
+				}
 			case err := <-channelErrors:
 				log.Error(err)
 			}
