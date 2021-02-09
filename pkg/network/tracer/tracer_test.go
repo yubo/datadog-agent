@@ -32,6 +32,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/network/config"
 	"github.com/DataDog/datadog-agent/pkg/network/ebpf/probes"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
+	sectests "github.com/DataDog/datadog-agent/pkg/security/tests"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/ebpf"
@@ -1901,6 +1902,11 @@ func TestHTTPStats(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.EnableHTTPMonitoring = true
+
+	tracelog, err := startTracing(cfg)
+	require.NoError(t, err)
+	defer tracelog.Stop()
+
 	tr, err := NewTracer(cfg)
 	require.NoError(t, err)
 	defer tr.Stop()
@@ -2010,6 +2016,50 @@ func testConfig() *config.Config {
 		cfg.AllowPrecompiledFallback = false
 	}
 	return cfg
+}
+
+type tracePipeLogger struct {
+	*sectests.TracePipe
+	stop chan struct{}
+}
+
+func (l *tracePipeLogger) Start() {
+	channelEvents, channelErrors := l.Channel()
+
+	go func() {
+		for {
+			select {
+			case <-l.stop:
+				return
+			case event := <-channelEvents:
+				log.Debug(event.Raw)
+			case err := <-channelErrors:
+				log.Error(err)
+			}
+		}
+	}()
+}
+
+func (l *tracePipeLogger) Stop() {
+	l.stop <- struct{}{}
+	l.Close()
+}
+
+func startTracing(cfg *config.Config) (*tracePipeLogger, error) {
+	cfg.BPFDebug = true
+
+	tracePipe, err := sectests.NewTracePipe()
+	if err != nil {
+		return nil, err
+	}
+
+	logger := &tracePipeLogger{
+		TracePipe: tracePipe,
+		stop:      make(chan struct{}),
+	}
+	logger.Start()
+
+	return logger, nil
 }
 
 func TestSelfConnect(t *testing.T) {
