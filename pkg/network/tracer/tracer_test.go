@@ -650,6 +650,7 @@ func TestTCPShortlived(t *testing.T) {
 	// Explicitly close this TCP connection
 	c.Close()
 
+	t.Logf("looking for connection from %s to %s", c.LocalAddr().String(), c.RemoteAddr().String())
 	var conn *network.ConnectionStats
 	require.Eventually(t, func() bool {
 		var ok bool
