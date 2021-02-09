@@ -1896,7 +1896,7 @@ func TestHTTPStats(t *testing.T) {
 		return
 	}
 
-	cfg := config.NewDefaultConfig()
+	cfg := testConfig()
 	cfg.EnableHTTPMonitoring = true
 	tr, err := NewTracer(cfg)
 	require.NoError(t, err)
