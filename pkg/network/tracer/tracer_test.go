@@ -1215,7 +1215,10 @@ func searchConnections(c *network.Connections, predicate func(network.Connection
 	var results []network.ConnectionStats
 	for _, conn := range c.Conns {
 		if predicate(conn) {
+			log.Tracef("MATCH: %s", conn)
 			results = append(results, conn)
+		} else {
+			log.Tracef("MISS: %s", conn)
 		}
 	}
 	return results
