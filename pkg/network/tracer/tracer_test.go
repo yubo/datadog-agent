@@ -1920,6 +1920,7 @@ func TestHTTPStats(t *testing.T) {
 	srv := &nethttp.Server{
 		Addr: serverAddr,
 		Handler: nethttp.HandlerFunc(func(w nethttp.ResponseWriter, req *nethttp.Request) {
+			t.Logf("received http request from %s", req.RemoteAddr)
 			io.Copy(ioutil.Discard, req.Body)
 			w.WriteHeader(200)
 		}),
