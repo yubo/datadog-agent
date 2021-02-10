@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,11 +14,12 @@ import (
 	"strconv"
 
 	"github.com/DataDog/datadog-agent/pkg/metadata/host"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/mholt/archiver/v3"
 
+	// "github.com/lebauce/igor/rpm"
 	"github.com/lebauce/igor/apt"
 	"github.com/lebauce/igor/cos"
-	"github.com/lebauce/igor/rpm"
 	"github.com/lebauce/igor/types"
 	"github.com/lebauce/igor/wsl"
 )
@@ -218,7 +218,7 @@ func runDownloadHeaders(target types.Target, outputDir string) error {
 
 	outputDirPath, err := filepath.Abs(outputDir)
 	if err != nil {
-		return fmt.Errorf("unable to get absolute path to %s: %s", outputDirPath, err)
+		return fmt.Errorf("unable to get absolute path to output directory %s: %s", outputDirPath, err)
 	}
 
 	err = os.MkdirAll(outputDirPath, 0755)
@@ -239,14 +239,14 @@ func getBackend(target types.Target) (types.Backend, error) {
 	)
 
 	switch target.Distro.Display {
-	case "Fedora", "RHEL":
-		backend, err = rpm.NewRedHatBackend(&target)
-	case "CentOS":
-		backend, err = rpm.NewCentOSBackend(&target)
-	case "openSUSE":
-		backend, err = rpm.NewOpenSUSEBackend(&target)
-	case "SLE":
-		backend, err = rpm.NewSLESBackend(&target)
+	// case "Fedora", "RHEL":
+	// 	backend, err = rpm.NewRedHatBackend(&target)
+	// case "CentOS":
+	// 	backend, err = rpm.NewCentOSBackend(&target)
+	// case "openSUSE":
+	// 	backend, err = rpm.NewOpenSUSEBackend(&target)
+	// case "SLE":
+	// 	backend, err = rpm.NewSLESBackend(&target)
 	case "Debian", "Ubuntu":
 		backend, err = apt.NewBackend(&target)
 	case "cos":
@@ -254,7 +254,7 @@ func getBackend(target types.Target) (types.Backend, error) {
 	case "wsl":
 		backend, err = wsl.NewBackend(&target)
 	default:
-		log.Fatalf("Unsupported distribution '%s'", target.Distro.Display)
+		err = fmt.Errorf("Unsupported distribution '%s'", target.Distro.Display)
 	}
 	return backend, err
 }
