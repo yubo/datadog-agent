@@ -146,6 +146,10 @@ github.com/Djarvur/go-err113 v0.0.0-20200410182137-af658d038157/go.mod h1:4UJr5H
 github.com/GoogleCloudPlatform/cloudsql-proxy v0.0.0-20190129172621-c8b1d7a94ddf/go.mod h1:aJ4qN3TfrelA6NZ6AXsXRfmEVaYin3EDbSPJrKS8OXo=
 github.com/GoogleCloudPlatform/k8s-cloud-provider v0.0.0-20181220005116-f8e995905100/go.mod h1:iroGtC8B3tQiqtds1l+mgk/BBOrxbqjH+eUfFQYRc14=
 github.com/GoogleCloudPlatform/k8s-cloud-provider v0.0.0-20190822182118-27a4ced34534/go.mod h1:iroGtC8B3tQiqtds1l+mgk/BBOrxbqjH+eUfFQYRc14=
+github.com/ISauve/igor v0.0.0-20210210054642-343eba35d0c8 h1:xlniY7Eluw1opTABkYzqDQGWiVrWK3olG6LbW0XQeZY=
+github.com/ISauve/igor v0.0.0-20210210054642-343eba35d0c8/go.mod h1:3fjgPl9M+CgX4Fh2ZTPTHQA7tykes5WemB+PnUQddZM=
+github.com/ISauve/igor v0.0.0-20210210055719-bc00a2f88546 h1:2vToOnsKxcaCDZrFz1GsqmS+m/kE/h3pHs8P+jcZ4Kk=
+github.com/ISauve/igor v0.0.0-20210210055719-bc00a2f88546/go.mod h1:3fjgPl9M+CgX4Fh2ZTPTHQA7tykes5WemB+PnUQddZM=
 github.com/JeffAshton/win_pdh v0.0.0-20161109143554-76bb4ee9f0ab/go.mod h1:3VYc5hodBMJ5+l/7J4xAyMeuM2PNuepvHlGs8yilUCA=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd/go.mod h1:64YHyfSL2R96J44Nlwm39UHepQbyR5q10x7iYa1ks2E=

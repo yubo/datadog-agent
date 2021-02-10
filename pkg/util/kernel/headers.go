@@ -18,10 +18,8 @@ import (
 	"github.com/mholt/archiver/v3"
 
 	// "github.com/lebauce/igor/rpm"
-	"github.com/lebauce/igor/apt"
-	"github.com/lebauce/igor/cos"
-	"github.com/lebauce/igor/types"
-	"github.com/lebauce/igor/wsl"
+	"github.com/ISauve/igor"
+	"github.com/ISauve/igor/types"
 )
 
 const sysfsHeadersPath = "/sys/kernel/kheaders.tar.xz"
@@ -211,7 +209,7 @@ func runDownloadHeaders(target types.Target, outputDir string) error {
 		target.OSRelease,
 	)
 
-	backend, err := getBackend(target)
+	backend, err := igor.GetBackend(target)
 	if err != nil {
 		return fmt.Errorf("unable to get kernel header download backend: %s", err)
 	}
@@ -230,31 +228,4 @@ func runDownloadHeaders(target types.Target, outputDir string) error {
 		return fmt.Errorf("failed to download kernel headers: %s", err)
 	}
 	return nil
-}
-
-func getBackend(target types.Target) (types.Backend, error) {
-	var (
-		backend types.Backend
-		err     error
-	)
-
-	switch target.Distro.Display {
-	// case "Fedora", "RHEL":
-	// 	backend, err = rpm.NewRedHatBackend(&target)
-	// case "CentOS":
-	// 	backend, err = rpm.NewCentOSBackend(&target)
-	// case "openSUSE":
-	// 	backend, err = rpm.NewOpenSUSEBackend(&target)
-	// case "SLE":
-	// 	backend, err = rpm.NewSLESBackend(&target)
-	case "Debian", "Ubuntu":
-		backend, err = apt.NewBackend(&target)
-	case "cos":
-		backend, err = cos.NewBackend(&target)
-	case "wsl":
-		backend, err = wsl.NewBackend(&target)
-	default:
-		err = fmt.Errorf("Unsupported distribution '%s'", target.Distro.Display)
-	}
-	return backend, err
 }

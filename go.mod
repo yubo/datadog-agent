@@ -50,6 +50,7 @@ require (
 	github.com/DataDog/sketches-go v1.0.0
 	github.com/DataDog/watermarkpodautoscaler v0.1.0
 	github.com/DataDog/zstd v0.0.0-20160706220725-2bf71ec48360
+	github.com/ISauve/igor v0.0.0-20210210055719-bc00a2f88546
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/go-winio v0.4.15
@@ -115,7 +116,6 @@ require (
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/kjk/lzma v0.0.0-20161016003348-3fd93898850d // indirect
 	github.com/kubernetes-incubator/custom-metrics-apiserver v0.0.0-20190918110929-3d9be26a50eb // Pinned to kubernetes-1.16.2
-	github.com/lebauce/igor v0.0.0-20201029143700-03b922dd06bd
 	github.com/lxn/walk v0.0.0-20191128110447-55ccb3a9f5c1
 	github.com/lxn/win v0.0.0-20191128105842-2da648fda5b4
 	github.com/mailru/easyjson v0.7.6
