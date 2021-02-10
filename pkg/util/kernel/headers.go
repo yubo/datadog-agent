@@ -19,7 +19,6 @@ import (
 
 	// "github.com/lebauce/igor/rpm"
 	"github.com/ISauve/igor"
-	"github.com/ISauve/igor/types"
 )
 
 const sysfsHeadersPath = "/sys/kernel/kheaders.tar.xz"
@@ -32,6 +31,8 @@ var versionCodeRegexp = regexp.MustCompile(`^#define[\t ]+LINUX_VERSION_CODE[\t 
 // which is enabled via the `kheaders` kernel module and the `CONFIG_KHEADERS` kernel config option.
 // The `kheaders` module will be automatically added and removed if present and needed.
 func FindHeaderDirs() ([]string, error) {
+	return nil, fmt.Errorf("forced failure for testing")
+
 	hv, err := HostVersion()
 	if err != nil {
 		return nil, fmt.Errorf("unable to determine host kernel version: %w", err)
@@ -186,22 +187,11 @@ func unloadKHeadersModule() error {
 }
 
 func DownloadHeaders(outputDir string) error {
-	target, err := types.NewTarget()
+	target, err := igor.GetTarget()
 	if err != nil {
 		return fmt.Errorf("failed to retrieve target information: %s", err)
 	}
 
-	if _, err := os.Stat("/run/WSL"); err == nil {
-		target.Distro.Display = "wsl"
-	} else if id := target.OSRelease["ID"]; target.Distro.Display == "" && id != "" {
-		target.Distro.Display = id
-	}
-
-	err = runDownloadHeaders(target, outputDir)
-	return err
-}
-
-func runDownloadHeaders(target types.Target, outputDir string) error {
 	log.Infof("Downloading kernel headers for target distribution %s, release %s, kernel %s, OSRelease %s\n",
 		target.Distro.Display,
 		target.Distro.Release,

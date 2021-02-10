@@ -50,7 +50,7 @@ require (
 	github.com/DataDog/sketches-go v1.0.0
 	github.com/DataDog/watermarkpodautoscaler v0.1.0
 	github.com/DataDog/zstd v0.0.0-20160706220725-2bf71ec48360
-	github.com/ISauve/igor v0.0.0-20210210055719-bc00a2f88546
+	github.com/ISauve/igor v0.0.0-20210210074255-51cd0e3b8770
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/go-winio v0.4.15

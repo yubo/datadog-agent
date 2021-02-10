@@ -150,6 +150,10 @@ github.com/ISauve/igor v0.0.0-20210210054642-343eba35d0c8 h1:xlniY7Eluw1opTABkYz
 github.com/ISauve/igor v0.0.0-20210210054642-343eba35d0c8/go.mod h1:3fjgPl9M+CgX4Fh2ZTPTHQA7tykes5WemB+PnUQddZM=
 github.com/ISauve/igor v0.0.0-20210210055719-bc00a2f88546 h1:2vToOnsKxcaCDZrFz1GsqmS+m/kE/h3pHs8P+jcZ4Kk=
 github.com/ISauve/igor v0.0.0-20210210055719-bc00a2f88546/go.mod h1:3fjgPl9M+CgX4Fh2ZTPTHQA7tykes5WemB+PnUQddZM=
+github.com/ISauve/igor v0.0.0-20210210074019-fd6808cca134 h1:9zAXPwvtukrZeQQN30Oa5mpLk6FFGxhO1R/8ZBemjhg=
+github.com/ISauve/igor v0.0.0-20210210074019-fd6808cca134/go.mod h1:3fjgPl9M+CgX4Fh2ZTPTHQA7tykes5WemB+PnUQddZM=
+github.com/ISauve/igor v0.0.0-20210210074255-51cd0e3b8770 h1:Yv5AnRVoT97qN3QbHlQHJDmP1HBmrDsO/kFTUz3f8kU=
+github.com/ISauve/igor v0.0.0-20210210074255-51cd0e3b8770/go.mod h1:3fjgPl9M+CgX4Fh2ZTPTHQA7tykes5WemB+PnUQddZM=
 github.com/JeffAshton/win_pdh v0.0.0-20161109143554-76bb4ee9f0ab/go.mod h1:3VYc5hodBMJ5+l/7J4xAyMeuM2PNuepvHlGs8yilUCA=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd/go.mod h1:64YHyfSL2R96J44Nlwm39UHepQbyR5q10x7iYa1ks2E=
