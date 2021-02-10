@@ -314,7 +314,7 @@ int kprobe__tcp_sendmsg(struct pt_regs* ctx) {
     struct sock* sk = (struct sock*)PT_REGS_PARM1(ctx);
     size_t size = (size_t)PT_REGS_PARM3(ctx);
     u64 pid_tgid = bpf_get_current_pid_tgid();
-    log_debug("kprobe/tcp_sendmsg: pid_tgid: %d, size: %d\n", pid_tgid, size);
+    log_debug("kprobe/tcp_sendmsg: tgid: %u, pid: %u, size: %d\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, size);
 
     conn_tuple_t t = {};
     if (!read_conn_tuple(&t, sk, pid_tgid, CONN_TYPE_TCP)) {
@@ -330,7 +330,7 @@ int kprobe__tcp_sendmsg__pre_4_1_0(struct pt_regs* ctx) {
     struct sock* sk = (struct sock*)PT_REGS_PARM2(ctx);
     size_t size = (size_t)PT_REGS_PARM4(ctx);
     u64 pid_tgid = bpf_get_current_pid_tgid();
-    log_debug("kprobe/tcp_sendmsg/pre_4_1_0: pid_tgid: %d, size: %d\n", pid_tgid, size);
+    log_debug("kprobe/tcp_sendmsg/pre_4_1_0: tgid: %u, pid: %u, size: %d\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, size);
 
     conn_tuple_t t = {};
     if (!read_conn_tuple(&t, sk, pid_tgid, CONN_TYPE_TCP)) {
@@ -367,7 +367,7 @@ int kprobe__tcp_cleanup_rbuf(struct pt_regs* ctx) {
         return 0;
     }
     u64 pid_tgid = bpf_get_current_pid_tgid();
-    log_debug("kprobe/tcp_cleanup_rbuf: pid_tgid: %d, copied: %d\n", pid_tgid, copied);
+    log_debug("kprobe/tcp_cleanup_rbuf: tgid: %u, pid: %u, copied: %d\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, copied);
 
     conn_tuple_t t = {};
     if (!read_conn_tuple(&t, sk, pid_tgid, CONN_TYPE_TCP)) {
@@ -385,7 +385,7 @@ int kprobe__tcp_close(struct pt_regs* ctx) {
     sk = (struct sock*)PT_REGS_PARM1(ctx);
 
     // Get network namespace id
-    log_debug("kprobe/tcp_close: pid_tgid: %d, ns: %d\n", pid_tgid, get_netns_from_sock(sk));
+    log_debug("kprobe/tcp_close: tgid: %u, pid: %u, ns: %d\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, get_netns_from_sock(sk));
 
     if (!read_conn_tuple(&t, sk, pid_tgid, CONN_TYPE_TCP)) {
         return 0;
@@ -415,7 +415,7 @@ int kprobe__ip6_make_skb(struct pt_regs* ctx) {
         return 0;
     }
 
-    log_debug("kprobe/ip6_make_skb: pid_tgid: %d, size: %d\n", pid_tgid, size);
+    log_debug("kprobe/ip6_make_skb: tgid: %u, pid: %u, size: %d\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, size);
     handle_message(&t, size, 0);
     increment_telemetry_count(udp_send_processed);
 
@@ -462,7 +462,7 @@ int kprobe__ip_make_skb(struct pt_regs* ctx) {
         t.dport = ntohs(t.dport);
     }
 
-    log_debug("kprobe/ip_send_skb: pid_tgid: %d, size: %d\n", pid_tgid, size);
+    log_debug("kprobe/ip_send_skb: tgid: %u, pid: %u, size: %d\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, size);
     handle_message(&t, size, 0);
     increment_telemetry_count(udp_send_processed);
 
@@ -487,7 +487,7 @@ int kprobe__udp_recvmsg(struct pt_regs* ctx) {
 
     // Store pointer to the socket using the pid/tgid
     bpf_map_update_elem(&udp_recv_sock, &pid_tgid, &t, BPF_ANY);
-    log_debug("kprobe/udp_recvmsg: pid_tgid: %d\n", pid_tgid);
+    log_debug("kprobe/udp_recvmsg: tgid: %u, pid: %u\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF);
 
     return 0;
 }
@@ -503,7 +503,7 @@ int kprobe__udp_recvmsg_pre_4_1_0(struct pt_regs* ctx) {
 
     // Store pointer to the socket using the pid/tgid
     bpf_map_update_elem(&udp_recv_sock, &pid_tgid, &t, BPF_ANY);
-    log_debug("kprobe/udp_recvmsg/pre_4_1_0: pid_tgid: %d\n", pid_tgid);
+    log_debug("kprobe/udp_recvmsg/pre_4_1_0: tgid: %u, pid: %u\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF);
 
     return 0;
 }
@@ -523,7 +523,7 @@ int kretprobe__udp_recvmsg(struct pt_regs* ctx) {
 
     int copied = (int)PT_REGS_RC(ctx);
     if (copied < 0) { // Non-zero values are errors (or a peek) (e.g -EINVAL)
-        log_debug("kretprobe/udp_recvmsg: ret=%d < 0, pid_tgid=%d\n", copied, pid_tgid);
+        log_debug("kretprobe/udp_recvmsg: ret=%d < 0, tgid: %u, pid: %u\n", copied, pid_tgid >> 32, pid_tgid & 0xFFFFFFFF);
         return 0;
     }
 
@@ -539,11 +539,11 @@ int kretprobe__udp_recvmsg(struct pt_regs* ctx) {
     sockaddr_to_addr(sa, &t.daddr_h, &t.daddr_l, &t.dport);
 
     if (!read_conn_tuple_partial(&t, st->sk, pid_tgid, CONN_TYPE_UDP)) {
-        log_debug("ERR(kretprobe/udp_recvmsg): error reading conn tuple, pid_tgid=%d\n", pid_tgid);
+        log_debug("ERR(kretprobe/udp_recvmsg): error reading conn tuple, tgid: %u, pid: %u\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF);
         return 0;
     }
 
-    log_debug("kretprobe/udp_recvmsg: pid_tgid: %d, return: %d\n", pid_tgid, copied);
+    log_debug("kretprobe/udp_recvmsg: tgid: %u, pid: %u, return: %d\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, copied);
     handle_message(&t, 0, copied);
 
     return 0;
