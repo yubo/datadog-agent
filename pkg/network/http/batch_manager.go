@@ -4,10 +4,10 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"unsafe"
 
-	"fmt"
-
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/ebpf"
 )
 
@@ -99,6 +99,7 @@ func (m *batchManager) GetPendingTransactions() []httpTX {
 
 			krnStateIDX := int(batch.idx)
 			krnStatePos := int(batch.pos)
+			log.Debugf("http get pending (cpu=%d): kernel(idx=%d pos=%d) user(idx=%d pos=%d)", i, krnStateIDX, krnStatePos, usrState.idx, usrState.pos)
 			if krnStateIDX != usrState.idx || krnStatePos <= usrState.pos {
 				break
 			}
