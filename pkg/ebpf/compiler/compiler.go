@@ -165,6 +165,10 @@ func NewEBPFCompiler(headerDirs []string, verbose bool) (*EBPFCompiler, error) {
 
 	var cflags []string
 	for _, d := range dirs {
+		log.Infof("Including %s/arch/%s/include", d, arch)
+		log.Infof("Including %s/arch/%s/include/generated", d, arch)
+		log.Infof("Including %s/arch/%s/include/uapi", d, arch)
+		log.Infof("Including %s/arch/%s/include/generated/uapi", d, arch)
 		cflags = append(cflags,
 			fmt.Sprintf("-isystem%s/arch/%s/include", d, arch),
 			fmt.Sprintf("-isystem%s/arch/%s/include/generated", d, arch),
