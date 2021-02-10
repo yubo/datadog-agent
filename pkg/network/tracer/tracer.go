@@ -151,16 +151,14 @@ func NewTracer(config *config.Config) (*Tracer, error) {
 	}
 
 	var buf bytecode.AssetReader
-	if config.EnableRuntimeCompiler {
-		buf, err = getRuntimeCompiledTracer(config)
-		if err != nil {
-			if !config.AllowPrecompiledFallback {
-				return nil, fmt.Errorf("error compiling network tracer: %s", err)
-			}
-			log.Warnf("error compiling network tracer, falling back to pre-compiled: %s", err)
-		} else {
-			defer buf.Close()
+	buf, err = getRuntimeCompiledTracer(config)
+	if err != nil {
+		if !config.AllowPrecompiledFallback {
+			return nil, fmt.Errorf("error compiling network tracer: %s", err)
 		}
+		log.Warnf("error compiling network tracer, falling back to pre-compiled: %s", err)
+	} else {
+		defer buf.Close()
 	}
 
 	if buf == nil {

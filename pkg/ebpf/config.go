@@ -95,7 +95,7 @@ func NewDefaultConfig() *Config {
 		BPFDir:                   filepath.Join(cwd, "bytecode/build"),
 		BPFDebug:                 false,
 		ProcRoot:                 "/proc",
-		EnableRuntimeCompiler:    false,
+		EnableRuntimeCompiler:    true,
 		RuntimeCompilerOutputDir: "/var/tmp/datadog-agent/system-probe/build",
 		AllowPrecompiledFallback: true,
 	}
