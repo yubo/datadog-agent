@@ -186,10 +186,10 @@ func unloadKHeadersModule() error {
 	return nil
 }
 
-func DownloadHeaders(outputDir string) error {
+func DownloadHeaders(outputDir string) ([]string, error) {
 	target, err := igor.GetTarget()
 	if err != nil {
-		return fmt.Errorf("failed to retrieve target information: %s", err)
+		return nil, fmt.Errorf("failed to retrieve target information: %s", err)
 	}
 
 	log.Infof("Downloading kernel headers for target distribution %s, release %s, kernel %s, OSRelease %s\n",
@@ -201,21 +201,21 @@ func DownloadHeaders(outputDir string) error {
 
 	backend, err := igor.GetBackend(target)
 	if err != nil {
-		return fmt.Errorf("unable to get kernel header download backend: %s", err)
+		return nil, fmt.Errorf("unable to get kernel header download backend: %s", err)
 	}
 
 	outputDirPath, err := filepath.Abs(outputDir)
 	if err != nil {
-		return fmt.Errorf("unable to get absolute path to output directory %s: %s", outputDirPath, err)
+		return nil, fmt.Errorf("unable to get absolute path to output directory %s: %s", outputDirPath, err)
 	}
 
 	err = os.MkdirAll(outputDirPath, 0755)
 	if err != nil {
-		return fmt.Errorf("unable create output directory %s: %s", outputDirPath, err)
+		return nil, fmt.Errorf("unable create output directory %s: %s", outputDirPath, err)
 	}
 
 	if err = backend.GetKernelHeaders(outputDir); err != nil {
-		return fmt.Errorf("failed to download kernel headers: %s", err)
+		return nil, fmt.Errorf("failed to download kernel headers: %s", err)
 	}
-	return nil
+	return []string{outputDir + "/usr/src/linux-headers-" + target.Uname.Kernel}, nil
 }
