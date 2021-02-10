@@ -1938,9 +1938,13 @@ func TestHTTPStats(t *testing.T) {
 
 	// Send a series of HTTP requests to the test server
 	client := new(nethttp.Client)
-	resp, err := client.Get("http://" + serverAddr + "/test")
+	req, err := nethttp.NewRequest("GET", "http://"+serverAddr+"/test", nil)
+	require.NoError(t, err)
+	req.Header.Set("Connection", "close")
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	resp.Body.Close()
+	client.CloseIdleConnections()
 
 	// Iterate through active connections until we find connection created above
 	var matchingConns []network.ConnectionStats
