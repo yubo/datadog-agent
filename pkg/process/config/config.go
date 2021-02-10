@@ -29,7 +29,8 @@ const (
 	defaultProxyPort = 3128
 
 	// defaultSystemProbeBPFDir is the default path for eBPF programs
-	defaultSystemProbeBPFDir = "/opt/datadog-agent/embedded/share/system-probe/ebpf"
+	// defaultSystemProbeBPFDir = "/opt/datadog-agent/embedded/share/system-probe/ebpf"
+	defaultSystemProbeBPFDir = "/git/datadog-agent/pkg/ebpf/bytecode/build"
 
 	// defaultRuntimeCompilerOutputDir is the default path for output from the system-probe runtime compiler
 	defaultRuntimeCompilerOutputDir = "/var/tmp/datadog-agent/system-probe/build"

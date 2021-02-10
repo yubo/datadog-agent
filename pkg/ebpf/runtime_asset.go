@@ -13,6 +13,7 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/ebpf/compiler"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 var (
@@ -96,7 +97,7 @@ func (a *RuntimeAsset) Compile(config *Config, cflags []string) (CompiledOutput,
 	// this ensures we re-compile when either of the input changes
 	baseName := strings.TrimSuffix(a.filename, filepath.Ext(a.filename))
 	outputFile := filepath.Join(config.RuntimeCompilerOutputDir, fmt.Sprintf("%s-%d-%s-%s.o", baseName, kv, hash, flagHash))
-	if _, err := os.Stat(outputFile); err != nil {
+	if _, err = os.Stat(outputFile); err != nil {
 		if !os.IsNotExist(err) {
 			return nil, fmt.Errorf("error stat-ing output file %s: %w", outputFile, err)
 		}
@@ -109,6 +110,8 @@ func (a *RuntimeAsset) Compile(config *Config, cflags []string) (CompiledOutput,
 		if err := comp.CompileToObjectFile(inputReader, outputFile, flags); err != nil {
 			return nil, fmt.Errorf("failed to compile runtime version of %s: %s", a.filename, err)
 		}
+	} else {
+		log.Infof("**** Output file already exists: %s", outputFile)
 	}
 	return os.Open(outputFile)
 }
