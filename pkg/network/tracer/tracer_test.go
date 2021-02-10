@@ -616,6 +616,11 @@ func TestTCPShortlived(t *testing.T) {
 	// Enable BPF-based system probe
 	cfg := testConfig()
 	cfg.TCPClosedTimeout = 10 * time.Millisecond
+
+	tracelog, err := startTracing(cfg)
+	require.NoError(t, err)
+	defer tracelog.Stop()
+
 	tr, err := NewTracer(cfg)
 	if err != nil {
 		t.Fatal(err)
