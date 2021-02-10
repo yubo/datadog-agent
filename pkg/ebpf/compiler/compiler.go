@@ -30,7 +30,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
-const kernelHeaderDirectoryPath = "/tmp/kernel-headers"
+const kernelHeaderDownloadDirectory = "/tmp/kernel-headers"
 
 type EBPFCompiler struct {
 	compiler *C.struct_bpf_compiler
@@ -143,13 +143,14 @@ func NewEBPFCompiler(headerDirs []string, verbose bool) (*EBPFCompiler, error) {
 	} else {
 		dirs, err = kernel.FindHeaderDirs()
 		if err != nil {
-			log.Infof("Unable to find kernel headers: %w. Attempting to download kernel headers", err)
-			err = kernel.DownloadHeaders(kernelHeaderDirectoryPath)
+			log.Infof("Unable to find kernel headers: %s. Attempting to download kernel headers", err)
+			err = kernel.DownloadHeaders(kernelHeaderDownloadDirectory)
 			if err != nil {
 				ebpfCompiler.Close()
 				return nil, fmt.Errorf("unable to download kernel headers: %w", err)
 			}
-			log.Infof("Successfully downloaded headers to %s\n", kernelHeaderDirectoryPath)
+			dirs = []string{kernelHeaderDownloadDirectory}
+			log.Infof("Successfully downloaded headers to %s", kernelHeaderDownloadDirectory)
 		}
 	}
 
