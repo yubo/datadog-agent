@@ -27,18 +27,18 @@ import (
 	"unsafe"
 
 	"github.com/DataDog/datadog-agent/pkg/network"
-	"github.com/cihub/seelog"
-
 	"github.com/DataDog/datadog-agent/pkg/network/config"
 	"github.com/DataDog/datadog-agent/pkg/network/ebpf/probes"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	sectests "github.com/DataDog/datadog-agent/pkg/security/tests"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/DataDog/datadog-agent/pkg/util/testutil"
 	"github.com/DataDog/ebpf"
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
 var (
@@ -51,16 +51,29 @@ var (
 // runtimeCompilationEnvVar forces use of the runtime compiler for ebpf functionality
 const runtimeCompilationEnvVar = "DD_TESTS_RUNTIME_COMPILED"
 
-func TestMain(m *testing.M) {
-	log.SetupLogger(seelog.Default, "trace")
-	cfg := testConfig()
-	if cfg.EnableRuntimeCompiler {
-		fmt.Println("RUNTIME COMPILER ENABLED")
-	}
-	os.Exit(m.Run())
+type TracerTestSuite struct {
+	suite.Suite
 }
 
-func TestTracerExpvar(t *testing.T) {
+func (s *TracerTestSuite) SetupTest() {
+	logger, err := testutil.NewTestLogger(s.T())
+	if err != nil {
+		s.T().Errorf("failed to setup logger: %s", err)
+	}
+
+	log.SetupLogger(logger, "trace")
+	cfg := testConfig()
+	if cfg.EnableRuntimeCompiler {
+		//s.T().Log("RUNTIME COMPILER ENABLED")
+	}
+}
+
+func TestTracer(t *testing.T) {
+	suite.Run(t, new(TracerTestSuite))
+}
+
+func (s *TracerTestSuite) TestTracerExpvar() {
+	t := s.T()
 	currKernelVersion, err := kernel.HostVersion()
 	require.NoError(t, err)
 	pre410Kernel := currKernelVersion < kernel.VersionCode(4, 1, 0)
@@ -190,7 +203,8 @@ func TestTracerExpvar(t *testing.T) {
 	}
 }
 
-func TestTCPSendAndReceive(t *testing.T) {
+func (s *TracerTestSuite) TestTCPSendAndReceive() {
+	t := s.T()
 	// Enable BPF-based system probe
 	tr, err := NewTracer(testConfig())
 	if err != nil {
@@ -255,7 +269,8 @@ func TestTCPSendAndReceive(t *testing.T) {
 	doneChan <- struct{}{}
 }
 
-func TestPreexistingConnectionDirection(t *testing.T) {
+func (s *TracerTestSuite) TestPreexistingConnectionDirection() {
+	t := s.T()
 	// Start the client and server before we enable the system probe to test that the tracer picks
 	// up the pre-existing connection
 	doneChan := make(chan struct{})
@@ -304,7 +319,8 @@ func TestPreexistingConnectionDirection(t *testing.T) {
 	doneChan <- struct{}{}
 }
 
-func TestDNATIntraHostIntegration(t *testing.T) {
+func (s *TracerTestSuite) TestDNATIntraHostIntegration() {
+	t := s.T()
 	t.SkipNow()
 	setupDNAT(t)
 	defer teardownDNAT(t)
@@ -367,7 +383,8 @@ func TestDNATIntraHostIntegration(t *testing.T) {
 	})
 }
 
-func TestTCPRemoveEntries(t *testing.T) {
+func (s *TracerTestSuite) TestTCPRemoveEntries() {
+	t := s.T()
 	config := testConfig()
 	config.TCPConnTimeout = 100 * time.Millisecond
 	tr, err := NewTracer(config)
@@ -449,7 +466,8 @@ func TestTCPRemoveEntries(t *testing.T) {
 	assert.Equal(t, addrPort(server.address), int(conn.DPort))
 }
 
-func TestTCPRetransmit(t *testing.T) {
+func (s *TracerTestSuite) TestTCPRetransmit() {
+	t := s.T()
 	// Enable BPF-based system probe
 	tr, err := NewTracer(testConfig())
 	if err != nil {
@@ -502,7 +520,8 @@ func TestTCPRetransmit(t *testing.T) {
 	assert.Equal(t, addrPort(server.address), int(conn.DPort))
 }
 
-func TestTCPRetransmitSharedSocket(t *testing.T) {
+func (s *TracerTestSuite) TestTCPRetransmitSharedSocket() {
+	t := s.T()
 	// Enable BPF-based system probe
 	tr, err := NewTracer(testConfig())
 	require.NoError(t, err)
@@ -565,7 +584,8 @@ func TestTCPRetransmitSharedSocket(t *testing.T) {
 	assert.GreaterOrEqual(t, int64(numProcesses-1), atomic.LoadInt64(&tr.pidCollisions))
 }
 
-func TestTCPRTT(t *testing.T) {
+func (s *TracerTestSuite) TestTCPRTT() {
+	t := s.T()
 	// Enable BPF-based system probe
 	tr, err := NewTracer(testConfig())
 	require.NoError(t, err)
@@ -607,12 +627,8 @@ func TestTCPRTT(t *testing.T) {
 	assert.EqualValues(t, int(tcpInfo.Rttvar), int(conn.RTTVar))
 }
 
-type AddrPair struct {
-	local  net.Addr
-	remote net.Addr
-}
-
-func TestTCPShortlived(t *testing.T) {
+func (s *TracerTestSuite) TestTCPShortlived() {
+	t := s.T()
 	// Enable BPF-based system probe
 	cfg := testConfig()
 	cfg.TCPClosedTimeout = 10 * time.Millisecond
@@ -679,7 +695,8 @@ func TestTCPShortlived(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func TestTCPOverIPv6(t *testing.T) {
+func (s *TracerTestSuite) TestTCPOverIPv6() {
+	t := s.T()
 	t.SkipNow()
 	config := testConfig()
 	config.CollectIPv6Conns = true
@@ -740,7 +757,8 @@ func TestTCPOverIPv6(t *testing.T) {
 
 }
 
-func TestTCPCollectionDisabled(t *testing.T) {
+func (s *TracerTestSuite) TestTCPCollectionDisabled() {
+	t := s.T()
 	// Enable BPF-based system probe with TCP disabled
 	config := testConfig()
 	config.CollectTCPConns = false
@@ -783,7 +801,8 @@ func TestTCPCollectionDisabled(t *testing.T) {
 	require.False(t, ok)
 }
 
-func TestUDPSendAndReceive(t *testing.T) {
+func (s *TracerTestSuite) TestUDPSendAndReceive() {
+	t := s.T()
 	// Enable BPF-based system probe
 	cfg := testConfig()
 	cfg.BPFDebug = true
@@ -833,7 +852,8 @@ func TestUDPSendAndReceive(t *testing.T) {
 	require.True(t, incoming.IntraHost)
 }
 
-func TestUDPDisabled(t *testing.T) {
+func (s *TracerTestSuite) TestUDPDisabled() {
+	t := s.T()
 	// Enable BPF-based system probe with UDP disabled
 	config := testConfig()
 	config.CollectUDPConns = false
@@ -875,7 +895,8 @@ func TestUDPDisabled(t *testing.T) {
 	require.False(t, ok)
 }
 
-func TestLocalDNSCollectionDisabled(t *testing.T) {
+func (s *TracerTestSuite) TestLocalDNSCollectionDisabled() {
+	t := s.T()
 	// Enable BPF-based system probe with DNS disabled (by default)
 	config := testConfig()
 
@@ -903,7 +924,8 @@ func TestLocalDNSCollectionDisabled(t *testing.T) {
 	}
 }
 
-func TestLocalDNSCollectionEnabled(t *testing.T) {
+func (s *TracerTestSuite) TestLocalDNSCollectionEnabled() {
+	t := s.T()
 	// Enable BPF-based system probe with DNS enabled
 	config := testConfig()
 	config.CollectLocalDNS = true
@@ -940,7 +962,8 @@ func isLocalDNS(c network.ConnectionStats) bool {
 	return c.Source.String() == "127.0.0.1" && c.Dest.String() == "127.0.0.1" && c.DPort == 53
 }
 
-func TestShouldSkipExcludedConnection(t *testing.T) {
+func (s *TracerTestSuite) TestShouldSkipExcludedConnection() {
+	t := s.T()
 	// exclude connections from 127.0.0.1:80
 	config := testConfig()
 	// exclude source SSH connections to make this pass in VM
@@ -981,7 +1004,8 @@ func TestShouldSkipExcludedConnection(t *testing.T) {
 	}, "Unable to find UDP connection to 127.0.0.1:80")
 }
 
-func TestIsExpired(t *testing.T) {
+func (s *TracerTestSuite) TestIsExpired() {
+	t := s.T()
 	// 10mn
 	var timeout uint64 = 600000000000
 	for _, tc := range []struct {
@@ -1009,7 +1033,8 @@ func TestIsExpired(t *testing.T) {
 	}
 }
 
-func TestTCPMiscount(t *testing.T) {
+func (s *TracerTestSuite) TestTCPMiscount() {
+	t := s.T()
 	t.Skip("skipping because this test will pass/fail depending on host performance")
 	tr, err := NewTracer(testConfig())
 	require.NoError(t, err)
@@ -1068,7 +1093,8 @@ func TestTCPMiscount(t *testing.T) {
 	assert.NotZero(t, tel["tcp_sent_miscounts"])
 }
 
-func TestSkipConnectionDNS(t *testing.T) {
+func (s *TracerTestSuite) TestSkipConnectionDNS() {
+	t := s.T()
 
 	t.Run("CollectLocalDNS disabled", func(t *testing.T) {
 		tr := &Tracer{config: &config.Config{CollectLocalDNS: false}}
@@ -1127,7 +1153,8 @@ func TestSkipConnectionDNS(t *testing.T) {
 	})
 }
 
-func TestConnectionExpirationRegression(t *testing.T) {
+func (s *TracerTestSuite) TestConnectionExpirationRegression() {
+	t := s.T()
 	t.SkipNow()
 	tr, err := NewTracer(testConfig())
 	require.NoError(t, err)
@@ -1600,19 +1627,23 @@ func testDNSStats(t *testing.T, domain string, success int, failure int, timeout
 	assert.Equal(t, uint32(timeout), conn.DNSTimeouts)
 }
 
-func TestDNSStatsForValidDomain(t *testing.T) {
+func (s *TracerTestSuite) TestDNSStatsForValidDomain() {
+	t := s.T()
 	testDNSStats(t, "golang.org", 1, 0, 0, validDNSServer)
 }
 
-func TestDNSStatsForInvalidDomain(t *testing.T) {
+func (s *TracerTestSuite) TestDNSStatsForInvalidDomain() {
+	t := s.T()
 	testDNSStats(t, "abcdedfg", 0, 1, 0, validDNSServer)
 }
 
-func TestDNSStatsForTimeout(t *testing.T) {
+func (s *TracerTestSuite) TestDNSStatsForTimeout() {
+	t := s.T()
 	testDNSStats(t, "golang.org", 0, 0, 1, "1.2.3.4")
 }
 
-func TestConntrackExpiration(t *testing.T) {
+func (s *TracerTestSuite) TestConntrackExpiration() {
+	t := s.T()
 	setupDNAT(t)
 	defer teardownDNAT(t)
 
@@ -1667,7 +1698,8 @@ func TestConntrackExpiration(t *testing.T) {
 	assert.Nil(t, tr.conntracker.GetTranslationForConn(*conn), "translation should have been deleted")
 }
 
-func TestTCPEstablished(t *testing.T) {
+func (s *TracerTestSuite) TestTCPEstablished() {
+	t := s.T()
 	// Ensure closed connections are flushed as soon as possible
 	cfg := testConfig()
 	cfg.TCPClosedTimeout = 500 * time.Millisecond
@@ -1712,7 +1744,8 @@ func TestTCPEstablished(t *testing.T) {
 	assert.Equal(t, uint32(1), conn.LastTCPClosed)
 }
 
-func TestTCPEstablishedPreExistingConn(t *testing.T) {
+func (s *TracerTestSuite) TestTCPEstablishedPreExistingConn() {
+	t := s.T()
 	server := NewTCPServer(func(c net.Conn) {
 		io.Copy(ioutil.Discard, c)
 		c.Close()
@@ -1749,7 +1782,8 @@ func TestTCPEstablishedPreExistingConn(t *testing.T) {
 	assert.Equal(t, uint32(1), conn.MonotonicTCPClosed)
 }
 
-func TestUnconnectedUDPSendIPv4(t *testing.T) {
+func (s *TracerTestSuite) TestUnconnectedUDPSendIPv4() {
+	t := s.T()
 	cfg := testConfig()
 	tr, err := NewTracer(cfg)
 	require.NoError(t, err)
@@ -1774,7 +1808,8 @@ func TestUnconnectedUDPSendIPv4(t *testing.T) {
 	assert.Equal(t, bytesSent, int(outgoing[0].MonotonicSentBytes))
 }
 
-func TestConnectedUDPSendIPv6(t *testing.T) {
+func (s *TracerTestSuite) TestConnectedUDPSendIPv6() {
+	t := s.T()
 	cfg := testConfig()
 	cfg.CollectIPv6Conns = true
 	tr, err := NewTracer(cfg)
@@ -1800,7 +1835,8 @@ func TestConnectedUDPSendIPv6(t *testing.T) {
 	assert.Equal(t, bytesSent, int(outgoing[0].MonotonicSentBytes))
 }
 
-func TestConnectionClobber(t *testing.T) {
+func (s *TracerTestSuite) TestConnectionClobber() {
+	t := s.T()
 	tr, err := NewTracer(testConfig())
 	if err != nil {
 		t.Fatal(err)
@@ -1889,7 +1925,8 @@ func TestConnectionClobber(t *testing.T) {
 	require.Equal(t, preCap, cap(tr.buffer))
 }
 
-func TestEnableHTTPMonitoring(t *testing.T) {
+func (s *TracerTestSuite) TestEnableHTTPMonitoring() {
+	t := s.T()
 	cfg := testConfig()
 	cfg.EnableHTTPMonitoring = true
 	tr, err := NewTracer(cfg)
@@ -1897,7 +1934,8 @@ func TestEnableHTTPMonitoring(t *testing.T) {
 	defer tr.Stop()
 }
 
-func TestHTTPStats(t *testing.T) {
+func (s *TracerTestSuite) TestHTTPStats() {
+	t := s.T()
 	currKernelVersion, err := kernel.HostVersion()
 	require.NoError(t, err)
 	pre410Kernel := currKernelVersion < kernel.VersionCode(4, 1, 0)
@@ -1943,13 +1981,9 @@ func TestHTTPStats(t *testing.T) {
 
 	// Send a series of HTTP requests to the test server
 	client := new(nethttp.Client)
-	req, err := nethttp.NewRequest("GET", "http://"+serverAddr+"/test", nil)
-	require.NoError(t, err)
-	req.Header.Set("Connection", "close")
-	resp, err := client.Do(req)
+	resp, err := client.Get("http://" + serverAddr + "/test")
 	require.NoError(t, err)
 	resp.Body.Close()
-	client.CloseIdleConnections()
 
 	// Iterate through active connections until we find connection created above
 	var matchingConns []network.ConnectionStats
@@ -1964,6 +1998,7 @@ func TestHTTPStats(t *testing.T) {
 
 	// Verify HTTP stats
 	conn := matchingConns[0]
+	assert.Equal(t, conn.Direction, network.OUTGOING, "connection direction must be outgoing")
 	httpReqStats, ok := conn.HTTPStatsByPath["/test"]
 	assert.True(t, ok)
 	assert.Equal(t, 0, httpReqStats.Count(0)) // number of requests with response status 100
@@ -1973,7 +2008,8 @@ func TestHTTPStats(t *testing.T) {
 	assert.Equal(t, 0, httpReqStats.Count(4)) // 500
 }
 
-func TestRuntimeCompilerEnvironmentVar(t *testing.T) {
+func (s *TracerTestSuite) TestRuntimeCompilerEnvironmentVar() {
+	t := s.T()
 	cfg := testConfig()
 	enabled := os.Getenv(runtimeCompilationEnvVar) != ""
 	assert.Equal(t, enabled, cfg.EnableRuntimeCompiler)
@@ -2076,7 +2112,8 @@ func startTracing(cfg *config.Config) (*tracePipeLogger, error) {
 	return logger, nil
 }
 
-func TestSelfConnect(t *testing.T) {
+func (s *TracerTestSuite) TestSelfConnect() {
+	t := s.T()
 	// Enable BPF-based system probe
 	cfg := testConfig()
 	cfg.BPFDebug = true
