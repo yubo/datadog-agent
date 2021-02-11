@@ -385,7 +385,7 @@ int kprobe__tcp_close(struct pt_regs* ctx) {
     sk = (struct sock*)PT_REGS_PARM1(ctx);
 
     // Get network namespace id
-    log_debug("kprobe/tcp_close: tgid: %u, pid: %u, ns: %d\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, get_netns_from_sock(sk));
+    log_debug("kprobe/tcp_close: tgid: %u, pid: %u, netns: %u\n", pid_tgid >> 32, pid_tgid & 0xFFFFFFFF, get_netns_from_sock(sk));
 
     if (!read_conn_tuple(&t, sk, pid_tgid, CONN_TYPE_TCP)) {
         return 0;
@@ -615,7 +615,7 @@ int kretprobe__inet_csk_accept(struct pt_regs* ctx) {
         bpf_map_update_elem(&port_bindings, &t, &state, BPF_ANY);
     }
 
-    log_debug("kretprobe/inet_csk_accept: net ns: %d, lport: %d\n", t.net_ns, t.port);
+    log_debug("kretprobe/inet_csk_accept: netns: %u, lport: %d\n", t.net_ns, t.port);
     return 0;
 }
 
@@ -646,7 +646,7 @@ int kprobe__tcp_v4_destroy_sock(struct pt_regs* ctx) {
         bpf_map_update_elem(&port_bindings, &t, &state, BPF_ANY);
     }
 
-    log_debug("kprobe/tcp_v4_destroy_sock: net ns: %u, lport: %u\n", t.net_ns, t.port);
+    log_debug("kprobe/tcp_v4_destroy_sock: netns: %u, lport: %u\n", t.net_ns, t.port);
     return 0;
 }
 
@@ -660,7 +660,7 @@ int kprobe__udp_destroy_sock(struct pt_regs* ctx) {
     }
 
     conn_tuple_t tup = {};
-     u64 pid_tgid = bpf_get_current_pid_tgid();
+    u64 pid_tgid = bpf_get_current_pid_tgid();
     if (read_conn_tuple(&tup, sk, pid_tgid, CONN_TYPE_UDP)) {
         cleanup_conn(&tup);
     }
