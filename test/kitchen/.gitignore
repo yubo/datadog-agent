@@ -8,7 +8,9 @@ Berksfile.lock
 cookbooks/
 .kitchen.yml
 kitchen.yml
+tmpkitchen.yml
 ssh-key
 ssh-key.pub
 azureid.sh
 *.bat
+*.ps1
