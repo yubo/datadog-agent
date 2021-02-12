@@ -30,12 +30,12 @@ func (d *dispatcher) getState() (types.StateResponse, error) {
 		Warmup:   !d.store.active,
 		Dangling: makeConfigArray(d.store.danglingConfigs),
 	}
-	for _, node := range d.store.nodes {
-		n := types.StateNodeResponse{
-			Name:    node.name,
-			Configs: makeConfigArray(node.digestToConfig),
+	for _, runner := range d.store.nodes {
+		n := types.StateRunnerResponse{
+			Name:    runner.name,
+			Configs: makeConfigArray(runner.digestToConfig),
 		}
-		response.Nodes = append(response.Nodes, n)
+		response.Runners = append(response.Runners, n)
 	}
 
 	return response, nil

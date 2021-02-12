@@ -53,7 +53,7 @@ type DCAClientInterface interface {
 	GetKubernetesMetadataNames(nodeName, ns, podName string) ([]string, error)
 	GetCFAppsMetadataForNode(nodename string) (map[string][]string, error)
 
-	PostClusterCheckStatus(nodeName string, status types.NodeStatus) (types.StatusResponse, error)
+	PostClusterCheckStatus(nodeName string, status types.RunnerStatus) (types.StatusResponse, error)
 	GetClusterCheckConfigs(nodeName string) (types.ConfigResponse, error)
 	GetEndpointsCheckConfigs(nodeName string) (types.ConfigResponse, error)
 	GetKubernetesClusterID() (string, error)

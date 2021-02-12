@@ -51,8 +51,8 @@ func (h *Handler) GetState() (types.StateResponse, error) {
 }
 
 // GetConfigs returns configurations dispatched to a given node
-func (h *Handler) GetConfigs(nodeName string) (types.ConfigResponse, error) {
-	configs, lastChange, err := h.dispatcher.getNodeConfigs(nodeName)
+func (h *Handler) GetConfigs(identifier string) (types.ConfigResponse, error) {
+	configs, lastChange, err := h.dispatcher.getNodeConfigs(identifier)
 	response := types.ConfigResponse{
 		Configs:    configs,
 		LastChange: lastChange,
@@ -61,8 +61,8 @@ func (h *Handler) GetConfigs(nodeName string) (types.ConfigResponse, error) {
 }
 
 // PostStatus handles status reports from the node agents
-func (h *Handler) PostStatus(nodeName, clientIP string, status types.NodeStatus) (types.StatusResponse, error) {
-	upToDate, err := h.dispatcher.processNodeStatus(nodeName, clientIP, status)
+func (h *Handler) PostStatus(identifier, clientIP string, status types.NodeStatus) (types.StatusResponse, error) {
+	upToDate, err := h.dispatcher.processNodeStatus(identifier, clientIP, status)
 	response := types.StatusResponse{
 		IsUpToDate: upToDate,
 	}
@@ -101,9 +101,9 @@ func (h *Handler) RebalanceClusterChecks() ([]types.RebalanceResponse, error) {
 		response = append(response, types.RebalanceResponse{
 			CheckID:        decision.CheckID,
 			CheckWeight:    decision.CheckWeight,
-			SourceNodeName: decision.SourceNodeName,
+			SourceRunnerID: decision.SourceRunnerID,
 			SourceDiff:     decision.SourceDiff,
-			DestNodeName:   decision.DestNodeName,
+			DestRunnerID:   decision.DestRunnerID,
 			DestDiff:       decision.DestDiff,
 		})
 	}

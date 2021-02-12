@@ -6,6 +6,7 @@
 package providers
 
 import (
+	"os"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
@@ -26,7 +27,7 @@ type ClusterChecksConfigProvider struct {
 	graceDuration  time.Duration
 	heartbeat      time.Time
 	lastChange     int64
-	nodeName       string
+	identifier     string
 	flushedConfigs bool
 }
 
@@ -38,13 +39,20 @@ func NewClusterChecksConfigProvider(cfg config.ConfigurationProviders) (ConfigPr
 		graceDuration: defaultGraceDuration,
 	}
 
-	c.nodeName, _ = util.GetHostname()
-	if config.Datadog.GetBool("cloud_foundry") {
-		boshID := config.Datadog.GetString("bosh_id")
-		if boshID == "" {
-			log.Warn("configuration variable cloud_foundry is set to true, but bosh_id is empty, can't retrieve node name")
-		} else {
-			c.nodeName = boshID
+	// TODO(juliogreff): LOOK ME HERE
+	usePodnameAsIdentifier := false
+	if usePodnameAsIdentifier {
+		// TODO(juliogreff): allow to override this
+		c.identifier = os.Getenv("HOSTNAME")
+	} else {
+		c.identifier, _ = util.GetHostname()
+		if config.Datadog.GetBool("cloud_foundry") {
+			boshID := config.Datadog.GetString("bosh_id")
+			if boshID == "" {
+				log.Warn("configuration variable cloud_foundry is set to true, but bosh_id is empty, can't retrieve node name")
+			} else {
+				c.identifier = boshID
+			}
 		}
 	}
 
@@ -85,11 +93,11 @@ func (c *ClusterChecksConfigProvider) IsUpToDate() (bool, error) {
 		}
 	}
 
-	status := types.NodeStatus{
+	status := types.RunnerStatus{
 		LastChange: c.lastChange,
 	}
 
-	reply, err := c.dcaClient.PostClusterCheckStatus(c.nodeName, status)
+	reply, err := c.dcaClient.PostClusterCheckStatus(c.identifier, status)
 	if err != nil {
 		if c.withinGracePeriod() {
 			// Return true to keep the configs during the grace period
@@ -118,7 +126,7 @@ func (c *ClusterChecksConfigProvider) Collect() ([]integration.Config, error) {
 		}
 	}
 
-	reply, err := c.dcaClient.GetClusterCheckConfigs(c.nodeName)
+	reply, err := c.dcaClient.GetClusterCheckConfigs(c.identifier)
 	if err != nil {
 		if !c.flushedConfigs {
 			// On first error after grace period, mask the error once

@@ -37,10 +37,10 @@ type RebalancingDecision struct {
 	CheckID     string
 	CheckWeight int
 
-	SourceNodeName string
+	SourceRunnerID string
 	SourceDiff     int
 
-	DestNodeName string
+	DestRunnerID string
 	DestDiff     int
 }
 

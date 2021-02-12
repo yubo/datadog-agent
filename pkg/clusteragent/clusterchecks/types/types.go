@@ -9,8 +9,8 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 )
 
-// NodeStatus holds the status report from the node-agent
-type NodeStatus struct {
+// RunnerStatus holds the status report from the node-agent
+type RunnerStatus struct {
 	LastChange int64 `json:"last_change"`
 }
 
@@ -24,10 +24,10 @@ type RebalanceResponse struct {
 	CheckID     string `json:"check_id"`
 	CheckWeight int    `json:"check_weight"`
 
-	SourceNodeName string `json:"source_node_name"`
+	SourceRunnerID string `json:"source_runner_id"`
 	SourceDiff     int    `json:"source_diff"`
 
-	DestNodeName string `json:"dest_node_name"`
+	DestRunnerID string `json:"dest_runner_id"`
 	DestDiff     int    `json:"dest_diff"`
 }
 
@@ -39,14 +39,14 @@ type ConfigResponse struct {
 
 // StateResponse holds the DCA response for a dispatching state query
 type StateResponse struct {
-	NotRunning string               `json:"not_running"` // Reason why not running, empty if leading
-	Warmup     bool                 `json:"warmup"`
-	Nodes      []StateNodeResponse  `json:"nodes"`
-	Dangling   []integration.Config `json:"dangling"`
+	NotRunning string                `json:"not_running"` // Reason why not running, empty if leading
+	Warmup     bool                  `json:"warmup"`
+	Runners    []StateRunnerResponse `json:"runners"`
+	Dangling   []integration.Config  `json:"dangling"`
 }
 
-// StateNodeResponse is a chunk of StateResponse
-type StateNodeResponse struct {
+// StateRunnerResponse is a chunk of StateResponse
+type StateRunnerResponse struct {
 	Name    string               `json:"name"`
 	Configs []integration.Config `json:"configs"`
 }
@@ -60,7 +60,7 @@ type Stats struct {
 	// Leading
 	Leader          bool
 	Active          bool
-	NodeCount       int
+	RunnerCount     int
 	ActiveConfigs   int
 	DanglingConfigs int
 	TotalConfigs    int
