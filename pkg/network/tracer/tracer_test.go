@@ -1759,6 +1759,7 @@ func (s *TracerTestSuite) TestTCPEstablishedPreExistingConn() {
 	c, err := net.DialTimeout("tcp", server.address, 50*time.Millisecond)
 	require.NoError(t, err)
 	laddr, raddr := c.LocalAddr(), c.RemoteAddr()
+	t.Logf("connecting from %s to %s", laddr, raddr)
 
 	// Ensure closed connections are flushed as soon as possible
 	cfg := testConfig()
