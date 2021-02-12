@@ -95,47 +95,48 @@ if [ -z ${AGENT_VERSION+x} ]; then
   popd
 fi
 
-cp kitchen-azure-common.yml kitchen.yml
+cp azure-driver.yml kitchen.yml
+cat platforms-common.yml >> kitchen.yml
 
 ## check to see if we want the windows-installer tester instead
 if [[ $1 == "windows-install-test" ]]; then
-  cat kitchen-azure-winstall.yml >> kitchen.yml
+  cat winstall.yml >> kitchen.yml
 fi
 
 if [[ $1 == "chef-test" ]]; then
-  cat kitchen-azure-chef-test.yml >> kitchen.yml
+  cat chef-test.yml >> kitchen.yml
 fi
 
 if [[ $1 == "step-by-step-test" ]]; then
-  cat kitchen-azure-step-by-step-test.yml >> kitchen.yml
+  cat step-by-step-test.yml >> kitchen.yml
 fi
 
 if [[ $1 == "install-script-test" ]]; then
-  cat kitchen-azure-install-script-test.yml >> kitchen.yml
+  cat install-script-test.yml >> kitchen.yml
 fi
 
 if [[ $1 == "upgrade5-test" ]]; then
-  cat kitchen-azure-upgrade5-test.yml >> kitchen.yml
+  cat upgrade5-test.yml >> kitchen.yml
 fi
 
 if [[ $1 == "upgrade6-test" ]]; then
-  cat kitchen-azure-upgrade6-test.yml >> kitchen.yml
+  cat upgrade6-test.yml >> kitchen.yml
 fi
 
 if [[ $1 == "upgrade7-test" ]]; then
-  cat kitchen-azure-upgrade7-test.yml >> kitchen.yml
+  cat upgrade7-test.yml >> kitchen.yml
 fi
 
 if [[ $1 == "security-agent-test" ]]; then
-  cat kitchen-azure-security-agent-test.yml >> kitchen.yml
+  cat security-agent-test.yml >> kitchen.yml
 fi
 
 if [[ $1 == "security-agent-stress" ]]; then
-  cat kitchen-azure-security-agent-stress.yml >> kitchen.yml
+  cat security-agent-stress.yml >> kitchen.yml
 fi
 
 if [[ $1 == "system-probe-test" ]]; then
-  cat kitchen-azure-system-probe-test.yml >> kitchen.yml
+  cat system-probe-test.yml >> kitchen.yml
 fi
 
 bundle exec kitchen diagnose --no-instances --loader
