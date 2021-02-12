@@ -1960,7 +1960,7 @@ func (s *TracerTestSuite) TestTCPDirection() {
 	// Allow the HTTP server time to get set up
 	time.Sleep(time.Millisecond * 500)
 
-	// Send a series of HTTP requests to the test server
+	// Send a HTTP request to the test server
 	client := new(nethttp.Client)
 	resp, err := client.Get("http://" + serverAddr + "/test")
 	require.NoError(t, err)
@@ -1971,15 +1971,19 @@ func (s *TracerTestSuite) TestTCPDirection() {
 	var incomingConns []network.ConnectionStats
 	require.Eventuallyf(t, func() bool {
 		conns := getConnections(t, tr)
-		outgoingConns = searchConnections(conns, func(cs network.ConnectionStats) bool {
-			return fmt.Sprintf("%s:%d", cs.Dest, cs.DPort) == serverAddr
-		})
-		incomingConns = searchConnections(conns, func(cs network.ConnectionStats) bool {
-			return fmt.Sprintf("%s:%d", cs.Source, cs.SPort) == serverAddr
-		})
+		if len(outgoingConns) == 0 {
+			outgoingConns = searchConnections(conns, func(cs network.ConnectionStats) bool {
+				return fmt.Sprintf("%s:%d", cs.Dest, cs.DPort) == serverAddr
+			})
+		}
+		if len(incomingConns) == 0 {
+			incomingConns = searchConnections(conns, func(cs network.ConnectionStats) bool {
+				return fmt.Sprintf("%s:%d", cs.Source, cs.SPort) == serverAddr
+			})
+		}
 
 		return len(outgoingConns) == 1 && len(incomingConns) == 1
-	}, 3*time.Second, 10*time.Millisecond, "couldn't find http connection matching: %s", serverAddr)
+	}, 3*time.Second, 10*time.Millisecond, "couldn't find incoming and outgoing http connections matching: %s", serverAddr)
 
 	// Verify connection directions
 	conn := outgoingConns[0]
