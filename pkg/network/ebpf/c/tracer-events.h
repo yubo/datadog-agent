@@ -56,25 +56,25 @@ static __always_inline void cleanup_conn(conn_tuple_t* tup) {
     switch (batch_ptr->pos) {
     case 0:
         batch_ptr->c0 = conn;
-        batch_ptr->pos++;
+        __sync_fetch_and_add(&batch_ptr->pos, 1);
         return;
     case 1:
         batch_ptr->c1 = conn;
-        batch_ptr->pos++;
+        __sync_fetch_and_add(&batch_ptr->pos, 1);
         return;
     case 2:
         batch_ptr->c2 = conn;
-        batch_ptr->pos++;
+        __sync_fetch_and_add(&batch_ptr->pos, 1);
         return;
     case 3:
         batch_ptr->c3 = conn;
-        batch_ptr->pos++;
+        __sync_fetch_and_add(&batch_ptr->pos, 1);
         return;
     case 4:
         // In this case the batch is ready to be flushed, which we defer to kretprobe/tcp_close
         // in order to cope with the eBPF stack limitation of 512 bytes.
         batch_ptr->c4 = conn;
-        batch_ptr->pos++;
+        __sync_fetch_and_add(&batch_ptr->pos, 1);
         return;
     }
 
@@ -86,12 +86,12 @@ static __always_inline void cleanup_conn(conn_tuple_t* tup) {
 
 static __always_inline void flush_conn_close_if_full(struct pt_regs * ctx) {
     u32 cpu = bpf_get_smp_processor_id();
-    batch_t * batch_ptr = bpf_map_lookup_elem(&conn_close_batch, &cpu);
+    batch_t* batch_ptr = bpf_map_lookup_elem(&conn_close_batch, &cpu);
     if (!batch_ptr) {
         return;
     }
 
-    if (batch_ptr->pos == CONN_CLOSED_BATCH_SIZE) {
+    if (batch_ptr->pos >= CONN_CLOSED_BATCH_SIZE) {
         // Here we copy the batch data to a variable allocated in the eBPF stack
         // This is necessary for older Kernel versions only (we validated this behavior on 4.4.0),
         // since you can't directly write a map entry to the perf buffer.
