@@ -35,6 +35,8 @@
 #include "raw_syscalls.h"
 #include "procfs.h"
 #include "setxattr.h"
+#include "span.h"
+#include "goroutine_tracker.h"
 #include "erpc.h"
 #include "ioctl.h"
 

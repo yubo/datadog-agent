@@ -11,9 +11,16 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/DataDog/datadog-go/statsd"
+	lib "github.com/DataDog/ebpf"
+	"github.com/DataDog/ebpf/manager"
+	"github.com/cihub/seelog"
+	"github.com/pkg/errors"
 
 	"github.com/DataDog/datadog-agent/pkg/ebpf/bytecode"
 	"github.com/DataDog/datadog-agent/pkg/security/config"
@@ -23,13 +30,9 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/security/model"
 	"github.com/DataDog/datadog-agent/pkg/security/rules"
 	"github.com/DataDog/datadog-agent/pkg/security/secl/eval"
+	"github.com/DataDog/datadog-agent/pkg/security/utils"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"github.com/DataDog/datadog-go/statsd"
-	lib "github.com/DataDog/ebpf"
-	"github.com/DataDog/ebpf/manager"
-	"github.com/cihub/seelog"
-	"github.com/pkg/errors"
 )
 
 // EventHandler represents an handler for the events sent by the probe
@@ -421,6 +424,9 @@ func (p *Probe) handleEvent(CPU uint64, data []byte) {
 		event.updateProcessCachePointer(p.resolvers.ProcessResolver.AddExecEntry(event.Process.Pid, event.processCacheEntry))
 	case model.ExitEventType:
 		defer p.resolvers.ProcessResolver.DeleteEntry(event.Process.Pid, event.ResolveEventTimestamp())
+	case model.GoroutineTrackerEventType:
+		p.setupGoroutineTracker(event)
+		return
 	case model.SetuidEventType:
 		if _, err := event.SetUID.UnmarshalBinary(data[offset:]); err != nil {
 			log.Errorf("failed to decode setuid event: %s (offset %d, len %d)", err, offset, len(data))
@@ -699,6 +705,23 @@ func (p *Probe) GetDebugStats() map[string]interface{} {
 	}
 	// TODO(Will): add manager state
 	return debug
+}
+
+// setupGoroutineTracker inserts a goroutine tracking uprobe in the requested program
+func (p *Probe) setupGoroutineTracker(event *Event) {
+	pce := event.ResolveProcessCacheEntry()
+	if pce == nil {
+		return
+	}
+
+	// create the new probe
+	if err := p.manager.AddHook(probes.SecurityAgentUID, manager.Probe{
+		UID:        probes.SecurityAgentUID + "_" + utils.RandString(5),
+		Section:    probes.GetGoroutineTrackerSection(),
+		BinaryPath: path.Join(event.ResolveExecContainerPath(&event.Exec), event.ResolveExecInode(&event.Exec)),
+	}); err != nil {
+		log.Warnf("failed to add goroutine tracker uprobe: %v", err)
+	}
 }
 
 // NewRuleSet returns a new rule set

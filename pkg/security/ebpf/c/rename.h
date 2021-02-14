@@ -90,6 +90,15 @@ int kprobe__vfs_rename(struct pt_regs *ctx) {
     return 0;
 }
 
+struct bpf_map_def SEC("maps/rename_evt") rename_evt = {
+    .type = BPF_MAP_TYPE_PERCPU_ARRAY,
+    .key_size = sizeof(u32),
+    .value_size = sizeof(struct rename_event_t),
+    .max_entries = 1,
+    .pinning = 0,
+    .namespace = "",
+};
+
 int __attribute__((always_inline)) trace__sys_rename_ret(struct pt_regs *ctx) {
     struct syscall_cache_t *syscall = pop_syscall(SYSCALL_RENAME);
     if (!syscall)
@@ -111,31 +120,31 @@ int __attribute__((always_inline)) trace__sys_rename_ret(struct pt_regs *ctx) {
     invalidate_path_key(ctx, &syscall->rename.target_key, 1);
 
     if (!syscall->discarded && is_event_enabled(EVENT_RENAME)) {
-        struct rename_event_t event = {
-            .syscall.retval = retval,
-            .old = {
-                .inode = syscall->rename.src_key.ino,
-                .mount_id = syscall->rename.src_key.mount_id,
-                .overlay_numlower = syscall->rename.src_overlay_numlower,
-                .metadata = syscall->rename.src_metadata,
-            },
-            .new = {
-                .inode = syscall->rename.target_key.ino,
-                .mount_id = syscall->rename.target_key.mount_id,
-                .overlay_numlower = get_overlay_numlower(syscall->rename.src_dentry),
-                .path_id = syscall->rename.target_key.path_id,
-                .metadata = syscall->rename.src_metadata,
-            },
-            .discarder_revision = bump_discarder_revision(syscall->rename.target_key.mount_id),
-        };
+        // use the rename_evt to allocate a rename event and prevent allocating it on the stack
+        u32 key = 0;
+        struct rename_event_t *event = bpf_map_lookup_elem(&rename_evt, &key);
+        if (!event) {
+            return 0;
+        }
+        event->syscall.retval = retval;
+        event->old.inode = syscall->rename.src_key.ino;
+        event->old.mount_id = syscall->rename.src_key.mount_id;
+        event->old.overlay_numlower = syscall->rename.src_overlay_numlower;
+        event->old.metadata = syscall->rename.src_metadata;
+        event->new.inode = syscall->rename.target_key.ino;
+        event->new.mount_id = syscall->rename.target_key.mount_id;
+        event->new.overlay_numlower = get_overlay_numlower(syscall->rename.src_dentry);
+        event->new.path_id = syscall->rename.target_key.path_id;
+        event->new.metadata = syscall->rename.src_metadata;
+        event->discarder_revision = bump_discarder_revision(syscall->rename.target_key.mount_id);
 
-        struct proc_cache_t *entry = fill_process_context(&event.process);
-        fill_container_context(entry, &event.container);
+        struct proc_cache_t *entry = fill_process_context(&event->process);
+        fill_container_context(entry, &event->container);
 
         // for centos7, use src dentry for target resolution as the pointers have been swapped
         resolve_dentry(syscall->rename.src_dentry, syscall->rename.target_key, 0);
 
-        send_event(ctx, EVENT_RENAME, event);
+        send_event_ptr(ctx, EVENT_RENAME, event);
     }
 
     return 0;

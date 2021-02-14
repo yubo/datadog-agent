@@ -163,16 +163,24 @@ int kprobe__do_fork(struct pt_regs *ctx) {
 
 SEC("tracepoint/sched/sched_process_fork")
 int sched_process_fork(struct _tracepoint_sched_process_fork *args) {
-    // check if this is a thread first
-    struct syscall_cache_t *syscall = pop_syscall(SYSCALL_FORK);
-    if (syscall) {
-        return 0;
-    }
-
     u32 pid = 0;
     u32 ppid = 0;
     bpf_probe_read(&pid, sizeof(pid), &args->child_pid);
     u64 ts = bpf_ktime_get_ns();
+
+    // check if this is a thread first
+    struct syscall_cache_t *syscall = pop_syscall(SYSCALL_FORK);
+    if (syscall) {
+        // unless explicitly updated, threads should inherit the coroutine ID of their parent
+        u64 id = bpf_get_current_pid_tgid();
+        u64 *coroutine_id = bpf_map_lookup_elem(&coroutine_ids, &id);
+        if (coroutine_id != NULL) {
+            id = ((id >> 32) << 32) + pid;
+            u64 new_coroutine_id = *coroutine_id;
+            bpf_map_update_elem(&coroutine_ids, &id, &new_coroutine_id, BPF_ANY);
+        }
+        return 0;
+    }
 
     struct exec_event_t event = {
         .pid_entry.fork_timestamp = ts,
@@ -187,6 +195,10 @@ int sched_process_fork(struct _tracepoint_sched_process_fork *args) {
     // sched::sched_process_fork is triggered from the parent process, update the pid / tid to the child value
     event.process.pid = pid;
     event.process.tid = pid;
+
+    // set fork span id and trace id
+    event.pid_entry.fork_span_id = event.process.span_id;
+    event.pid_entry.fork_trace_id = event.process.trace_id;
 
     struct pid_cache_t *parent_pid_entry = (struct pid_cache_t *) bpf_map_lookup_elem(&pid_cache, &ppid);
     if (parent_pid_entry) {
@@ -274,6 +286,8 @@ int kprobe_security_bprm_committed_creds(struct pt_regs *ctx) {
 
             // copy pid_cache entry data
             copy_pid_cache_except_exit_ts(pid_entry, &event.pid_entry);
+            event.pid_entry.fork_span_id = pid_entry->fork_span_id;
+            event.pid_entry.fork_trace_id = pid_entry->fork_trace_id;
 
             // add pid / tid context
             fill_process_context(&event.process);

@@ -30,6 +30,7 @@ func AllProbes() []*manager.Probe {
 	allProbes = append(allProbes, getUnlinkProbes()...)
 	allProbes = append(allProbes, getXattrProbes()...)
 	allProbes = append(allProbes, getIoctlProbes()...)
+	allProbes = append(allProbes, getGoroutineTracker()...)
 
 	allProbes = append(allProbes,
 		// Syscall monitor

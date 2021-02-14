@@ -131,6 +131,8 @@ func (ev *Event) UnmarshalExecEvent(data []byte) (int, error) {
 	entry.ProcessContext = model.ProcessContext{
 		Pid: ev.Process.Pid,
 		Tid: ev.Process.Tid,
+		SpanID: ev.Process.SpanID,
+		TraceID: ev.Process.TraceID,
 	}
 	ev.processCacheEntry = entry
 

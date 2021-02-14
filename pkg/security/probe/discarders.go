@@ -34,6 +34,8 @@ const (
 	DiscardInodeOp = iota + 1
 	// DiscardPidOp discards a pid
 	DiscardPidOp
+	SpanIDOp
+	GoroutineTrackerOp
 )
 
 const (

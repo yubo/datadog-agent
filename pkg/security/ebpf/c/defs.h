@@ -201,6 +201,7 @@ enum event_type
     EVENT_EXEC,
     EVENT_EXIT,
     EVENT_INVALIDATE_DENTRY,
+    EVENT_GOROUTINE_TRACKER,
     EVENT_SETUID,
     EVENT_SETGID,
     EVENT_CAPSET,
@@ -267,6 +268,8 @@ struct syscall_t {
 struct process_context_t {
     u32 pid;
     u32 tid;
+    u64 span_id;
+    u64 trace_id;
 };
 
 struct container_context_t {
@@ -360,6 +363,26 @@ struct bpf_map_def SEC("maps/events_stats") events_stats = {
                                                                                                                        \
     if (kernel_event.event.type < EVENT_MAX) {                                                                         \
         struct perf_map_stats_t *stats = bpf_map_lookup_elem(&events_stats, &kernel_event.event.type);                 \
+        if (stats != NULL) {                                                                                           \
+            if (!perf_ret) {                                                                                           \
+                __sync_fetch_and_add(&stats->bytes, size + 4);                                                         \
+                __sync_fetch_and_add(&stats->count, 1);                                                                \
+            } else {                                                                                                   \
+                __sync_fetch_and_add(&stats->lost, 1);                                                                 \
+            }                                                                                                          \
+        }                                                                                                              \
+    }                                                                                                                  \
+
+#define send_event_ptr(ctx, event_type, kernel_event)                                                                  \
+    kernel_event->event.type = event_type;                                                                             \
+    kernel_event->event.cpu = bpf_get_smp_processor_id();                                                              \
+    kernel_event->event.timestamp = bpf_ktime_get_ns();                                                                \
+                                                                                                                       \
+    u64 size = sizeof(*kernel_event);                                                                                  \
+    int perf_ret = bpf_perf_event_output(ctx, &events, kernel_event->event.cpu, kernel_event, size);                   \
+                                                                                                                       \
+    if (kernel_event->event.type < EVENT_MAX) {                                                                        \
+        struct perf_map_stats_t *stats = bpf_map_lookup_elem(&events_stats, &kernel_event->event.type);                \
         if (stats != NULL) {                                                                                           \
             if (!perf_ret) {                                                                                           \
                 __sync_fetch_and_add(&stats->bytes, size + 4);                                                         \

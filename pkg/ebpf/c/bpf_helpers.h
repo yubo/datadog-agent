@@ -46,6 +46,7 @@ static int (*bpf_get_current_comm)(void* buf, int buf_size) = (void*)BPF_FUNC_ge
 static int (*bpf_perf_event_read)(void* map, int index) = (void*)BPF_FUNC_perf_event_read;
 static int (*bpf_clone_redirect)(void* ctx, int ifindex, int flags) = (void*)BPF_FUNC_clone_redirect;
 static int (*bpf_redirect)(int ifindex, int flags) = (void*)BPF_FUNC_redirect;
+static int (*bpf_get_stack)(void *ctx, void *buf, int size, int flags) = (void *) BPF_FUNC_get_stack;
 static int (*bpf_perf_event_output)(void* ctx, void* map,
     unsigned long long flags, void* data,
     int size)
@@ -56,6 +57,8 @@ static unsigned long long (*bpf_get_prandom_u32)(void) = (void*)BPF_FUNC_get_pra
 static int (*bpf_skb_store_bytes)(void* ctx, int off, void* from, int len, int flags) = (void*)BPF_FUNC_skb_store_bytes;
 static int (*bpf_l3_csum_replace)(void* ctx, int off, int from, int to, int flags) = (void*)BPF_FUNC_l3_csum_replace;
 static int (*bpf_l4_csum_replace)(void* ctx, int off, int from, int to, int flags) = (void*)BPF_FUNC_l4_csum_replace;
+static int (*bpf_probe_write_user)(void *dst, const void *src, int size) =
+	(void *) BPF_FUNC_probe_write_user;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 static u64 (*bpf_get_current_task)(void) = (void*)BPF_FUNC_get_current_task;

@@ -100,6 +100,9 @@ type ContainerContext struct {
 	ID string `field:"id" handler:"ResolveContainerID,string"`
 }
 
+// GoroutineTrackerEvent defines the event sent by the golang APM library to request a goroutine tracker
+type GoroutineTrackerEvent struct{}
+
 // Event represents an event sent from the kernel
 // genaccessors
 type Event struct {
@@ -111,18 +114,19 @@ type Event struct {
 	Process   ProcessContext   `field:"process" event:"*"`
 	Container ContainerContext `field:"container"`
 
-	Chmod       ChmodEvent    `field:"chmod" event:"chmod"`
-	Chown       ChownEvent    `field:"chown" event:"chown"`
-	Open        OpenEvent     `field:"open" event:"open"`
-	Mkdir       MkdirEvent    `field:"mkdir" event:"mkdir"`
-	Rmdir       RmdirEvent    `field:"rmdir" event:"rmdir"`
-	Rename      RenameEvent   `field:"rename" event:"rename"`
-	Unlink      UnlinkEvent   `field:"unlink" event:"unlink"`
-	Utimes      UtimesEvent   `field:"utimes" event:"utimes"`
-	Link        LinkEvent     `field:"link" event:"link"`
-	SetXAttr    SetXAttrEvent `field:"setxattr" event:"setxattr"`
-	RemoveXAttr SetXAttrEvent `field:"removexattr" event:"removexattr"`
-	Exec        ExecEvent     `field:"exec" event:"exec"`
+	Chmod            ChmodEvent            `field:"chmod" event:"chmod"`
+	Chown            ChownEvent            `field:"chown" event:"chown"`
+	Open             OpenEvent             `field:"open" event:"open"`
+	Mkdir            MkdirEvent            `field:"mkdir" event:"mkdir"`
+	Rmdir            RmdirEvent            `field:"rmdir" event:"rmdir"`
+	Rename           RenameEvent           `field:"rename" event:"rename"`
+	Unlink           UnlinkEvent           `field:"unlink" event:"unlink"`
+	Utimes           UtimesEvent           `field:"utimes" event:"utimes"`
+	Link             LinkEvent             `field:"link" event:"link"`
+	SetXAttr         SetXAttrEvent         `field:"setxattr" event:"setxattr"`
+	RemoveXAttr      SetXAttrEvent         `field:"removexattr" event:"removexattr"`
+	Exec             ExecEvent             `field:"exec" event:"exec"`
+	GoroutineTracker GoroutineTrackerEvent `field:"-"`
 
 	SetUID SetuidEvent `field:"setuid" event:"setuid"`
 	SetGID SetgidEvent `field:"setgid" event:"setgid"`
@@ -224,6 +228,9 @@ type ExecEvent struct {
 
 	ExitTimestamp uint64    `field:"-"`
 	ExitTime      time.Time `field:"-"`
+
+	ForkSpanID  uint64 `field:"-"`
+	ForkTraceID uint64 `field:"-"`
 
 	Cookie uint32 `field:"cookie" handler:"ResolveExecCookie,int"`
 	PPid   uint32 `field:"ppid" handler:"ResolveExecPPID,int"`
@@ -386,8 +393,10 @@ func (it *ProcessAncestorsIterator) Next() unsafe.Pointer {
 type ProcessContext struct {
 	ExecEvent
 
-	Pid uint32 `field:"pid"`
-	Tid uint32 `field:"tid"`
+	Pid     uint32 `field:"pid"`
+	Tid     uint32 `field:"tid"`
+	SpanID  uint64 `field:"-"`
+	TraceID uint64 `field:"-"`
 
 	Ancestor *ProcessCacheEntry `field:"ancestors" iterator:"ProcessAncestorsIterator"`
 }

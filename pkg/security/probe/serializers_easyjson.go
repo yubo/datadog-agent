@@ -669,6 +669,10 @@ func easyjsonA970e379DecodeGithubComDataDogDatadogAgentPkgSecurityProbe4(in *jle
 					in.AddError((*out.ExitTime).UnmarshalJSON(data))
 				}
 			}
+		case "span_id":
+			out.SpanID = string(in.String())
+		case "trace_id":
+			out.TraceID = string(in.String())
 		case "credentials":
 			if in.IsNull() {
 				in.Skip()
@@ -847,6 +851,16 @@ func easyjsonA970e379EncodeGithubComDataDogDatadogAgentPkgSecurityProbe4(out *jw
 		out.RawString(prefix)
 		out.Raw((*in.ExitTime).MarshalJSON())
 	}
+	if in.SpanID != "" {
+		const prefix string = ",\"span_id\":"
+		out.RawString(prefix)
+		out.String(string(in.SpanID))
+	}
+	if in.TraceID != "" {
+		const prefix string = ",\"trace_id\":"
+		out.RawString(prefix)
+		out.String(string(in.TraceID))
+	}
 	if in.Credentials != nil {
 		const prefix string = ",\"credentials\":"
 		out.RawString(prefix)
@@ -971,6 +985,10 @@ func easyjsonA970e379DecodeGithubComDataDogDatadogAgentPkgSecurityProbe5(in *jle
 					in.AddError((*out.ExitTime).UnmarshalJSON(data))
 				}
 			}
+		case "span_id":
+			out.SpanID = string(in.String())
+		case "trace_id":
+			out.TraceID = string(in.String())
 		case "credentials":
 			if in.IsNull() {
 				in.Skip()
@@ -1115,6 +1133,16 @@ func easyjsonA970e379EncodeGithubComDataDogDatadogAgentPkgSecurityProbe5(out *jw
 		const prefix string = ",\"exit_time\":"
 		out.RawString(prefix)
 		out.Raw((*in.ExitTime).MarshalJSON())
+	}
+	if in.SpanID != "" {
+		const prefix string = ",\"span_id\":"
+		out.RawString(prefix)
+		out.String(string(in.SpanID))
+	}
+	if in.TraceID != "" {
+		const prefix string = ",\"trace_id\":"
+		out.RawString(prefix)
+		out.String(string(in.TraceID))
 	}
 	if in.Credentials != nil {
 		const prefix string = ",\"credentials\":"

@@ -76,6 +76,8 @@ struct pid_cache_t {
     u32 ppid;
     u64 fork_timestamp;
     u64 exit_timestamp;
+    u64 fork_span_id;
+    u64 fork_trace_id;
     struct credentials_t credentials;
 };
 
@@ -94,6 +96,8 @@ struct bpf_map_def SEC("maps/pid_cache") pid_cache = {
     .pinning = 0,
     .namespace = "",
 };
+
+#include "span.h"
 
 struct proc_cache_t * __attribute__((always_inline)) get_proc_cache(u32 tgid) {
     struct proc_cache_t *entry = NULL;
@@ -115,6 +119,14 @@ static struct proc_cache_t * __attribute__((always_inline)) fill_process_context
     // https://github.com/iovisor/bcc/blob/master/docs/reference_guide.md#4-bpf_get_current_pid_tgid
     data->pid = tgid;
     data->tid = pid_tgid;
+
+    struct span_t span = {};
+    resolve_current_span(&span);
+    if (span.span_id > 0) {
+        // fill data structure
+        data->span_id = span.span_id;
+        data->trace_id = span.trace_id;
+    }
 
     return get_proc_cache(tgid);
 }

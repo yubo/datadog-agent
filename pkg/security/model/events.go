@@ -47,6 +47,8 @@ const (
 	ExitEventType
 	// InvalidateDentryEventType Dentry invalidated event
 	InvalidateDentryEventType
+	// GoroutineTrackerEventType - Goroutine tracker event
+	GoroutineTrackerEventType
 	// SetuidEventType setuid event
 	SetuidEventType
 	// SetgidEventType setgid event
@@ -114,6 +116,8 @@ func (t EventType) String() string {
 		return "exit"
 	case InvalidateDentryEventType:
 		return "invalidate_dentry"
+	case GoroutineTrackerEventType:
+		return "goroutine_tracker"
 	case SetuidEventType:
 		return "setuid"
 	case SetgidEventType:

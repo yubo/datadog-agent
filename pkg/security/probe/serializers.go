@@ -10,6 +10,7 @@
 package probe
 
 import (
+	"fmt"
 	"syscall"
 	"time"
 
@@ -128,6 +129,8 @@ type ProcessCacheEntrySerializer struct {
 	ForkTime            *time.Time                    `json:"fork_time,omitempty"`
 	ExecTime            *time.Time                    `json:"exec_time,omitempty"`
 	ExitTime            *time.Time                    `json:"exit_time,omitempty"`
+	SpanID              string                        `json:"span_id,omitempty"`
+	TraceID             string                        `json:"trace_id,omitempty"`
 	Credentials         *ProcessCredentialsSerializer `json:"credentials,omitempty"`
 	Executable          *FileSerializer               `json:"executable,omitempty"`
 	Container           *ContainerContextSerializer   `json:"container,omitempty"`
@@ -324,6 +327,17 @@ func newProcessCacheEntrySerializer(pce *model.ProcessCacheEntry, e *Event, topL
 		Executable:    newExecFileSerializer(&pce.ExecEvent, e),
 	}
 
+	if e.Process.SpanID > 0 {
+		pceSerializer.SpanID = fmt.Sprintf("%v", e.Process.SpanID)
+	} else if pce.ForkSpanID > 0 {
+		pceSerializer.SpanID = fmt.Sprintf("%v", pce.ForkSpanID)
+	}
+	if e.Process.TraceID > 0 {
+		pceSerializer.TraceID = fmt.Sprintf("%v", e.Process.TraceID)
+	} else if pce.ForkTraceID > 0 {
+		pceSerializer.TraceID = fmt.Sprintf("%v", pce.ForkTraceID)
+	}
+
 	credsSerializer := newCredentialsSerializer(&pce.Credentials, e)
 	// Populate legacy user / group fields
 	pceSerializer.UID = credsSerializer.UID
@@ -359,6 +373,13 @@ func newProcessCacheEntrySerializerWithResolvers(pce *model.ProcessCacheEntry, r
 		Comm:          pce.Comm,
 		TTY:           pce.TTYName,
 		Executable:    newExecFileSerializerWithResolvers(&pce.ExecEvent, r),
+	}
+
+	if pce.ForkSpanID > 0 {
+		pceSerializer.SpanID = fmt.Sprintf("%v", pce.ForkSpanID)
+	}
+	if pce.ForkTraceID > 0 {
+		pceSerializer.TraceID = fmt.Sprintf("%v", pce.ForkTraceID)
 	}
 
 	credsSerializer := newCredentialsSerializerWithResolvers(&pce.Credentials, r)
