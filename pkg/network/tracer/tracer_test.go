@@ -2137,7 +2137,8 @@ func testConfig() *config.Config {
 
 type tracePipeLogger struct {
 	*sectests.TracePipe
-	stop chan struct{}
+	stop   chan struct{}
+	ignore bool
 }
 
 func (l *tracePipeLogger) Start() {
@@ -2149,6 +2150,9 @@ func (l *tracePipeLogger) Start() {
 			case <-l.stop:
 				return
 			case event := <-channelEvents:
+				if l.ignore {
+					continue
+				}
 				// filter out sshd messages which have nothing to do with our tests
 				if event.Task != "sshd" {
 					log.Debug(event.Raw)
@@ -2158,10 +2162,16 @@ func (l *tracePipeLogger) Start() {
 			}
 		}
 	}()
+
+	// flush existing logs from pipe
+	l.ignore = true
+	l.Flush()
+	l.ignore = false
 }
 
 func (l *tracePipeLogger) Stop() {
 	l.stop <- struct{}{}
+	l.Flush()
 	l.Close()
 }
 

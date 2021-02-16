@@ -16,11 +16,13 @@ package tests
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 const tracePipeFile = "/sys/kernel/debug/tracing/trace_pipe"
@@ -32,9 +34,11 @@ const tracePipeFile = "/sys/kernel/debug/tracing/trace_pipe"
 // read again with a sequential read."
 // https://www.kernel.org/doc/Documentation/trace/ftrace.txt
 type TracePipe struct {
-	file   *os.File
-	reader *bufio.Reader
-	stop   chan struct{}
+	file     *os.File
+	reader   *bufio.Reader
+	stop     chan struct{}
+	flushing bool
+	flush    chan struct{}
 }
 
 // TraceEvent contains the raw event as well as the contents of
@@ -51,6 +55,10 @@ type TraceEvent struct {
 	Message   string
 }
 
+type timeoutError interface {
+	Timeout() bool
+}
+
 // NewTracePipe instantiates a new trace pipe
 func NewTracePipe() (*TracePipe, error) {
 	f, err := os.Open(tracePipeFile)
@@ -61,6 +69,7 @@ func NewTracePipe() (*TracePipe, error) {
 		file:   f,
 		reader: bufio.NewReader(f),
 		stop:   make(chan struct{}),
+		flush:  make(chan struct{}),
 	}, nil
 }
 
@@ -109,9 +118,17 @@ func (t *TracePipe) Channel() (<-chan *TraceEvent, <-chan error) {
 				return
 			default:
 			}
+			err := t.file.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 			traceEvent, err := t.ReadLine()
 			if err != nil {
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
+					continue
+				}
+				if te, ok := err.(timeoutError); ok && te.Timeout() {
+					if t.flushing {
+						t.flushing = false
+						t.flush <- struct{}{}
+					}
 					continue
 				}
 				channelErrors <- err
@@ -121,6 +138,11 @@ func (t *TracePipe) Channel() (<-chan *TraceEvent, <-chan error) {
 		}
 	}()
 	return channelEvents, channelErrors
+}
+
+func (t *TracePipe) Flush() {
+	t.flushing = true
+	<-t.flush
 }
 
 // Close the trace pipe
