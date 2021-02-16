@@ -103,3 +103,7 @@ rm -rf cookbooks
 rm -f Berksfile.lock
 berks vendor ./cookbooks
 bundle exec kitchen test '^dd*.*-azure$' -c -d always
+
+## copy the generated kitchen.yml to the .kitchen directory so it'll be included
+## in the artifacts (for debugging when necessary)
+cp kitchen.yml ./.kitchen/generated_kitchen.yml

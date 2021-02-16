@@ -30,9 +30,8 @@ platforms:
 
 
 <%
-    # TEST_PLATFORMS syntax is `short_name1,azure_full_qualified_name1|short_name2,azure_full_qualified_name1`
     # TEST_PLATFORMS syntax is `short_name1,parent vhd folder,parent_vhd_name|...`
-    azure_test_platforms = ENV['TEST_PLATFORMS'].split('|').map { |p| p.split(',') }
+    hyperv_test_platforms = ENV['TEST_PLATFORMS'].split('|').map { |p| p.split(',') }
 
     sizes = [
       "Standard_D1_v2",
@@ -48,33 +47,33 @@ platforms:
     sles15_platforms = []
 
     idx = 0
-    azure_test_platforms.each do |platform|
-    idx += 1
+    hyperv_test_platforms.each do |platform|
+      idx += 1
 
-    host = "hyperv"
-    platform_name = platform[0] + "-#{host}"
+      host = "hyperv"
+      platform_name = platform[0] + "-#{host}"
 
-    windows = platform_name.include?("win")
-    sles11 = platform_name.include?("sles-11")
-    sles15 = platform_name.include?("sles-15")
-    windows2008 = windows && platform_name.include?("2008")
+      windows = platform_name.include?("win")
+      sles11 = platform_name.include?("sles-11")
+      sles15 = platform_name.include?("sles-15")
+      windows2008 = windows && platform_name.include?("2008")
 
-    if windows
-      windows_platforms << platform_name
-      size = windows_sizes[idx % windows_sizes.length]
-    else
-      if sles15
-        sles15_platforms << platform_name
+      if windows
+        windows_platforms << platform_name
+        size = windows_sizes[idx % windows_sizes.length]
+      else
+        if sles15
+          sles15_platforms << platform_name
+        end
+        if sles11
+          sles11_platforms << platform_name
+        end
+        size = sizes[idx % sizes.length]
       end
-      if sles11
-        sles11_platforms << platform_name
-      end
-      size = sizes[idx % sizes.length]
-    end
 
-    vm_username = ENV['VM_USERNAME'] ? ENV['VM_USERNAME'] : "datadog"
-    vm_password = ENV['SERVER_PASSWORD']
-    vm_hyperv_switch = ENV['KITCHEN_HYPERV_SWITCH'] ? ENV['KITCHEN_HYPERV_SWITCH'] : "public_eth"
+      vm_username = ENV['VM_USERNAME'] ? ENV['VM_USERNAME'] : "datadog"
+      vm_password = ENV['SERVER_PASSWORD']
+      vm_hyperv_switch = ENV['KITCHEN_HYPERV_SWITCH'] ? ENV['KITCHEN_HYPERV_SWITCH'] : "public_eth"
 
 %>
 

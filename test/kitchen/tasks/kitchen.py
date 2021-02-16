@@ -1,5 +1,5 @@
 from invoke import task
-from invoke.exceptions import Exit, ParseError
+from invoke.exceptions import Exit
 
 import glob
 import json
@@ -62,30 +62,29 @@ def genconfig(
             testplatforms += "|"
         testplatforms += "{},{}".format(osimage, prov[osimage])
 
-    print(testplatforms)
+    print("Using the following test platform(s)\n")
+    for logplat in testplatforms.split("|"):
+        print("  {}".format(logplat))
 
     # create the kitchen.yml file
     with open('tmpkitchen.yml', 'w') as kitchenyml:
         # first read the correct driver
-        print("Adding driver file drivers/{}-driver.yml".format(provider))
+        print("Adding driver file drivers/{}-driver.yml\n".format(provider))
 
         with open("drivers/{}-driver.yml".format(provider), 'r') as driverfile:
-            for line in driverfile:
-                kitchenyml.write(line)
+            kitchenyml.write(driverfile.read())
 
         # read the generic contents
         with open("test-definitions/platforms-common.yml", 'r') as commonfile:
-            for line in commonfile:
-                kitchenyml.write(line)
+            kitchenyml.write(commonfile.read())
 
         # now open the requested test files
         for f in glob.glob("test-definitions/{}.yml".format(testfiles)):
             if f.lower().endswith("platforms-common.yml"):
-                print("Skipping common file")
+                print("Skipping common file\n")
             with open(f, 'r') as infile:
                 print("Adding file {}\n".format(f))
-                for line in infile:
-                    kitchenyml.write(line)
+                kitchenyml.write(infile.read())
 
     env = {}
     if uservars:
