@@ -8,7 +8,7 @@ import (
 	"unsafe"
 
 	"github.com/DataDog/datadog-agent/pkg/network"
-
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/ebpf"
 )
 
@@ -78,16 +78,19 @@ func (p *PerfBatchManager) GetIdleConns(now time.Time) []network.ConnectionStats
 		state := &p.stateByCPU[i]
 
 		if (nowTS - state.updated) < p.maxIdleInterval {
+			log.Tracef("skipping GetIdleConns for cpu %d because the idle interval has not elapsed. elapsed: %s interval: %s", i, time.Duration(nowTS-state.updated).String(), time.Duration(p.maxIdleInterval).String())
 			continue
 		}
 
 		// we have an idle batch, so let's retrieve its data from eBPF
 		err := p.batchMap.Lookup(unsafe.Pointer(&i), unsafe.Pointer(batch))
 		if err != nil {
+			log.Warnf("missing batch for cpu %d", i)
 			continue
 		}
 
 		pos := int(batch.pos)
+		log.Tracef("GetIdleConns: batch cpu %d pos: %d offset: %d", i, pos, state.offset)
 		if pos == 0 {
 			continue
 		}

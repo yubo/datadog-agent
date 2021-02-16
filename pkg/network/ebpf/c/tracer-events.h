@@ -49,10 +49,12 @@ static __always_inline void cleanup_conn(conn_tuple_t* tup) {
     // Batch TCP closed connections before generating a perf event
     batch_t* batch_ptr = bpf_map_lookup_elem(&conn_close_batch, &cpu);
     if (batch_ptr == NULL) {
+        log_debug("ERR(cleanup_conn): no batch for cpu: %u", cpu);
         return;
     }
 
     // TODO: Can we turn this into a macro based on TCP_CLOSED_BATCH_SIZE?
+    log_debug("cleanup_conn: cpu: %u pos: %u", cpu, batch_ptr->pos);
     switch (batch_ptr->pos) {
     case 0:
         batch_ptr->c0 = conn;
@@ -88,9 +90,11 @@ static __always_inline void flush_conn_close_if_full(struct pt_regs * ctx) {
     u32 cpu = bpf_get_smp_processor_id();
     batch_t* batch_ptr = bpf_map_lookup_elem(&conn_close_batch, &cpu);
     if (!batch_ptr) {
+        log_debug("ERR(flush_conn_close_if_full): no batch for cpu: %u", cpu);
         return;
     }
 
+    log_debug("flush_conn_close_if_full: cpu: %u pos: %u", cpu, batch_ptr->pos);
     if (batch_ptr->pos >= CONN_CLOSED_BATCH_SIZE) {
         // Here we copy the batch data to a variable allocated in the eBPF stack
         // This is necessary for older Kernel versions only (we validated this behavior on 4.4.0),
