@@ -2192,6 +2192,8 @@ func startTracing(cfg *config.Config, allowedTasks ...string) (*tracePipeLogger,
 		allowedTasks: map[string]struct{}{
 			"tracer.test": {},
 			"testsuite":   {},
+			// sometimes trace_pipe uses this task, so allow it since we don't know what task it is
+			"<...>": {},
 		},
 	}
 	for _, t := range allowedTasks {
