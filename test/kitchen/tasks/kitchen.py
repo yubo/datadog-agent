@@ -98,15 +98,17 @@ def load_platforms(ctx, platformfile):
         platforms = json.load(f)
     return platforms
 
-def load_targets(ctx, targethash, selection):
-    commentpattern = re.compile("^comment")
-    selectionpattern = re.compile(selection)
+def load_targets(ctx, targethash, selections):
     returnlist = []
-    for key in targethash:
-        if commentpattern.match(key):
-            continue
-        if selectionpattern.search(key):
-            returnlist.append(key)
+    commentpattern = re.compile("^comment")
+    for selection in selections.split(","):
+        selectionpattern = re.compile(selection)
+        
+        for key in targethash:
+            if commentpattern.match(key):
+                continue
+            if selectionpattern.search(key):
+                returnlist.append(key)
     return returnlist
 
 def load_user_env(ctx, provider, varsfile):
