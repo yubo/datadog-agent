@@ -17,8 +17,8 @@
 .kitchen_os_debian:
   before_script:
     - rsync -azr --delete ./ $SRC_PATH
-    - KITCHEN_PLATFORM="debian"
-    - KITCHEN_OSVERS="debian-8,debian-9,debian-10"
+    - export KITCHEN_PLATFORM="debian"
+    - export KITCHEN_OSVERS="debian-8,debian-9,debian-10"
     - cd $DD_AGENT_TESTING_DIR
     - bash -l tasks/kitchen_setup.sh
 
