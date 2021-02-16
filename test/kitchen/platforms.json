@@ -11,7 +11,7 @@
         "azure" : {
             "debian-8": "urn,credativ:Debian:8:8.0.201901221",
             "debian-9": "urn,credativ:Debian:9:9.20200722.0",
-            "debian-10": "urn,Debian:debian-10:10:0.20200610.293"
+            "debian-10": "urn,Debian:debian-10:10:0.20210129.530"
         }
     },
     "suse" : {
