@@ -2137,8 +2137,9 @@ func testConfig() *config.Config {
 
 type tracePipeLogger struct {
 	*sectests.TracePipe
-	stop   chan struct{}
-	ignore bool
+	stop         chan struct{}
+	ignore       bool
+	allowedTasks map[string]struct{}
 }
 
 func (l *tracePipeLogger) Start() {
@@ -2153,10 +2154,12 @@ func (l *tracePipeLogger) Start() {
 				if l.ignore {
 					continue
 				}
-				// filter out sshd messages which have nothing to do with our tests
-				if event.Task != "sshd" {
-					log.Debug(event.Raw)
+				if len(l.allowedTasks) > 0 {
+					if _, ok := l.allowedTasks[event.Task]; !ok {
+						continue
+					}
 				}
+				log.Debug(event.Raw)
 			case err := <-channelErrors:
 				log.Error(err)
 			}
@@ -2175,7 +2178,7 @@ func (l *tracePipeLogger) Stop() {
 	l.Close()
 }
 
-func startTracing(cfg *config.Config) (*tracePipeLogger, error) {
+func startTracing(cfg *config.Config, allowedTasks ...string) (*tracePipeLogger, error) {
 	cfg.BPFDebug = true
 
 	tracePipe, err := sectests.NewTracePipe()
@@ -2186,6 +2189,13 @@ func startTracing(cfg *config.Config) (*tracePipeLogger, error) {
 	logger := &tracePipeLogger{
 		TracePipe: tracePipe,
 		stop:      make(chan struct{}),
+		allowedTasks: map[string]struct{}{
+			"tracer.test": {},
+			"testsuite":   {},
+		},
+	}
+	for _, t := range allowedTasks {
+		logger.allowedTasks[t] = struct{}{}
 	}
 	logger.Start()
 
