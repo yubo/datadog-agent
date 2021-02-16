@@ -95,49 +95,7 @@ if [ -z ${AGENT_VERSION+x} ]; then
   popd
 fi
 
-cp drivers/azure-driver.yml kitchen.yml
-cat test-definitions/platforms-common.yml >> kitchen.yml
-
-## check to see if we want the windows-installer tester instead
-if [[ $1 == "windows-install-test" ]]; then
-  cat test-definitions/winstall.yml >> kitchen.yml
-fi
-
-if [[ $1 == "chef-test" ]]; then
-  cat test-definitions/chef-test.yml >> kitchen.yml
-fi
-
-if [[ $1 == "step-by-step-test" ]]; then
-  cat test-definitions/step-by-step-test.yml >> kitchen.yml
-fi
-
-if [[ $1 == "install-script-test" ]]; then
-  cat test-definitions/install-script-test.yml >> kitchen.yml
-fi
-
-if [[ $1 == "upgrade5-test" ]]; then
-  cat test-definitions/upgrade5-test.yml >> kitchen.yml
-fi
-
-if [[ $1 == "upgrade6-test" ]]; then
-  cat test-definitions/upgrade6-test.yml >> kitchen.yml
-fi
-
-if [[ $1 == "upgrade7-test" ]]; then
-  cat test-definitions/upgrade7-test.yml >> kitchen.yml
-fi
-
-if [[ $1 == "security-agent-test" ]]; then
-  cat test-definitions/security-agent-test.yml >> kitchen.yml
-fi
-
-if [[ $1 == "security-agent-stress" ]]; then
-  cat test-definitions/security-agent-stress.yml >> kitchen.yml
-fi
-
-if [[ $1 == "system-probe-test" ]]; then
-  cat test-definitions/system-probe-test.yml >> kitchen.yml
-fi
+invoke -v kitchen.genconfig --platform=$(KITCHEN_PLATFORM) --osversions-$(KITCHEN_OSVERS) --provider=azure --testfiles=$1
 
 bundle exec kitchen diagnose --no-instances --loader
 
