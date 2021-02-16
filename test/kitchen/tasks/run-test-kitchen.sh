@@ -95,7 +95,7 @@ if [ -z ${AGENT_VERSION+x} ]; then
   popd
 fi
 
-invoke -v kitchen.genconfig --platform=$(KITCHEN_PLATFORM) --osversions-$(KITCHEN_OSVERS) --provider=azure --testfiles=$1
+invoke -e kitchen.genconfig --platform=$KITCHEN_PLATFORM --osversions=$KITCHEN_OSVERS --provider=azure --testfiles=$1
 
 bundle exec kitchen diagnose --no-instances --loader
 
