@@ -3,15 +3,42 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
-package main
+// +build !windows
+
+package app
 
 import (
+	"context"
+	"flag"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/DataDog/datadog-agent/pkg/runtime"
+	"github.com/DataDog/datadog-agent/pkg/trace/agent"
+	"github.com/DataDog/datadog-agent/pkg/trace/flags"
+	"github.com/DataDog/datadog-agent/pkg/trace/watchdog"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
+
+// Run starts the trace-agent
+func Run() {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+
+	// prepare go runtime
+	runtime.SetMaxProcs()
+
+	// Handle stops properly
+	go func() {
+		defer watchdog.LogOnPanic()
+		handleSignal(cancelFunc)
+	}()
+
+	flags.RegisterFlags()
+	flag.Parse()
+
+	agent.Run(ctx)
+}
 
 // handleSignal closes a channel to exit cleanly from routines
 func handleSignal(onSignal func()) {

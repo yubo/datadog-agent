@@ -8,6 +8,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"path"
@@ -15,7 +16,7 @@ import (
 	"time"
 
 	_ "expvar" // Blank import used because this isn't directly used in this file
-	"net/http"
+
 	_ "net/http/pprof" // Blank import used because this isn't directly used in this file
 
 	"github.com/fatih/color"
@@ -37,6 +38,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/tagger/remote"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util"
+	"github.com/DataDog/datadog-agent/pkg/util/flavor"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/version"
 	ddgostatsd "github.com/DataDog/datadog-go/statsd"
@@ -98,8 +100,10 @@ Datadog Security Agent takes care of running compliance and security checks.`,
 )
 
 func init() {
-	var defaultConfPathArray = []string{path.Join(commonagent.DefaultConfPath, "datadog.yaml"),
-		path.Join(commonagent.DefaultConfPath, "security-agent.yaml")}
+	defaultConfPathArray := []string{
+		path.Join(commonagent.DefaultConfPath, "datadog.yaml"),
+		path.Join(commonagent.DefaultConfPath, "security-agent.yaml"),
+	}
 	SecurityAgentCmd.PersistentFlags().StringArrayVarP(&confPathArray, "cfgpath", "c", defaultConfPathArray, "path to a yaml configuration file")
 	SecurityAgentCmd.PersistentFlags().BoolVarP(&flagNoColor, "no-color", "n", false, "disable color output")
 
@@ -112,6 +116,16 @@ func init() {
 
 	startCmd.Flags().StringVarP(&pidfilePath, "pidfile", "p", "", "path to the pidfile")
 	SecurityAgentCmd.AddCommand(startCmd)
+}
+
+// Run starts the security-agent
+func Run() {
+	// set the Agent flavor
+	flavor.SetFlavor(flavor.SecurityAgent)
+
+	if err := SecurityAgentCmd.Execute(); err != nil {
+		os.Exit(-1)
+	}
 }
 
 func newLogContext(logsConfig config.LogsConfigKeys, endpointPrefix string) (*config.Endpoints, *client.DestinationsContext, error) {
@@ -212,7 +226,7 @@ func RunAgent(ctx context.Context) (err error) {
 	}
 
 	// Setup expvar server
-	var port = coreconfig.Datadog.GetString("security_agent.expvar_port")
+	port := coreconfig.Datadog.GetString("security_agent.expvar_port")
 	coreconfig.Datadog.Set("expvar_port", port)
 	if coreconfig.Datadog.GetBool("telemetry.enabled") {
 		http.Handle("/telemetry", telemetry.Handler())

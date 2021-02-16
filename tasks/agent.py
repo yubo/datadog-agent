@@ -13,7 +13,7 @@ from distutils.dir_util import copy_tree
 from invoke import task
 from invoke.exceptions import Exit, ParseError
 
-from .build_tags import filter_incompatible_tags, get_build_tags, get_default_build_tags
+from .build_tags import AGENT_TAGS, PROCESS_AGENT_TAGS, SECURITY_AGENT_TAGS, TRACE_AGENT_TAGS, filter_incompatible_tags, get_build_tags, get_default_build_tags
 from .docker import pull_base_images
 from .go import deps, generate
 from .rtloader import clean as rtloader_clean
@@ -102,7 +102,7 @@ def build(
     """
 
     if not exclude_rtloader and not iot:
-        rtloader_make(ctx, python_runtimes=python_runtimes)
+        rtloader_make(ctx, python_runtimes=python_runtimes, install_prefix=embedded_path)
         rtloader_install(ctx)
 
     ldflags, gcflags, env = get_build_flags(
@@ -151,11 +151,7 @@ def build(
         # Iot mode overrides whatever passed through `--build-exclude` and `--build-include`
         build_tags = get_default_build_tags(build="iot", arch=arch)
     else:
-        build_include = (
-            get_default_build_tags(build="agent", arch=arch)
-            if build_include is None
-            else filter_incompatible_tags(build_include.split(","), arch=arch)
-        )
+        build_include = AGENT_TAGS.union(TRACE_AGENT_TAGS).union(PROCESS_AGENT_TAGS).union(SECURITY_AGENT_TAGS)
         build_exclude = [] if build_exclude is None else build_exclude.split(",")
         build_tags = get_build_tags(build_include, build_exclude)
 
@@ -174,7 +170,7 @@ def build(
         "gcflags": gcflags,
         "ldflags": ldflags,
         "REPO_PATH": REPO_PATH,
-        "flavor": "iot-agent" if iot else "agent",
+        "flavor": "iot-agent" if iot else "meta",
     }
     ctx.run(cmd.format(**args), env=env)
 
