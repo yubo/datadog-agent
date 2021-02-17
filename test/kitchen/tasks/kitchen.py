@@ -6,20 +6,21 @@ import json
 import os.path
 import re
 
-@task
+@task(iterable=['platlist'])
 def genconfig(
     ctx,
     platform=None,
-    provider="azure",
+    provider=None,
     osversions="all",
     testfiles=None,
     uservars=None,
-    platformfile="platforms.json"
+    platformfile="platforms.json",
+    platlist=None
 ):
     """
     Create a kitchen config
     """
-    if not platform:
+    if not platform and not platlist:
         print("Must supply a platform to configure\n")
         raise Exit(1)
 
@@ -27,40 +28,73 @@ def genconfig(
         print("Must supply one or more testfiles to include\n")
         raise Exit(1)
 
+    if platlist and (platform or provider):
+        print("Can specify either a list of specific OS images OR a platform and provider, but not both\n")
+        raise Exit(1)
+
+    if not platlist and not provider:
+        provider = "azure"
+
     platforms = load_platforms(ctx, platformfile=platformfile)
-
-    plat = platforms.get(platform)
-    if not plat:
-        print("Unknown platform {platform}.  Known platforms are {avail}\n".format(
-            platform=platform,
-            avail=list(platforms.keys())
-        ))
-        raise Exit(2)
-
-    ## check to see if the OS is configured for the given provider
-    prov = plat.get(provider)
-    if not prov:
-        print("Unknown provider {prov}.  Known providers for platform {plat} are {avail}\n".format(
-            prov=provider,
-            plat=platform,
-            avail=list(plat.keys())
-        ))
-        raise Exit(3)
-
-    ## get list of target OSes
-    if osversions.lower() == "all":
-        osversions = ".*"
-
-    osimages = load_targets(ctx, prov, osversions)
-
-    print("Chose os targets {}\n".format(osimages))
 
     # create the TEST_PLATFORMS environment variable
     testplatforms = ""
-    for osimage in osimages:
-        if testplatforms:
-            testplatforms += "|"
-        testplatforms += "{},{}".format(osimage, prov[osimage])
+
+    if platform:
+        plat = platforms.get(platform)
+        if not plat:
+            print("Unknown platform {platform}.  Known platforms are {avail}\n".format(
+                platform=platform,
+                avail=list(platforms.keys())
+            ))
+            raise Exit(2)
+
+        ## check to see if the OS is configured for the given provider
+        prov = plat.get(provider)
+        if not prov:
+            print("Unknown provider {prov}.  Known providers for platform {plat} are {avail}\n".format(
+                prov=provider,
+                plat=platform,
+                avail=list(plat.keys())
+            ))
+            raise Exit(3)
+
+        ## get list of target OSes
+        if osversions.lower() == "all":
+            osversions = ".*"
+
+        osimages = load_targets(ctx, prov, osversions)
+
+        print("Chose os targets {}\n".format(osimages))
+        for osimage in osimages:
+            if testplatforms:
+                testplatforms += "|"
+            testplatforms += "{},{}".format(osimage, prov[osimage])
+    elif platlist:
+        # platform list should be in the form of driver,os,image
+        for entry in platlist:
+            driver, os, image = entry.split(",")
+            if provider and driver != provider:
+                print("Can only use one driver type per config ( {} != {} )\n".format(provider, driver))
+                raise Exit(1)
+
+            provider = driver
+            # check to see if we know this one
+            if not platforms.get(os):
+                print("Unknown OS in {}\n".format(entry))
+                raise Exit(4)
+            if not platforms[os].get(driver):
+                print("Unknown driver in {}\n".format(entry))
+                raise Exit(5)
+            if not platforms[os][driver].get(image):
+                print("Unknown image in {}\n".format(entry))
+                raise Exit(6)
+            if testplatforms:
+                testplatforms += "|"
+            testplatforms += "{},{}".format(image, platforms[os][driver][image])
+
+    
+
 
     print("Using the following test platform(s)\n")
     for logplat in testplatforms.split("|"):
