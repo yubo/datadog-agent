@@ -212,12 +212,44 @@ frameworks (including Bats and minitest).
 
 To support running multiple kitchen suites using multiple back-end providers, the 
 kitchen configuration file (kitchen.yaml) is created dynamically by combining three
-provided yaml files.  For an example of how this is constructed during the CI tests,
-see [run-test-kitchen.sh](tasks/run-test-kitchen.sh).
+provided yaml files. 
 
 A complete kitchen configuration (kitchen.yaml) is created by taking one of the 
 driver files, adding the common configuration options [platforms-common](test-definitions/platforms-common.yml),
 and then adding the desired test suite(s) from the test-definitions directory.
+
+There is an invoke task for creating the completed `kitchen.yml`.  The usage for 
+the invoke task is:
+
+  invoke kitchen.genconfig --platform=platform --osversions=osversions --provider=provider --testfiles=testfiles
+
+where:
+  platform is an index into the platforms.json.  It is (currently) one of:
+  - centos
+  - debian
+  - suse
+  - ubuntu
+  - windows
+
+  osversions is an index into the per-provider dictionary for the given 
+  platform.  Examples include
+  - win2012r2 (which is in both windows/azure and windows/ec2)
+  - ubuntu-20-04 (which is in ubuntu/azure)
+
+  Provider is the kitchen driver to be used.  Currently supported are
+  - azure
+  - ec2
+  - vagrant
+  - hyperv (with a user-supplied platforms file)
+
+  Testfiles is the name of the test-specific file(s) (found in [test-definitions](test-definitions) ) to be
+  added.  The testfiles define the tests that are run, on what OS, on the given provider.
+
+An example command would be
+  invoke kitchen.genconfig --platform ubuntu --osversions all --provider azure --testfiles install-script-test
+
+  This will generate a kitchen.yml which executes the `install-script-test` on all of the defined `ubuntu` 
+  OS images in azure.
 
 #### Running in CI
 
