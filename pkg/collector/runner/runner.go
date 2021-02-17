@@ -72,6 +72,9 @@ type Runner struct {
 func NewRunner() *Runner {
 	numWorkers := config.Datadog.GetInt("check_runners")
 
+	log.Infof("numWorkers: %d", numWorkers)
+	log.Infof("config.DefaultNumWorkers: %d", config.DefaultNumWorkers)
+
 	r := &Runner{
 		// initialize the channel
 		pending:          make(chan check.Check),
@@ -238,11 +241,23 @@ func (r *Runner) StopCheck(id check.ID) error {
 
 // work waits for checks and run them as long as they arrive on the channel
 func (r *Runner) work() {
-	log.Debug("Ready to process checks...")
+	log.Info("Ready to process checks...")
 	defer TestWg.Done()
 	defer runnerStats.Add("Workers", -1)
 
+	prev := time.Now()
+
 	for check := range r.pending {
+		check_start := time.Now()
+		// use the default sender for the service checks
+		sender, e := aggregator.GetDefaultSender()
+		if e != nil {
+			log.Errorf("Error getting default sender: %v.", e)
+		}
+
+		submitWorkDuration(sender, "wait_pending_get_sender", prev, check.String())
+		prev = time.Now()
+
 		// see if the check is already running
 		r.m.Lock()
 		if _, isRunning := r.runningChecks[check.ID()]; isRunning {
@@ -255,6 +270,9 @@ func (r *Runner) work() {
 		}
 		r.m.Unlock()
 
+		submitWorkDuration(sender, "set_runningChecks_lock", prev, check.String())
+		prev = time.Now()
+
 		doLog, lastLog := shouldLog(check.ID())
 
 		if doLog {
@@ -263,30 +281,40 @@ func (r *Runner) work() {
 			log.Debugc("Running check", "check", check)
 		}
 
+		submitWorkDuration(sender, "get_shouldLog", prev, check.String())
+		prev = time.Now()
+
 		// run the check
 		var err error
 		t0 := time.Now()
 
 		err = check.Run()
+
+		submitWorkDuration(sender, "check_run", prev, check.String())
+		prev = time.Now()
+
 		longRunning := check.Interval() == 0
 
 		warnings := check.GetWarnings()
 
-		// use the default sender for the service checks
-		sender, e := aggregator.GetDefaultSender()
-		if e != nil {
-			log.Errorf("Error getting default sender: %v. Not sending status check for %s", e, check)
-		}
 		serviceCheckTags := []string{fmt.Sprintf("check:%s", check.String())}
 		serviceCheckStatus := metrics.ServiceCheckOK
+		submitWorkDuration(sender, "get_warnings", prev, check.String())
+		prev = time.Now()
 
 		hostname := getHostname()
+
+		submitWorkDuration(sender, "get_hostname", prev, check.String())
+		prev = time.Now()
 
 		if len(warnings) != 0 {
 			// len returns int, and this expect int64, so it has to be converted
 			runnerStats.Add("Warnings", int64(len(warnings)))
 			serviceCheckStatus = metrics.ServiceCheckWarning
 		}
+
+		submitWorkDuration(sender, "process_warnings", prev, check.String())
+		prev = time.Now()
 
 		if err != nil {
 			log.Errorf("Error running check %s: %s", check, err)
@@ -299,14 +327,23 @@ func (r *Runner) work() {
 			sender.Commit()
 		}
 
+		submitWorkDuration(sender, "send_service_check", prev, check.String())
+		prev = time.Now()
+
 		// remove the check from the running list
 		r.m.Lock()
 		delete(r.runningChecks, check.ID())
 		r.m.Unlock()
 
+		submitWorkDuration(sender, "del_check_from_runningChecks_lock", prev, check.String())
+		prev = time.Now()
+
 		// publish statistics about this run
 		runnerStats.Add("RunningChecks", -1)
 		runnerStats.Add("Runs", 1)
+
+		submitWorkDuration(sender, "update_stats", prev, check.String())
+		prev = time.Now()
 
 		r.m.Lock()
 		if !longRunning || len(warnings) != 0 || err != nil {
@@ -318,6 +355,8 @@ func (r *Runner) work() {
 			}
 		}
 		r.m.Unlock()
+		submitWorkDuration(sender, "stats_addWorkStats_lock", prev, check.String())
+		prev = time.Now()
 
 		l := "Done running check"
 		if doLog {
@@ -328,14 +367,20 @@ func (r *Runner) work() {
 		} else {
 			log.Debugc(l, "check", check.String())
 		}
-
 		if check.Interval() == 0 {
 			log.Infof("Check %v one-time's execution has finished", check)
 			return
 		}
+		submitWorkDuration(sender, "done_running_logs", prev, check.String())
+		prev = time.Now()
+		submitWorkDuration(sender, "check_total_duration", check_start, check.String())
 	}
 
 	log.Debug("Finished processing checks.")
+}
+
+func submitWorkDuration(sender aggregator.Sender, stepName string, start time.Time, check string) {
+	sender.Gauge("datadog.runner.work.duration", time.Since(start).Seconds(), "", []string{"step:"+stepName, "check:" + check})
 }
 
 func shouldLog(id check.ID) (doLog bool, lastLog bool) {
