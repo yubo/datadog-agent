@@ -19,7 +19,7 @@
     - if [ $AGENT_MAJOR_VERSION == "7" ]; then export WINDOWS_TESTING_S3_BUCKET=$WINDOWS_TESTING_S3_BUCKET_A7; else export WINDOWS_TESTING_S3_BUCKET=$WINDOWS_TESTING_S3_BUCKET_A6; fi
     - rsync -azr --delete ./ $SRC_PATH
     - export KITCHEN_PLATFORM=windows
-    - export KITCHEN_OSVERS="win2008r2,win2012,win2012r2,win2016,win2019"
+    - export KITCHEN_OSVERS="win2008r2,win2012,win2016,win2019"
     - cd $DD_AGENT_TESTING_DIR
     - bash -l tasks/kitchen_setup.sh
 
