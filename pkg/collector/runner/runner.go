@@ -256,6 +256,8 @@ func (r *Runner) work() {
 		}
 
 		submitWorkDuration(sender, "wait_pending_get_sender", prev, check.String())
+		numWorkers, _ := strconv.Atoi(runnerStats.Get("Workers").String())
+		sender.Gauge("datadog.runner.workers", float64(numWorkers), "", []string{"check:" + check.String()})
 		prev = time.Now()
 
 		// see if the check is already running
