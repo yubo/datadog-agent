@@ -248,7 +248,7 @@ func (r *Runner) work() {
 	prev := time.Now()
 
 	for check := range r.pending {
-		check_start := time.Now()
+		checkStart := time.Now()
 		// use the default sender for the service checks
 		sender, e := aggregator.GetDefaultSender()
 		if e != nil {
@@ -375,14 +375,14 @@ func (r *Runner) work() {
 		}
 		submitWorkDuration(sender, "done_running_logs", prev, check.String())
 		prev = time.Now()
-		submitWorkDuration(sender, "check_total_duration", check_start, check.String())
+		submitWorkDuration(sender, "check_total_duration", checkStart, check.String())
 	}
 
 	log.Debug("Finished processing checks.")
 }
 
 func submitWorkDuration(sender aggregator.Sender, stepName string, start time.Time, check string) {
-	sender.Gauge("datadog.runner.work.duration", time.Since(start).Seconds(), "", []string{"step:"+stepName, "check:" + check})
+	sender.Gauge("datadog.runner.work.duration", time.Since(start).Seconds(), "", []string{"step:" + stepName, "check:" + check})
 }
 
 func shouldLog(id check.ID) (doLog bool, lastLog bool) {
