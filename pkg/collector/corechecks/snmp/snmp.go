@@ -2,13 +2,15 @@ package snmp
 
 import (
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
-	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -19,9 +21,12 @@ const (
 // Check aggregates metrics from one Check instance
 type Check struct {
 	core.CheckBase
-	config  snmpConfig
-	session sessionAPI
-	sender  metricSender
+	config        snmpConfig
+	session       sessionAPI
+	sender        metricSender
+	benchMode     bool
+	sleepTime     time.Duration
+	metricsToSend int
 }
 
 // Run executes the check
@@ -35,13 +40,23 @@ func (c *Check) Run() error {
 	c.sender = metricSender{sender: sender}
 
 	staticTags := c.config.getStaticTags()
+	tags := copyStrings(staticTags)
 
-	var checkErr error
-	tags, checkErr := c.processSnmpMetrics(staticTags)
-	if checkErr != nil {
-		c.sender.serviceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", tags, checkErr.Error())
+	var retErr error
+	if c.benchMode {
+		time.Sleep(c.sleepTime)
+		for i := 0; i < c.metricsToSend; i++ {
+			c.sender.sendMetric("snmp.my_metric"+strconv.Itoa(i), snmpValueType{"gauge", "1"}, staticTags, "counter", metricsConfigOption{})
+		}
 	} else {
-		c.sender.serviceCheck("snmp.can_check", metrics.ServiceCheckOK, "", tags, "")
+		metricTags, checkErr := c.processSnmpMetrics(staticTags)
+		tags = metricTags
+		retErr = checkErr
+		if checkErr != nil {
+			c.sender.serviceCheck("snmp.can_check", metrics.ServiceCheckCritical, "", tags, checkErr.Error())
+		} else {
+			c.sender.serviceCheck("snmp.can_check", metrics.ServiceCheckOK, "", tags, "")
+		}
 	}
 
 	c.sender.gauge("snmp.devices_monitored", float64(1), "", tags)
@@ -53,7 +68,7 @@ func (c *Check) Run() error {
 
 	// Commit
 	sender.Commit()
-	return checkErr
+	return retErr
 }
 
 func (c *Check) processSnmpMetrics(staticTags []string) ([]string, error) {
@@ -125,6 +140,26 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	err = c.session.Configure(c.config)
 	if err != nil {
 		return fmt.Errorf("session configure failed: %s", err)
+	}
+
+	c.benchMode = os.Getenv("DD_BENCH_MODE") == "true"
+
+	sleepTimeStr := os.Getenv("DD_SLEEP_TIME")
+	if sleepTimeStr != "" {
+		sleepTime, err := strconv.Atoi(sleepTimeStr)
+		if err != nil {
+			return fmt.Errorf("error getting DD_SLEEP_TIME: %s", err)
+		}
+		c.sleepTime = time.Duration(sleepTime) * time.Second
+	}
+
+	metricsToSendStr := os.Getenv("DD_METRICS_TO_SEND")
+	if metricsToSendStr != "" {
+		metricsToSend, err := strconv.Atoi(metricsToSendStr)
+		if err != nil {
+			return fmt.Errorf("error getting DD_METRICS_TO_SEND: %s", err)
+		}
+		c.metricsToSend = metricsToSend
 	}
 
 	return nil
