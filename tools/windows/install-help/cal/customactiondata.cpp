@@ -2,6 +2,25 @@
 #include "PropertyReplacer.h"
 #include <utility>
 
+template <class Str>
+void trim_string_left(Str &str)
+{
+    str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](int ch) { return !std::isspace(ch); }));
+}
+
+template <class Str>
+void trim_string_right(Str &str)
+{
+    str.erase(std::find_if(str.rbegin(), str.rend(), [](int ch) { return !std::isspace(ch); }).base(), str.end());
+}
+
+template <class Str>
+void trim_string(Str &str)
+{
+    trim_string_left(str);
+    trim_string_right(str);
+}
+
 CustomActionData::CustomActionData()
     : domainUser(false)
       , doInstallSysprobe(true)
@@ -34,22 +53,26 @@ bool CustomActionData::init(const std::wstring &data)
         return false;
     }
 
-    auto start = data.begin();
-    auto end = data.end();
-    std::wregex re(L"((\\w+)=(.+)?;\\s*\r?\n)");
-    std::match_results<decltype(start)> results;
-    while (std::regex_search(start, end, results, re))
+    // first, the string is KEY=VAL;KEY=VAL....
+    // first split into key/value pairs
+    std::wstringstream ss(data);
+    std::wstring token;
+    while (std::getline(ss, token))
     {
-        auto propertyValue = results[3].str();
-        propertyValue.erase(propertyValue.begin(), std::find_if(propertyValue.begin(), propertyValue.end(), [](int ch)
+        // now 'token'  has the key=val; do the same thing for the key=value
+        bool boolval = false;
+        std::wstringstream instream(token);
+        std::wstring key, val;
+        if (std::getline(instream, key, L'='))
         {
-            return !std::isspace(ch);
-        }));
-        if (propertyValue.length() > 0)
-        {
-            values[results[2]] = propertyValue;
+            trim_string(key);
+            std::getline(instream, val);
+            trim_string(val);
         }
-        start += results.position() + results.length();
+        if (val.length() > 0)
+        {
+            this->values[key] = val;
+        }
     }
 
     return parseUsernameData() && parseSysprobeData();

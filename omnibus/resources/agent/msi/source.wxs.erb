@@ -646,30 +646,30 @@
 
     <CustomAction Id='SetFinalizeProperty' Return='check' Property='FinalizeInstall'
         Value='
-            PROJECTLOCATION=[PROJECTLOCATION];
-            APPLICATIONDATADIRECTORY=[APPLICATIONDATADIRECTORY];
-            DDAGENTUSER_NAME=[DDAGENTUSER_NAME];
-            DDAGENTUSER_PASSWORD=[DDAGENTUSER_PASSWORD];
-            SYSPROBE_PRESENT=[SYSPROBE_PRESENT];
-            ADDLOCAL=[ADDLOCAL];
-            APIKEY=[APIKEY];
-            TAGS=[TAGS];
-            HOSTNAME=[HOSTNAME];
-            PROXY_HOST=[PROXY_HOST];
-            PROXY_PORT=[PROXY_PORT];
-            PROXY_USER=[PROXY_USER];
-            PROXY_PASSWORD=[PROXY_PASSWORD];
-            LOGS_ENABLED=[LOGS_ENABLED];
-            APM_ENABLED=[APM_ENABLED];
-            PROCESS_ENABLED=[PROCESS_ENABLED];
-            CMD_PORT=[CMD_PORT];
-            SITE=[SITE];
-            DD_URL=[DD_URL];
-            LOGS_DD_URL=[LOGS_DD_URL];
-            PROCESS_DD_URL=[PROCESS_DD_URL];
-            TRACE_DD_URL=[TRACE_DD_URL];
-            PYVER=[PYVER];
-            HOSTNAME_FQDN_ENABLED=[HOSTNAME_FQDN_ENABLED];
+            PROJECTLOCATION=[PROJECTLOCATION]
+            APPLICATIONDATADIRECTORY=[APPLICATIONDATADIRECTORY]
+            DDAGENTUSER_NAME=[DDAGENTUSER_NAME]
+            DDAGENTUSER_PASSWORD=[DDAGENTUSER_PASSWORD]
+            SYSPROBE_PRESENT=[SYSPROBE_PRESENT]
+            ADDLOCAL=[ADDLOCAL]
+            APIKEY=[APIKEY]
+            TAGS=[TAGS]
+            HOSTNAME=[HOSTNAME]
+            PROXY_HOST=[PROXY_HOST]
+            PROXY_PORT=[PROXY_PORT]
+            PROXY_USER=[PROXY_USER]
+            PROXY_PASSWORD=[PROXY_PASSWORD]
+            LOGS_ENABLED=[LOGS_ENABLED]
+            APM_ENABLED=[APM_ENABLED]
+            PROCESS_ENABLED=[PROCESS_ENABLED]
+            CMD_PORT=[CMD_PORT]
+            SITE=[SITE]
+            DD_URL=[DD_URL]
+            LOGS_DD_URL=[LOGS_DD_URL]
+            PROCESS_DD_URL=[PROCESS_DD_URL]
+            TRACE_DD_URL=[TRACE_DD_URL]
+            PYVER=[PYVER]
+            HOSTNAME_FQDN_ENABLED=[HOSTNAME_FQDN_ENABLED]
             ' />
     <CustomAction Id='FinalizeInstall' BinaryKey='wixcadll' DllEntry='FinalizeInstall' Execute='deferred' Return='check' Impersonate='no'/>
     <CustomAction Id='StopDDServices' BinaryKey='wixcadll' DllEntry='PreStopServices' Execute='deferred' Return='check' Impersonate='no'/>
