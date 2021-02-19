@@ -11,6 +11,7 @@ import (
 
 	"github.com/DataDog/sketches-go/ddsketch/mapping"
 	"github.com/DataDog/sketches-go/ddsketch/pb/sketchpb"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -101,6 +102,7 @@ func decodeDDSketch(data []byte) (ddSketch, error) {
 		len(pb.NegativeValues.ContiguousBinCounts) > 0 {
 		return ddSketch{}, errors.New("negative values not supported")
 	}
+	spew.Dump(pb)
 	return ddSketch{
 		mapping:              mapping,
 		bins:                 pb.PositiveValues.BinCounts,
