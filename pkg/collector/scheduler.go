@@ -151,7 +151,6 @@ func (s *CheckScheduler) getChecks(config integration.Config) ([]check.Check, er
 		return nil, err
 	}
 	selectedLoader := initConfig.LoaderName
-	benchMode := os.Getenv("DD_BENCH_MODE") == "true"
 	instancesStr := os.Getenv("DD_INSTANCES")
 	var benchInstances int
 	if instancesStr != "" {
@@ -167,7 +166,7 @@ func (s *CheckScheduler) getChecks(config integration.Config) ([]check.Check, er
 		selectedInstanceLoader := selectedLoader
 		instanceConfig := commonInstanceConfig{}
 
-		if benchMode && config.Name == "snmp" {
+		if benchInstances > 0 && config.Name == "snmp" {
 			for i := 0; i < benchInstances; i++ {
 				instanceNew := []byte(strings.Replace(string(instance), "<CONTEXT>", fmt.Sprintf("%v", i+1), 1))
 				log.Warnf("Running instance %d : %v", i, string(instanceNew))
@@ -216,7 +215,6 @@ func (s *CheckScheduler) getChecks(config integration.Config) ([]check.Check, er
 					log.Debugf("Unable to load a check from instance of config '%s': %s", config.Name, strings.Join(errors, "; "))
 				}
 			}
-			break
 		} else {
 			err := yaml.Unmarshal(instance, &instanceConfig)
 			if err != nil {

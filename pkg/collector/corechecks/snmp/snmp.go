@@ -21,12 +21,12 @@ const (
 // Check aggregates metrics from one Check instance
 type Check struct {
 	core.CheckBase
-	config        snmpConfig
-	session       sessionAPI
-	sender        metricSender
-	benchMode     bool
-	sleepTime     time.Duration
-	metricsToSend int
+	config          snmpConfig
+	session         sessionAPI
+	sender          metricSender
+	sendFakeMetrics bool
+	sleepTime       time.Duration
+	metricsToSend   int
 }
 
 // Run executes the check
@@ -43,7 +43,7 @@ func (c *Check) Run() error {
 	tags := copyStrings(staticTags)
 
 	var retErr error
-	if c.benchMode {
+	if c.sendFakeMetrics {
 		time.Sleep(c.sleepTime)
 		for i := 0; i < c.metricsToSend; i++ {
 			c.sender.sendMetric("snmp.my_metric"+strconv.Itoa(i), snmpValueType{"gauge", "1"}, staticTags, "counter", metricsConfigOption{})
@@ -142,7 +142,7 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 		return fmt.Errorf("session configure failed: %s", err)
 	}
 
-	c.benchMode = os.Getenv("DD_BENCH_MODE") == "true"
+	c.sendFakeMetrics = os.Getenv("DD_SEND_FAKE_METRICS") == "true"
 
 	sleepTimeStr := os.Getenv("DD_SLEEP_TIME")
 	if sleepTimeStr != "" {
