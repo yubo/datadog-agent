@@ -110,7 +110,7 @@ func (d *dispatcher) Schedule(configs []integration.Config) {
 			var instances []integration.Data
 			for _, instance := range patched.Instances {
 				for i := 0; i < benchInstances; i++ {
-					instanceNew := []byte(strings.Replace(string(instance), "<CONTEXT>", fmt.Sprintf("%v", i+1), 1))
+					instanceNew := []byte(strings.Replace(string(instance), "<CLUSTER_CONTEXT>", fmt.Sprintf("%v", i+1), 1))
 					log.Warnf("Running instance %d : %v", i, string(instanceNew))
 					instances = append(instances, instanceNew)
 				}
