@@ -10,6 +10,9 @@ package clusterchecks
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
@@ -73,6 +76,17 @@ func (d *dispatcher) Stop() {
 
 // Schedule implements the scheduler.Scheduler interface
 func (d *dispatcher) Schedule(configs []integration.Config) {
+	instancesStr := os.Getenv("DD_CLUSTER_INSTANCES")
+	var benchInstances int
+	if instancesStr != "" {
+		instances, err := strconv.Atoi(instancesStr)
+		if err != nil {
+			log.Warnf("error getting DD_CLUSTER_INSTANCES: %s", err)
+			return
+		}
+		benchInstances = instances
+	}
+
 	for _, c := range configs {
 		if !c.ClusterCheck {
 			continue // Ignore non cluster-check configs
@@ -92,6 +106,17 @@ func (d *dispatcher) Schedule(configs []integration.Config) {
 			log.Warnf("Cannot patch configuration %s: %s", c.Digest(), err)
 			continue
 		}
+		if benchInstances > 0 {
+			var instances []integration.Data
+			for _, instance := range patched.Instances {
+				for i := 0; i < benchInstances; i++ {
+					instanceNew := []byte(strings.Replace(string(instance), "<CONTEXT>", fmt.Sprintf("%v", i+1), 1))
+					log.Warnf("Running instance %d : %v", i, string(instanceNew))
+					instances = append(instances, instanceNew)
+				}
+			}
+		}
+		log.Warnf("Patched: %#v", patched)
 		d.add(patched)
 	}
 }
