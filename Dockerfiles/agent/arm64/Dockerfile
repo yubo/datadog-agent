@@ -2,7 +2,7 @@
 #  Preparation stage: extract and cleanup  #
 ############################################
 
-FROM debian:bullseye-slim AS extract
+FROM debian:stable-slim AS extract
 ARG WITH_JMX
 ARG PYTHON_VERSION
 ARG DD_AGENT_ARTIFACT=datadog-agent*_arm64.deb
