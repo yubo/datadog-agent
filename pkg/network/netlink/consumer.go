@@ -136,7 +136,10 @@ func (c *Consumer) Events() <-chan Event {
 	c.do(false, func() {
 		defer close(output)
 		c.streaming = true
-		_ = c.conn.JoinGroup(netlinkCtNew)
+		err := c.conn.JoinGroup(netlinkCtNew)
+		if err != nil {
+			log.Warnf("error joining netlink multicast group: %s", err)
+		}
 		c.receive(output, c.socket)
 	})
 
@@ -150,7 +153,7 @@ func (c *Consumer) isPeerNS(conn *netlink.Conn, ns netns.NsHandle) bool {
 	encoder.Uint32(unix.NETNSA_FD, uint32(ns))
 	data, err := encoder.Encode()
 	if err != nil {
-		log.Errorf("isPeerNS: err encoding attributes netlink attributes: %s", err)
+		log.Errorf("isPeerNS: error encoding attributes netlink attributes: %s", err)
 		return false
 	}
 
@@ -435,6 +438,7 @@ ReadLoop:
 
 		throttlingErr := c.throttle(len(msgs))
 		if throttlingErr != nil {
+			log.Errorf("netlink throttling error, stopping receive loop: %s", err)
 			return
 		}
 
@@ -493,8 +497,7 @@ func (c *Consumer) throttle(numMessages int) error {
 	samplingRate := (float64(c.targetRateLimit) / float64(c.breaker.Rate())) * c.samplingRate * overshootFactor
 	err := c.initNetlinkSocket(samplingRate)
 	if err != nil {
-		log.Errorf("failed to re-create netlink socket. exiting conntrack: %s", err)
-		return err
+		return fmt.Errorf("failed to re-create netlink socket: %s", err)
 	}
 
 	// Reset circuit breaker
