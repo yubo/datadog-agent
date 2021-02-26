@@ -16,7 +16,7 @@ windows_choco_offline_7_x64:
       when: manual
       allow_failure: true
   stage: choco_build
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["runner:windows-docker", "windowsversion:1809_test"]
   needs: ["windows_msi_and_bosh_zip_x64-a7"]
   variables:
     ARCH: "x64"
@@ -38,7 +38,7 @@ windows_choco_online_7_x64:
   rules:
     - <<: *if_deploy_on_tag_7
   stage: choco_build
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["runner:windows-docker", "windowsversion:1809_test"]
   needs: ["deploy_staging_windows_tags-a7"]
   variables:
     ARCH: "x64"

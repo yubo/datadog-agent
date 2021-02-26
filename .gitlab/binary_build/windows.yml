@@ -8,7 +8,7 @@ build_windows_container_entrypoint:
     - <<: *if_version_7
       when: on_success
   stage: binary_build
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["runner:windows-docker", "windowsversion:1809_test"]
   needs: ["tests_windows-x64"]
   variables:
     ARCH: "x64"

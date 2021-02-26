@@ -12,7 +12,7 @@ publish_choco_7_x64:
       when: manual
       allow_failure: true
   stage: choco_deploy
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["runner:windows-docker", "windowsversion:1809_test"]
   needs: ["windows_choco_online_7_x64"]
   variables:
     ARCH: "x64"
