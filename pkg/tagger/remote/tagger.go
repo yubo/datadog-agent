@@ -24,12 +24,14 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
 	"github.com/DataDog/datadog-agent/pkg/tagger/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/tagger/types"
+	grpcutil "github.com/DataDog/datadog-agent/pkg/util/grpc"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 const (
-	defaultTimeout = 5 * time.Minute
-	noTimeout      = 0 * time.Minute
+	defaultTimeout    = 5 * time.Minute
+	noTimeout         = 0 * time.Minute
+	streamRecvTimeout = 10 * time.Minute
 )
 
 // Tagger holds a connection to a remote tagger, processes incoming events from
@@ -42,10 +44,14 @@ type Tagger struct {
 	client pb.AgentSecureClient
 	stream pb.AgentSecure_TaggerStreamEntitiesClient
 
+	streamCtx    context.Context
+	streamCancel context.CancelFunc
+
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	health *health.Handle
+	health          *health.Handle
+	telemetryTicker *time.Ticker
 }
 
 // NewTagger returns an allocated tagger. You still have to run Init()
@@ -60,6 +66,7 @@ func NewTagger() *Tagger {
 // events.
 func (t *Tagger) Init() error {
 	t.health = health.RegisterLiveness("tagger")
+	t.telemetryTicker = time.NewTicker(1 * time.Minute)
 
 	t.ctx, t.cancel = context.WithCancel(context.Background())
 
@@ -105,10 +112,13 @@ func (t *Tagger) Stop() error {
 		return err
 	}
 
+	t.telemetryTicker.Stop()
 	err = t.health.Deregister()
 	if err != nil {
 		return err
 	}
+
+	log.Info("remote tagger stopped successfully")
 
 	return nil
 }
@@ -171,14 +181,24 @@ func (t *Tagger) run() {
 	for {
 		select {
 		case <-t.health.C:
+		case <-t.telemetryTicker.C:
+			t.store.collectTelemetry()
 		case <-t.ctx.Done():
 			return
 		default:
 		}
 
-		response, err := t.stream.Recv()
+		var response *pb.StreamTagsResponse
+		err := grpcutil.DoWithTimeout(func() error {
+			var err error
+			response, err = t.stream.Recv()
+			return err
+		}, streamRecvTimeout)
+
 		if err != nil {
-			telemetry.StreamErrors.Inc()
+			t.streamCancel()
+
+			telemetry.ClientStreamErrors.Inc()
 
 			// when Recv() returns an error, the stream is aborted
 			// and the contents of our store are considered out of
@@ -197,6 +217,8 @@ func (t *Tagger) run() {
 			}
 			continue
 		}
+
+		telemetry.Receives.Inc()
 
 		err = t.processResponse(response)
 		if err != nil {
@@ -265,11 +287,13 @@ func (t *Tagger) startTaggerStream(maxElapsed time.Duration) error {
 			return fmt.Errorf("unable to fetch authentication token: %w", err)
 		}
 
-		ctx := metadata.NewOutgoingContext(t.ctx, metadata.MD{
-			"authorization": []string{fmt.Sprintf("Bearer %s", token)},
-		})
+		t.streamCtx, t.streamCancel = context.WithCancel(
+			metadata.NewOutgoingContext(t.ctx, metadata.MD{
+				"authorization": []string{fmt.Sprintf("Bearer %s", token)},
+			}),
+		)
 
-		t.stream, err = t.client.TaggerStreamEntities(ctx, &pb.StreamTagsRequest{
+		t.stream, err = t.client.TaggerStreamEntities(t.streamCtx, &pb.StreamTagsRequest{
 			Cardinality: pb.TagCardinality_HIGH,
 		})
 
