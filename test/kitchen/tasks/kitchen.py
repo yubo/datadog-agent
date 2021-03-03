@@ -9,14 +9,15 @@ from invoke.exceptions import Exit
 
 @task(iterable=['platlist'])
 def genconfig(
-    ctx,
-    platform=None,
-    provider=None,
-    osversions="all",
-    testfiles=None,
-    uservars=None,
-    platformfile="platforms.json",
-    platlist=None,
+        ctx,
+        platform=None,
+        provider=None,
+        osversions="all",
+        testfiles=None,
+        uservars=None,
+        platformfile="platforms.json",
+        platlist=None,
+        arch="x64",
 ):
     """
     Create a kitchen config
@@ -35,6 +36,9 @@ def genconfig(
     if not platlist and not provider:
         provider = "azure"
 
+    if not arch:
+        arch = "x64"
+
     platforms = load_platforms(ctx, platformfile=platformfile)
 
     # create the TEST_PLATFORMS environment variable
@@ -49,9 +53,8 @@ def genconfig(
                 ),
                 code=2,
             )
-            raise Exit(2)
 
-        ## check to see if the OS is configured for the given provider
+        # check to see if the OS is configured for the given provider
         prov = plat.get(provider)
         if not prov:
             raise Exit(
@@ -61,20 +64,29 @@ def genconfig(
                 code=3,
             )
 
-        ## get list of target OSes
+        ar = prov.get(arch)
+        if not ar:
+            raise Exit(
+                message="Unknown architecture {arch}. "
+                        "Known architectures for platform {plat} provider {prov} are {avail}\n"
+                        .format(arch=arch, prov=provider, plat=platform, avail=list(prov.keys())),
+                code=4,
+            )
+
+        # get list of target OSes
         if osversions.lower() == "all":
             osversions = ".*"
 
-        osimages = load_targets(ctx, prov, osversions)
+        osimages = load_targets(ctx, ar, osversions)
 
         print("Chose os targets {}\n".format(osimages))
         for osimage in osimages:
-            testplatformslist.append("{},{}".format(osimage, prov[osimage]))
+            testplatformslist.append("{},{}".format(osimage, ar[osimage]))
 
     elif platlist:
-        # platform list should be in the form of driver,os,image
+        # platform list should be in the form of driver,os,arch,image
         for entry in platlist:
-            driver, os, image = entry.split(",")
+            driver, os, arch, image = entry.split(",")
             if provider and driver != provider:
                 raise Exit(
                     message="Can only use one driver type per config ( {} != {} )\n".format(provider, driver), code=1
@@ -88,10 +100,13 @@ def genconfig(
             if not platforms[os].get(driver):
                 raise Exit(message="Unknown driver in {}\n".format(entry), code=5)
 
-            if not platforms[os][driver].get(image):
+            if not platforms[os][driver].get(arch):
+                raise Exit(message="Unknown architecture in {}\n".format(entry), code=5)
+
+            if not platforms[os][driver][arch].get(image):
                 raise Exit(message="Unknown image in {}\n".format(entry), code=6)
 
-            testplatformslist.append("{},{}".format(image, platforms[os][driver][image]))
+            testplatformslist.append("{},{}".format(image, platforms[os][driver][arch][image]))
 
     print("Using the following test platform(s)\n")
     for logplat in testplatformslist:
