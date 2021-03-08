@@ -127,3 +127,24 @@ docker_build_agent7_windows2004_jmx:
     VARIANT: 2004
     TAG_SUFFIX: -7-jmx
     WITH_JMX: "true"
+
+docker_build_agent7_windows20h2:
+  extends:
+    - .docker_build_windows_job_definition
+    - .docker_build_agent7_windows_common
+  tags: ["runner:windows-docker", "windowsversion:20h2"]
+  variables:
+    VARIANT: 20h2
+    TAG_SUFFIX: "-7"
+    WITH_JMX: "false"
+
+docker_build_agent7_windows20h2_jmx:
+  extends:
+    - .docker_build_windows_job_definition
+    - .docker_build_agent7_windows_common
+  tags: ["runner:windows-docker", "windowsversion:20h2"]
+  needs: ["windows_msi_and_bosh_zip_x64-a7", "build_windows_container_entrypoint"]
+  variables:
+    VARIANT: 20h2
+    TAG_SUFFIX: -7-jmx
+    WITH_JMX: "true"

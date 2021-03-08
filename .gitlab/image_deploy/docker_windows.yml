@@ -26,7 +26,7 @@ dev_branch_docker_hub-a7-windows:
   ## For Future Reference. Must update to do this job from the newest OS version
   ## that we're publishing (.e.g. adding windows2104 will require also using the
   ## 2104 builder)
-  tags: ["runner:windows-docker", "windowsversion:2004"]
+  tags: ["runner:windows-docker", "windowsversion:20h2"]
   needs:
     - docker_build_agent7_windows1809
     - docker_build_agent7_windows1809_jmx
@@ -34,8 +34,10 @@ dev_branch_docker_hub-a7-windows:
     - docker_build_agent7_windows1909_jmx
     - docker_build_agent7_windows2004
     - docker_build_agent7_windows2004_jmx
+    - docker_build_agent7_windows20h2
+    - docker_build_agent7_windows20h2_jmx
   variables:
-    VARIANT: 2004
+    VARIANT: 20h2
   script:
     - $ErrorActionPreference = "Stop"
     - |
@@ -53,9 +55,13 @@ dev_branch_docker_hub-a7-windows:
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
       inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-jmx-win2004-amd64 datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win2004
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
-      inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py3-win --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-win1809,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-win1909,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-win2004,windows/amd64
+      inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-win20h2-amd64 datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-win20h2
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
-      inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py3-jmx-win --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win1809,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win1909,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win2004,windows/amd64
+      inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-jmx-win20h2-amd64 datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win20h2
+      If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
+      inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py3-win --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-win1809,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-win1909,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-win2004,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-win20h2,windows/amd64
+      If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
+      inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py3-jmx-win --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win1809,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win1909,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win2004,windows/amd64 --image datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py3-jmx-win20h2,windows/amd64
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
       "@ | Add-Content ci-scripts/publish.ps1
     - cat ci-scripts/publish.ps1
@@ -71,7 +77,7 @@ dev_master_docker_hub-a7-windows:
   ## For Future Reference. Must update to do this job from the newest OS version
   ## that we're publishing (.e.g. adding windows2104 will require also using the
   ## 2104 builder)
-  tags: ["runner:windows-docker", "windowsversion:2004"]
+  tags: ["runner:windows-docker", "windowsversion:20h2"]
   needs:
     - docker_build_agent7_windows1809
     - docker_build_agent7_windows1809_jmx
@@ -79,8 +85,10 @@ dev_master_docker_hub-a7-windows:
     - docker_build_agent7_windows1909_jmx
     - docker_build_agent7_windows2004
     - docker_build_agent7_windows2004_jmx
+    - docker_build_agent7_windows20h2
+    - docker_build_agent7_windows20h2_jmx
   variables:
-    VARIANT: 2004
+    VARIANT: 20h2
   script:
     - $ErrorActionPreference = "Stop"
     - |
@@ -98,9 +106,13 @@ dev_master_docker_hub-a7-windows:
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
       inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-jmx-win2004-amd64 datadog/agent-dev:master-py3-jmx-win2004
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
-      inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag master-py3-win --image datadog/agent-dev:master-py3-win1809,windows/amd64 --image datadog/agent-dev:master-py3-win1909,windows/amd64 --image datadog/agent-dev:master-py3-win2004,windows/amd64
+      inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-win20h2-amd64 datadog/agent-dev:master-py3-win20h2
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
-      inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag master-py3-jmx-win --image datadog/agent-dev:master-py3-jmx-win1809,windows/amd64 --image datadog/agent-dev:master-py3-jmx-win1909,windows/amd64 --image datadog/agent-dev:master-py3-jmx-win2004,windows/amd64
+      inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-jmx-win20h2-amd64 datadog/agent-dev:master-py3-jmx-win20h2
+      If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
+      inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag master-py3-win --image datadog/agent-dev:master-py3-win1809,windows/amd64 --image datadog/agent-dev:master-py3-win1909,windows/amd64 --image datadog/agent-dev:master-py3-win2004,windows/amd64 --image datadog/agent-dev:master-py3-win20h2,windows/amd64
+      If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
+      inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag master-py3-jmx-win --image datadog/agent-dev:master-py3-jmx-win1809,windows/amd64 --image datadog/agent-dev:master-py3-jmx-win1909,windows/amd64 --image datadog/agent-dev:master-py3-jmx-win2004,windows/amd64 --image datadog/agent-dev:master-py3-jmx-win20h2,windows/amd64
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
       "@ | Add-Content ci-scripts/publish.ps1
     - cat ci-scripts/publish.ps1
@@ -117,7 +129,7 @@ dev_nightly_docker_hub-a7-windows:
   ## For Future Reference.  Must update to do this job from the newest OS version
   ## that we're publishing (.e.g. adding windows2104 will require also using the
   ## 2104 builder)
-  tags: ["runner:windows-docker", "windowsversion:2004"]
+  tags: ["runner:windows-docker", "windowsversion:20h2"]
   needs:
     - docker_build_agent7_windows1809
     - docker_build_agent7_windows1809_jmx
@@ -125,8 +137,10 @@ dev_nightly_docker_hub-a7-windows:
     - docker_build_agent7_windows1909_jmx
     - docker_build_agent7_windows2004
     - docker_build_agent7_windows2004_jmx
+    - docker_build_agent7_windows20h2
+    - docker_build_agent7_windows20h2_jmx
   variables:
-    VARIANT: 2004
+    VARIANT: 20h2
   script:
     - $ErrorActionPreference = "Stop"
     - |
@@ -142,6 +156,10 @@ dev_nightly_docker_hub-a7-windows:
       inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-win2004-amd64 datadog/agent-dev:nightly-${CI_COMMIT_SHORT_SHA}-py3-win2004
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
       inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-jmx-win2004-amd64 datadog/agent-dev:nightly-${CI_COMMIT_SHORT_SHA}-py3-jmx-win2004
+      If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
+      inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-win20h2-amd64 datadog/agent-dev:nightly-${CI_COMMIT_SHORT_SHA}-py3-win20h2
+      If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
+      inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-7-jmx-win20h2-amd64 datadog/agent-dev:nightly-${CI_COMMIT_SHORT_SHA}-py3-jmx-win20h2
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
       "@ | Add-Content ci-scripts/publish.ps1
     - cat ci-scripts/publish.ps1

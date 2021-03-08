@@ -83,10 +83,10 @@ deploy_google_container_registry_linux-a7:
   ## For Future Reference.  Must update to do this job from the newest OS version
   ## that we're publishing (.e.g. adding windows2104 will require also using the
   ## 2104 builder)
-  tags: ["runner:windows-docker", "windowsversion:2004"]
+  tags: ["runner:windows-docker", "windowsversion:20h2"]
   dependencies: []
   variables:
-    VARIANT: 2004
+    VARIANT: 20h2
   script:
     - $ErrorActionPreference = "Stop"
     - | # If we're not deploying on tag 7, target the dev repo instead
@@ -108,6 +108,10 @@ deploy_google_container_registry_linux-a7:
       inv -e docker.publish-bulk ${SIGNING_ARGS} --platform windows/amd64 --src-template ${SRC_AGENT}:${SRC_TAG}-7-win2004-ARCH --dst-template ${REPOSITORY}-ARCH:`${VERSION}-win2004
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
       inv -e docker.publish-bulk ${SIGNING_ARGS} --platform windows/amd64 --src-template ${SRC_AGENT}:${SRC_TAG}-7-jmx-win2004-ARCH --dst-template ${REPOSITORY}-ARCH:`${VERSION}-jmx-win2004
+      If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
+      inv -e docker.publish-bulk ${SIGNING_ARGS} --platform windows/amd64 --src-template ${SRC_AGENT}:${SRC_TAG}-7-win20h2-ARCH --dst-template ${REPOSITORY}-ARCH:`${VERSION}-win20h2
+      If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
+      inv -e docker.publish-bulk ${SIGNING_ARGS} --platform windows/amd64 --src-template ${SRC_AGENT}:${SRC_TAG}-7-jmx-win20h2-ARCH --dst-template ${REPOSITORY}-ARCH:`${VERSION}-jmx-win20h2
       If (`$lastExitCode -ne "0") { throw "Previous command returned `$lastExitCode" }
       "@ | Add-Content ci-scripts/publish.ps1
     - cat ci-scripts/publish.ps1
@@ -237,12 +241,14 @@ deploy_google_container_registry-dogstatsd:
       --image ${REPOSITORY}-amd64:${VERSION}-win1809,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-win1909,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-win2004,windows/amd64
+      --image ${REPOSITORY}-amd64:${VERSION}-win20h2,windows/amd64
       --image ${REPOSITORY}-arm64:${VERSION},linux/arm64
     - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag ${VERSION}-jmx
       --image ${REPOSITORY}-amd64:${VERSION}-jmx,linux/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win1809,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win1909,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win2004,windows/amd64
+      --image ${REPOSITORY}-amd64:${VERSION}-jmx-win20h2,windows/amd64
       --image ${REPOSITORY}-arm64:${VERSION}-jmx,linux/arm64
 
 deploy_docker_hub_manifests-a7:
@@ -329,24 +335,28 @@ deploy_google_container_registry_manifests-a7:
       --image ${REPOSITORY}-amd64:${VERSION}-win1809,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-win1909,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-win2004,windows/amd64
+      --image ${REPOSITORY}-amd64:${VERSION}-win20h2,windows/amd64
       --image ${REPOSITORY}-arm64:${VERSION},linux/arm64
     - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag latest-jmx
       --image ${REPOSITORY}-amd64:${VERSION}-jmx,linux/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win1809,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win1909,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win2004,windows/amd64
+      --image ${REPOSITORY}-amd64:${VERSION}-jmx-win20h2,windows/amd64
       --image ${REPOSITORY}-arm64:${VERSION}-jmx,linux/arm64
     - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag 7
       --image ${REPOSITORY}-amd64:${VERSION},linux/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-win1809,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-win1909,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-win2004,windows/amd64
+      --image ${REPOSITORY}-amd64:${VERSION}-win20h2,windows/amd64
       --image ${REPOSITORY}-arm64:${VERSION},linux/arm64
     - inv -e docker.publish-manifest ${SIGNING_ARGS} --name ${REPOSITORY} --tag 7-jmx
       --image ${REPOSITORY}-amd64:${VERSION}-jmx,linux/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win1809,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win1909,windows/amd64
       --image ${REPOSITORY}-amd64:${VERSION}-jmx-win2004,windows/amd64
+      --image ${REPOSITORY}-amd64:${VERSION}-jmx-win20h2,windows/amd64
       --image ${REPOSITORY}-arm64:${VERSION}-jmx,linux/arm64
 
 deploy_latest_manifests_docker_hub-a7:
