@@ -119,6 +119,7 @@ type ConnectionStats struct {
 
 	// Last time the stats for this connection were updated
 	LastUpdateEpoch uint64
+	CreatedEpoch    uint64
 
 	MonotonicRetransmits uint32
 	LastRetransmits      uint32
