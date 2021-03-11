@@ -212,8 +212,8 @@ def test(
         cmd = 'sudo -E PATH={path} ' + cmd
 
     bpf_tag = BPF_TAG
-    # temporary measure until we have a good default for BPFDir for testing
-    bpf_tag += ",ebpf_bindata"
+    if bundle_ebpf:
+        bpf_tag += ",ebpf_bindata"
     if os.getenv("GOPATH") is None:
         print(
             "GOPATH is not set, if you are running tests with sudo, you may need to use the -E option to preserve "

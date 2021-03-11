@@ -86,7 +86,7 @@ func TestTracerExpvar(t *testing.T) {
 		},
 		"state": {
 			"StatsResets",
-			"UnorderedConns",
+			"DuplicateConns",
 			"ClosedConnDropped",
 			"ConnDropped",
 			"TimeSyncCollisions",
@@ -992,17 +992,17 @@ func TestIsExpired(t *testing.T) {
 		expected   bool
 	}{
 		{
-			ConnStatsWithTimestamp{timestamp: 101},
+			ConnStatsWithTimestamp{updated: 101},
 			100,
 			false,
 		},
 		{
-			ConnStatsWithTimestamp{timestamp: 100},
+			ConnStatsWithTimestamp{updated: 100},
 			101,
 			false,
 		},
 		{
-			ConnStatsWithTimestamp{timestamp: 100},
+			ConnStatsWithTimestamp{updated: 100},
 			101 + timeout,
 			true,
 		},
