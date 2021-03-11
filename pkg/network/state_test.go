@@ -1098,9 +1098,9 @@ func TestUnorderedCloseEvent(t *testing.T) {
 	assert.EqualValues(t, 2, conns[0].LastSentBytes)
 	assert.EqualValues(t, 0, conns[0].LastRecvBytes)
 
-	// Ensure we don't have underflows / unordered conns
+	// Ensure we don't have underflows / duplicate conns
 	assert.Zero(t, state.(*networkState).telemetry.statsResets)
-	assert.Zero(t, state.(*networkState).telemetry.unorderedConns)
+	assert.Zero(t, state.(*networkState).telemetry.duplicateConns)
 
 	assert.Len(t, state.Connections(client, latestEpochTime(), nil, nil, nil), 0)
 }
