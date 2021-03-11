@@ -89,10 +89,35 @@ func NewAgent(ctx context.Context, conf *config.AgentConfig) *Agent {
 	return agnt
 }
 
+func NewInProcessAgent(ctx context.Context, conf *config.AgentConfig) *Agent {
+	dynConf := sampler.NewDynamicConfig(conf.DefaultEnv)
+	in := make(chan *api.Payload, 1000)
+	statsChan := make(chan []stats.Bucket, 100)
+
+	agnt := &Agent{
+		Concentrator:       stats.NewConcentrator(conf.BucketInterval.Nanoseconds(), statsChan),
+		Blacklister:        filters.NewBlacklister(conf.Ignore["resource"]),
+		Replacer:           filters.NewReplacer(conf.ReplaceTags),
+		ScoreSampler:       NewScoreSampler(conf),
+		ExceptionSampler:   sampler.NewExceptionSampler(),
+		ErrorsScoreSampler: NewErrorsSampler(conf),
+		PrioritySampler:    NewPrioritySampler(conf, dynConf),
+		EventProcessor:     newEventProcessor(conf),
+		TraceWriter:        writer.NewTraceWriter(conf),
+		StatsWriter:        writer.NewStatsWriter(conf, statsChan),
+		obfuscator:         obfuscate.NewObfuscator(conf.Obfuscation),
+		In:                 in,
+		conf:               conf,
+		ctx:                ctx,
+	}
+
+	return agnt
+}
+
 // Run starts routers routines and individual pieces then stop them when the exit order is received
 func (a *Agent) Run() {
 	for _, starter := range []interface{ Start() }{
-		a.Receiver,
+		// a.Receiver,
 		a.Concentrator,
 		a.ClientStatsAggregator,
 		a.PrioritySampler,
@@ -229,10 +254,12 @@ func (a *Agent) Process(p *api.Payload) {
 			clientSampleRate := sampler.GetGlobalRate(root)
 			sampler.SetClientRate(root, clientSampleRate)
 
-			if ratelimiter := a.Receiver.RateLimiter; ratelimiter.Active() {
+			/*if ratelimiter := a.Receiver.RateLimiter; ratelimiter.Active() {
+				fmt.Println("Ratelimiter")
 				rate := ratelimiter.RealRate()
 				sampler.SetPreSampleRate(root, rate)
-			}
+			}*/
+
 			if p.ContainerTags != "" {
 				traceutil.SetMeta(root, tagContainersTags, p.ContainerTags)
 			}

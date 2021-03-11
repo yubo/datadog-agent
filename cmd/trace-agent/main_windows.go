@@ -7,18 +7,25 @@
 
 package main
 
+import "C"
+
 import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/trace/api"
+	"github.com/DataDog/datadog-agent/pkg/trace/info"
+	"github.com/DataDog/datadog-agent/pkg/trace/pb"
 	"os"
 	"path/filepath"
 	"time"
+	"unsafe"
 
 	"github.com/DataDog/datadog-agent/pkg/runtime"
 	"github.com/DataDog/datadog-agent/pkg/trace/agent"
 	"github.com/DataDog/datadog-agent/pkg/trace/flags"
 	"github.com/DataDog/datadog-agent/pkg/trace/watchdog"
+	"github.com/DataDog/datadog-agent/pkg/trace/config"
 	_ "github.com/DataDog/datadog-agent/pkg/util/containers/providers/windows"
 
 	"golang.org/x/sys/windows/svc"
@@ -92,6 +99,50 @@ func runService(isDebug bool) {
 		return
 	}
 	elog.Info(0x40000004, ServiceName)
+}
+
+//export SendTraces
+func SendTraces(value unsafe.Pointer, length C.int){
+	var traces pb.Traces
+	traces.UnmarshalMsg(C.GoBytes(value, length))
+
+	ts := &info.TagStats{}
+
+	payload := &api.Payload{
+		Source:                 ts,
+		Traces:                 traces,
+		ContainerTags:          "",
+		ClientComputedTopLevel: false,
+		ClientComputedStats:    false,
+	}
+
+	agnt.In <- payload
+}
+
+var agnt *agent.Agent
+
+//export Init
+func Init() {
+	// prepare go runtime
+	runtime.SetMaxProcs()
+
+	// if we are an interactive session, then just invoke the agent on the command line.
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	// Handle stops properly
+	go func() {
+		defer watchdog.LogOnPanic()
+		handleSignal(cancelFunc)
+	}()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Panic: %+v\n", r)
+		}
+	}()
+	// Invoke the Agent
+	cfg, _ := config.Load("C:\\ProgramData\\Datadog\\datadog.yaml")
+
+	agnt = agent.NewInProcessAgent(ctx, cfg)
+	agnt.Run()
 }
 
 // main is the main application entry point
