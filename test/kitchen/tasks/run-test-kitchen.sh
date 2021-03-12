@@ -106,5 +106,5 @@ cp kitchen.yml ./.kitchen/generated_kitchen.yml
 rm -rf cookbooks
 rm -f Berksfile.lock
 berks vendor ./cookbooks
-bundle exec kitchen test '^dd*.*-azure$' -c -d always
+bundle exec kitchen test '^dd*.*-azure$' -c -d passing
 
