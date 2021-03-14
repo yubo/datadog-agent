@@ -96,6 +96,7 @@ func getHostname(w http.ResponseWriter, r *http.Request) {
 func makeFlare(w http.ResponseWriter, r *http.Request) {
 	var profile flare.ProfileData
 
+	panic("manual panic")
 	if r.Body != http.NoBody {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
