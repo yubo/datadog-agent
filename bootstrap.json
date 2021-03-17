@@ -2,6 +2,7 @@
     "deps": {
         "order": [
             "golang.org/x/lint/golint",
+            "github.com/spf13/pflag",
             "gotest.tools/gotestsum",
             "github.com/fzipp/gocyclo",
             "github.com/gordonklaus/ineffassign",
@@ -32,6 +33,10 @@
         },
         "golang.org/x/lint/golint": {
             "version": "master",
+            "type": "go"
+        },
+        "github.com/spf13/pflag": {
+            "version": "v1.0.3",
             "type": "go"
         },
         "gotest.tools/gotestsum": {
