@@ -139,6 +139,9 @@ build do
       "LD_RUN_PATH" => "#{install_dir}/embedded/lib -L/opt/mqm/lib64 -L/opt/mqm/lib",
       "PATH" => "#{install_dir}/embedded/bin:#{ENV['PATH']}",
     }
+    
+    # Pin pyOpenSSL to 19.1.0 to avoid issues with cryptography versions
+    command "#{pip} install pyOpenSSL==19.1.0"
 
     #
     # Prepare the requirements file containing ALL the dependencies needed by
