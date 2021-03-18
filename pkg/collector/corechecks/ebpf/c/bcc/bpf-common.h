@@ -1,6 +1,7 @@
 #ifndef BPF_COMMON_H
 #define BPF_COMMON_H
 
+#include <uapi/linux/bpf.h>
 #include <linux/bpf.h>
 #include <linux/cgroup.h>
 

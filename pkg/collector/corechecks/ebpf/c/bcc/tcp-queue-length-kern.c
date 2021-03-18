@@ -1,5 +1,6 @@
 #include <linux/kconfig.h>
 #define KBUILD_MODNAME "ddsysprobe"
+#include <uapi/linux/bpf.h>
 #include <linux/bpf.h>
 #include <linux/ptrace.h>
 #include <linux/tcp.h>
