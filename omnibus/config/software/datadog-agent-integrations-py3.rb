@@ -37,10 +37,6 @@ if linux?
   dependency 'libkrb5'
   # needed for glusterfs
   dependency 'gstatus'
-
-  unless suse? || arm?
-    dependency 'aerospike-py3'
-  end
 end
 
 relative_path 'integrations-core'
@@ -71,12 +67,11 @@ blacklist_folders = [
 # package names of dependencies that won't be added to the Agent Python environment
 blacklist_packages = Array.new
 
-# We build these manually
-blacklist_packages.push(/^aerospike==/)
 blacklist_packages.push(/^snowflake-connector-python==/)
 
 if suse?
   blacklist_folders.push('aerospike')  # Temporarily blacklist Aerospike until builder supports new dependency
+  blacklist_packages.push(/^aerospike==/) # Temporarily blacklist Aerospike until builder supports new dependency
 end
 
 if osx?
@@ -94,6 +89,7 @@ end
 if arm?
   # These two checks don't build on ARM
   blacklist_folders.push('aerospike')
+  blacklist_packages.push(/^aerospike==/)
   blacklist_folders.push('ibm_mq')
   blacklist_packages.push(/^pymqi==/)
 end
