@@ -94,7 +94,7 @@ agent_rpm-arm64-a6:
   needs: ["go_mod_tidy_check", "build_system-probe-arm64", "linux_arm64_go_deps"]
   variables:
     AGENT_MAJOR_VERSION: 6
-    PYTHON_RUNTIMES: '2,3'
+    PYTHON_RUNTIMES: '2'
     PACKAGE_ARCH: arm64
   before_script:
     - source /root/.bashrc && conda activate ddpy3
