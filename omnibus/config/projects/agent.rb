@@ -194,8 +194,6 @@ if windows?
     dependency 'datadog-windows-filter-driver'
   end
 end
-# Bundled cacerts file (is this a good idea?)
-dependency 'cacerts'
 
 if osx?
   dependency 'datadog-agent-mac-app'
