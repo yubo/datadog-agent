@@ -155,22 +155,56 @@ metric_tags:
       OID:  1.2.3.4.8.1.2
       name: cpiPduName
     table: cpiPduTable
-    match: '(\w)(\w+)'
+    match: 'ArubaOS \(MODEL: (.*)\), Version(.*)'
+#    match: 'ArubaOS \(MODEL: (.*)\), Version(.*)'
     tags:
-      prefix: '$1'
-      suffix: '$2'
+      device_model: '\1'
+      os_version: '\2'
 `),
 			fullIndex: "1.2.3.4.5.6.7.8",
 			values: &resultValueStore{
 				columnValues: map[string]map[string]snmpValueType{
 					"1.2.3.4.8.1.2": {
 						"1.2.3.4.5.6.7.8": snmpValueType{
-							value: "eth0",
+							value: "ArubaOS (MODEL: Aruba7205), Version8.999.999.7 (70587)",
+							//value: "ArubaOS (MODEL: Aruba7205), Version8.999.999.7 (70587)",
 						},
 					},
 				},
 			},
-			expectedTags: []string{"prefix:e", "suffix:th0"},
+			expectedTags: []string{"XXX"},
+		},
+		{
+			name: "regex match 2",
+			// language=yaml
+			rawMetricConfig: []byte(`
+table:
+  OID:  1.2.3.4.5
+  name: cpiPduBranchTable
+symbols:
+  - OID: 1.2.3.4.5.1.2
+    name: cpiPduBranchCurrent
+metric_tags:
+  - column:
+      OID:  1.2.3.4.8.1.2
+      name: cpiPduName
+    table: cpiPduTable
+    match: 'ArubaOS \(MODEL: (.*)\), Version(.*)'
+    tags:
+      device_model: '\1'
+      os_version: '\2'
+`),
+			fullIndex: "1.2.3.4.5.6.7.8",
+			values: &resultValueStore{
+				columnValues: map[string]map[string]snmpValueType{
+					"1.2.3.4.8.1.2": {
+						"1.2.3.4.5.6.7.8": snmpValueType{
+							value: "ArubaOS (MODEL: Aruba7205), Version8.999.999.7 (70587)",
+						},
+					},
+				},
+			},
+			expectedTags: []string{"XXX"},
 		},
 		{
 			name: "regex match only once",
