@@ -78,6 +78,9 @@ func startCompliance(stopper restart.Stopper, apiCl *apiserver.APIClient, isLead
 
 	reporter := event.NewReporter(logSource, pipelineProvider.NextPipelineChan())
 
+
+
+
 	runner := runner.NewRunner()
 	stopper.Add(runner)
 

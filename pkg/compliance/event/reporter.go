@@ -46,5 +46,7 @@ func (r *reporter) ReportRaw(content []byte, tags ...string) {
 	origin := message.NewOrigin(r.logSource)
 	origin.SetTags(tags)
 	msg := message.NewMessage(content, origin, message.StatusInfo, time.Now().UnixNano())
+
+
 	r.logChan <- msg
 }

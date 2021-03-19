@@ -2,6 +2,7 @@ package snmp
 
 import (
 	"fmt"
+	"github.com/DataDog/datadog-agent/pkg/logs/pipeline"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
@@ -126,6 +127,11 @@ func (c *Check) Configure(rawInstance integration.Data, rawInitConfig integratio
 	if err != nil {
 		return fmt.Errorf("session configure failed: %s", err)
 	}
+
+
+	// setup the pipeline provider that provides pairs of processor and sender
+	pipelineProvider := pipeline.NewProvider(config.NumberOfPipelines, auditor, diagnosticMessageReceiver, processingRules, endpoints, destinationsCtx)
+
 
 	return nil
 }
