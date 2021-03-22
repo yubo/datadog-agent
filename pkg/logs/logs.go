@@ -103,6 +103,9 @@ func start(getAC func() *autodiscovery.AutoConfig, serverless bool, logsChan cha
 		// serverless logs agent
 		log.Info("Starting a serverless logs-agent...")
 		agent = NewServerless(sources, services, processingRules, endpoints)
+
+
+
 	}
 
 	agent.Start()
@@ -118,12 +121,16 @@ func start(getAC func() *autodiscovery.AutoConfig, serverless bool, logsChan cha
 			Tags:    extraTags,
 			Channel: logsChan,
 		})
+
+
 		sources.AddSource(chanSource)
+
 	}
 
 	// add SNMP traps source forwarding SNMP traps as logs if enabled.
 	if source := config.SNMPTrapsSource(); source != nil {
 		log.Debug("Adding SNMPTraps source to the Logs Agent")
+
 		sources.AddSource(source)
 	}
 

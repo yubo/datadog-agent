@@ -35,6 +35,7 @@ func (l *Launcher) Start() {
 func (l *Launcher) startNewTailer(source *config.LogSource) {
 	outputChan := l.pipelineProvider.NextPipelineChan()
 	tailer := NewTailer(source, source.Config.Channel, outputChan)
+
 	l.tailers = append(l.tailers, tailer)
 	tailer.Start()
 }

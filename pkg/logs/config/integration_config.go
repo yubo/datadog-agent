@@ -61,6 +61,8 @@ type LogsConfig struct {
 	// a more generic type here.
 	Channel chan aws.LogMessage
 
+
+
 	Service         string
 	Source          string
 	SourceCategory  string
