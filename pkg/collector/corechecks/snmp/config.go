@@ -74,8 +74,8 @@ func (c *snmpConfig) refreshWithProfile(profile string) error {
 
 	c.metrics = append(c.metrics, definition.Metrics...)
 	c.metricTags = append(c.metricTags, definition.MetricTags...)
-	c.oidConfig.scalarOids = append(c.oidConfig.scalarOids, parseScalarOids(definition.Metrics, definition.MetricTags)...)
-	c.oidConfig.columnOids = append(c.oidConfig.columnOids, parseColumnOids(definition.Metrics)...)
+	c.oidConfig.addScalarOids(parseScalarOids(definition.Metrics, definition.MetricTags))
+	c.oidConfig.addColumnOids(parseColumnOids(definition.Metrics))
 
 	if definition.Device.Vendor != "" {
 		tags = append(tags, "device_vendor:"+definition.Device.Vendor)
@@ -90,7 +90,7 @@ func (c *snmpConfig) addUptimeMetric() {
 	}
 	metricConfig := getUptimeMetricConfig()
 	c.metrics = append(c.metrics, metricConfig)
-	c.oidConfig.scalarOids = append(c.oidConfig.scalarOids, metricConfig.Symbol.OID)
+	c.oidConfig.addScalarOid(metricConfig.Symbol.OID)
 	c.uptimeMetricAdded = true
 }
 
@@ -188,8 +188,8 @@ func buildConfig(rawInstance integration.Data, rawInitConfig integration.Data) (
 
 	c.metricTags = instance.MetricTags
 
-	c.oidConfig.scalarOids = parseScalarOids(c.metrics, c.metricTags)
-	c.oidConfig.columnOids = parseColumnOids(c.metrics)
+	c.oidConfig.addScalarOids(parseScalarOids(c.metrics, c.metricTags))
+	c.oidConfig.addColumnOids(parseColumnOids(c.metrics))
 
 	// Profile Configs
 	var profiles profileDefinitionMap
