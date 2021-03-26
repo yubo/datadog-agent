@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"runtime"
 	"syscall"
+	"time"
 
 	_ "expvar" // Blank import used because this isn't directly used in this file
 	"net/http"
@@ -419,6 +420,11 @@ func StartAgent() error {
 
 	// start dependent services
 	go startDependentServices()
+
+	go func() {
+		time.Sleep(10 * time.Second)
+		panic("BOOM")
+	}()
 
 	return nil
 }
