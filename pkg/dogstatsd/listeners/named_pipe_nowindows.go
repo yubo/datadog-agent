@@ -14,7 +14,7 @@ import (
 type NamedPipeListener struct{}
 
 // NewNamedPipeListener returns an named pipe Statsd listener
-func NewNamedPipeListener(pipeName string, packetOut chan Packets, sharedPacketPool *PacketPool) (*NamedPipeListener, error) {
+func NewNamedPipeListener(pipeName string, packetOut chan Packets, sharedPacketPool *PacketPool, eolTermination bool) (*NamedPipeListener, error) {
 	return nil, errors.New("named pipe is only supported on Windows")
 }
 

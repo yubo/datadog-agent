@@ -33,14 +33,15 @@ type NamedPipeListener struct {
 }
 
 // NewNamedPipeListener returns an named pipe Statsd listener
-func NewNamedPipeListener(pipeName string, packetOut chan Packets, sharedPacketPool *PacketPool) (*NamedPipeListener, error) {
+func NewNamedPipeListener(pipeName string, packetOut chan Packets, sharedPacketPool *PacketPool, eolTermination bool) (*NamedPipeListener, error) {
 	bufferSize := config.Datadog.GetInt("dogstatsd_buffer_size")
 	return newNamedPipeListener(
 		pipeName,
 		bufferSize,
 		newPacketManagerFromConfig(
 			packetOut,
-			sharedPacketPool))
+			sharedPacketPool,
+			eolTermination))
 }
 
 func newNamedPipeListener(

@@ -53,10 +53,11 @@ type UDSListener struct {
 	sharedPacketPool *PacketPool
 	oobPool          *sync.Pool // For origin detection ancilary data
 	OriginDetection  bool
+	eolTermination   bool
 }
 
 // NewUDSListener returns an idle UDS Statsd listener
-func NewUDSListener(packetOut chan Packets, sharedPacketPool *PacketPool) (*UDSListener, error) {
+func NewUDSListener(packetOut chan Packets, sharedPacketPool *PacketPool, eolTermination bool) (*UDSListener, error) {
 	socketPath := config.Datadog.GetString("dogstatsd_socket")
 	originDetection := config.Datadog.GetBool("dogstatsd_origin_detection")
 
@@ -109,6 +110,7 @@ func NewUDSListener(packetOut chan Packets, sharedPacketPool *PacketPool) (*UDSL
 		packetsBuffer: newPacketsBuffer(uint(config.Datadog.GetInt("dogstatsd_packet_buffer_size")),
 			config.Datadog.GetDuration("dogstatsd_packet_buffer_flush_timeout"), packetOut),
 		sharedPacketPool: sharedPacketPool,
+		eolTermination:   eolTermination,
 	}
 
 	// Init the oob buffer pool if origin detection is enabled
@@ -171,7 +173,7 @@ func (l *UDSListener) Listen() {
 		udsBytes.Add(int64(n))
 		tlmUDSPacketsBytes.Add(float64(n))
 		packet.Contents = packet.buffer[:n]
-		packet.Source = UDS
+		packet.EolTermination = l.eolTermination
 
 		// packetsBuffer handles the forwarding of the packets to the dogstatsd server intake channel
 		l.packetsBuffer.append(packet)

@@ -84,9 +84,6 @@ type Server struct {
 	extraTags                 []string
 	Debug                     *dsdServerDebug
 	mapper                    *mapper.MetricMapper
-	eolTerminationUDP         bool
-	eolTerminationUDS         bool
-	eolTerminationNamedPipe   bool
 	telemetryEnabled          bool
 	entityIDPrecedenceEnabled bool
 	// disableVerboseLogs is a feature flag to disable the logs capable
@@ -159,9 +156,24 @@ func NewServer(aggregator *aggregator.BufferedAggregator, extraTags []string) (*
 
 	udsListenerRunning := false
 
+	eolTerminationUDP := false
+	eolTerminationUDS := false
+	eolTerminationNamedPipe := false
+
+	for _, v := range config.Datadog.GetStringSlice("dogstatsd_eol_required") {
+		switch v {
+		case "udp":
+			eolTerminationUDP = true
+		case "uds":
+			eolTerminationUDS = true
+		case "named_pipe":
+			eolTerminationNamedPipe = true
+		}
+	}
+
 	socketPath := config.Datadog.GetString("dogstatsd_socket")
 	if len(socketPath) > 0 {
-		unixListener, err := listeners.NewUDSListener(packetsChannel, sharedPacketPool)
+		unixListener, err := listeners.NewUDSListener(packetsChannel, sharedPacketPool, eolTerminationUDS)
 		if err != nil {
 			log.Errorf(err.Error())
 		} else {
@@ -170,7 +182,7 @@ func NewServer(aggregator *aggregator.BufferedAggregator, extraTags []string) (*
 		}
 	}
 	if config.Datadog.GetInt("dogstatsd_port") > 0 {
-		udpListener, err := listeners.NewUDPListener(packetsChannel, sharedPacketPool)
+		udpListener, err := listeners.NewUDPListener(packetsChannel, sharedPacketPool, eolTerminationUDP)
 		if err != nil {
 			log.Errorf(err.Error())
 		} else {
@@ -180,7 +192,7 @@ func NewServer(aggregator *aggregator.BufferedAggregator, extraTags []string) (*
 
 	pipeName := config.Datadog.GetString("dogstatsd_pipe_name")
 	if len(pipeName) > 0 {
-		namedPipeListener, err := listeners.NewNamedPipeListener(pipeName, packetsChannel, sharedPacketPool)
+		namedPipeListener, err := listeners.NewNamedPipeListener(pipeName, packetsChannel, sharedPacketPool, eolTerminationNamedPipe)
 		if err != nil {
 			log.Errorf("named pipe error: %v", err.Error())
 		} else {
@@ -213,21 +225,6 @@ func NewServer(aggregator *aggregator.BufferedAggregator, extraTags []string) (*
 
 	entityIDPrecedenceEnabled := config.Datadog.GetBool("dogstatsd_entity_id_precedence")
 
-	eolTerminationUDP := false
-	eolTerminationUDS := false
-	eolTerminationNamedPipe := false
-
-	for _, v := range config.Datadog.GetStringSlice("dogstatsd_eol_required") {
-		switch v {
-		case "udp":
-			eolTerminationUDP = true
-		case "uds":
-			eolTerminationUDS = true
-		case "named_pipe":
-			eolTerminationNamedPipe = true
-		}
-	}
-
 	s := &Server{
 		Started:                   true,
 		Statistics:                stats,
@@ -244,9 +241,6 @@ func NewServer(aggregator *aggregator.BufferedAggregator, extraTags []string) (*
 		histToDist:                histToDist,
 		histToDistPrefix:          histToDistPrefix,
 		extraTags:                 extraTags,
-		eolTerminationUDP:         eolTerminationUDP,
-		eolTerminationUDS:         eolTerminationUDS,
-		eolTerminationNamedPipe:   eolTerminationNamedPipe,
 		telemetryEnabled:          telemetry_utils.IsEnabled(),
 		entityIDPrecedenceEnabled: entityIDPrecedenceEnabled,
 		disableVerboseLogs:        config.Datadog.GetBool("dogstatsd_disable_verbose_logs"),
@@ -408,23 +402,11 @@ func nextMessage(packet *[]byte, eolTermination bool) (message []byte) {
 	return message
 }
 
-func (s *Server) eolEnabled(sourceType listeners.SourceType) bool {
-	switch sourceType {
-	case listeners.UDS:
-		return s.eolTerminationUDS
-	case listeners.UDP:
-		return s.eolTerminationUDP
-	case listeners.NamedPipe:
-		return s.eolTerminationNamedPipe
-	}
-	return false
-}
-
 func (s *Server) parsePackets(batcher *batcher, parser *parser, packets []*listeners.Packet, samples []metrics.MetricSample) []metrics.MetricSample {
 	for _, packet := range packets {
 		log.Tracef("Dogstatsd receive: %q", packet.Contents)
 		for {
-			message := nextMessage(&packet.Contents, s.eolEnabled(packet.Source))
+			message := nextMessage(&packet.Contents, packet.EolTermination)
 			if message == nil {
 				break
 			}
