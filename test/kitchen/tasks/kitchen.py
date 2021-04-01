@@ -9,15 +9,15 @@ from invoke.exceptions import Exit
 
 @task(iterable=['platlist'])
 def genconfig(
-        ctx,
-        platform=None,
-        provider=None,
-        osversions="all",
-        testfiles=None,
-        uservars=None,
-        platformfile="platforms.json",
-        platlist=None,
-        arch="x86_64",
+    ctx,
+    platform=None,
+    provider=None,
+    osversions="all",
+    testfiles=None,
+    uservars=None,
+    platformfile="platforms.json",
+    platlist=None,
+    arch="x86_64",
 ):
     """
     Create a kitchen config
@@ -68,8 +68,9 @@ def genconfig(
         if not ar:
             raise Exit(
                 message="Unknown architecture {arch}. "
-                        "Known architectures for platform {plat} provider {prov} are {avail}\n"
-                        .format(arch=arch, prov=provider, plat=platform, avail=list(prov.keys())),
+                "Known architectures for platform {plat} provider {prov} are {avail}\n".format(
+                    arch=arch, prov=provider, plat=platform, avail=list(prov.keys())
+                ),
                 code=4,
             )
 
@@ -152,15 +153,19 @@ def load_targets(_, targethash, selections):
     for selection in selections.split(","):
         selectionpattern = re.compile("^{}$".format(selection))
 
+        matched = False
         for key in targethash:
             if commentpattern.match(key):
                 continue
             if selectionpattern.search(key):
+                matched = True
                 if key not in returnlist:
                     returnlist.append(key)
                 else:
                     print("Skipping duplicate target key {} (matched search {})\n".format(key, selection))
 
+        if not matched:
+            raise Exit(message="Couldn't find any match for target {}\n".format(selection), code=7)
     return returnlist
 
 

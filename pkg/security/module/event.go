@@ -11,6 +11,7 @@ package module
 // easyjson:json
 type AgentContext struct {
 	RuleID        string `json:"rule_id"`
+	RuleVersion   string `json:"rule_version,omitempty"`
 	PolicyName    string `json:"policy_name,omitempty"`
 	PolicyVersion string `json:"policy_version,omitempty"`
 }
@@ -20,5 +21,4 @@ type AgentContext struct {
 type Signal struct {
 	*AgentContext `json:"agent"`
 	Title         string `json:"title"`
-	Msg           string `json:"msg,omitempty"`
 }
