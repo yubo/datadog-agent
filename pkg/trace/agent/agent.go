@@ -7,6 +7,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -289,6 +290,7 @@ var _ api.StatsProcessor = (*Agent)(nil)
 
 // ProcessStats processes incoming client stats in from the given tracer.
 func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang, tracerVersion string) {
+	fmt.Println("Calling process stats")
 	if in.Env == "" {
 		in.Env = a.conf.DefaultEnv
 	}
