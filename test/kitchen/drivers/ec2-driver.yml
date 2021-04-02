@@ -1,7 +1,7 @@
 provisioner:
   name: chef_solo
   product_name: chef
-  product_version: 13.9.4
+  product_version: 15.16.4
   install_strategy: always
 
 driver:
