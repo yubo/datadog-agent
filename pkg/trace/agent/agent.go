@@ -7,6 +7,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"strconv"
 	"sync/atomic"
@@ -281,6 +282,7 @@ func (a *Agent) ProcessStats(in pb.ClientStatsPayload, lang string) {
 		Env:      in.Env,
 	}
 	for _, group := range in.Stats {
+		fmt.Println(group.Start)
 		for _, b := range group.Stats {
 			normalizeStatsGroup(&b, lang)
 			a.obfuscator.ObfuscateStatsGroup(&b)
