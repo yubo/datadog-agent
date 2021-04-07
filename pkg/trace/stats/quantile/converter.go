@@ -11,6 +11,7 @@ import (
 
 	"github.com/DataDog/sketches-go/ddsketch/mapping"
 	"github.com/DataDog/sketches-go/ddsketch/pb/sketchpb"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -122,6 +123,7 @@ func DDToGKSketches(okSketchData []byte, errSketchData []byte) (hits, errors *Sl
 		return nil, nil, err
 	}
 
+	spew.Dump(okDDSketch)
 	hits = &SliceSummary{Entries: make([]Entry, 0, okDDSketch.maxSize())}
 	errors = &SliceSummary{Entries: make([]Entry, 0, errDDSketch.maxSize())}
 	if zeros := okDDSketch.zeros + errDDSketch.zeros; zeros > 0 {
@@ -165,5 +167,6 @@ func DDToGKSketches(okSketchData []byte, errSketchData []byte) (hits, errors *Sl
 		errors.Entries[0].Delta = 0
 		errors.Entries[len(errors.Entries)-1].Delta = 0
 	}
+	spew.Dump(hits)
 	return hits, errors, nil
 }
