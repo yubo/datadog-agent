@@ -1,3 +1,4 @@
+// +build serverless
 // +build !windows
 
 package aws
