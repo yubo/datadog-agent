@@ -24,13 +24,13 @@ var (
 	tlmWarnings = telemetry.NewCounter("checks", "warnings",
 		[]string{"check_name"}, "Check warnings")
 	tlmMetricsSamples = telemetry.NewCounter("checks", "metrics_samples",
-		[]string{"check_name"}, "Metrics count")
+		[]string{"check_name", "check_id"}, "Metrics count")
 	tlmEvents = telemetry.NewCounter("checks", "events",
 		[]string{"check_name"}, "Events count")
 	tlmServices = telemetry.NewCounter("checks", "services_checks",
 		[]string{"check_name"}, "Service checks count")
 	tlmExecutionTime = telemetry.NewGauge("checks", "execution_time",
-		[]string{"check_name"}, "Check execution time")
+		[]string{"check_name", "check_id"}, "Check execution time")
 )
 
 // Stats holds basic runtime statistics about check instances
@@ -90,7 +90,7 @@ func (cs *Stats) Add(t time.Duration, err error, warnings []error, metricStats m
 	cs.ExecutionTimes[cs.TotalRuns%uint64(len(cs.ExecutionTimes))] = tms
 	cs.TotalRuns++
 	if cs.telemetry {
-		tlmExecutionTime.Set(float64(tms), cs.CheckName)
+		tlmExecutionTime.Set(float64(tms), cs.CheckName, string(cs.CheckID))
 	}
 	var totalExecutionTime int64
 	ringSize := cs.TotalRuns
@@ -130,7 +130,7 @@ func (cs *Stats) Add(t time.Duration, err error, warnings []error, metricStats m
 		cs.MetricSamples = m
 		cs.TotalMetricSamples += uint64(m)
 		if cs.telemetry {
-			tlmMetricsSamples.Add(float64(m), cs.CheckName)
+			tlmMetricsSamples.Add(float64(m), cs.CheckName, string(cs.CheckID))
 		}
 	}
 	if ev, ok := metricStats["Events"]; ok {
