@@ -6,6 +6,12 @@
 #
 # Each section note must be formatted as reStructuredText.
 ---
+upgrade:
+  - |
+    If for troubleshooting purposes you wish to enable internal profiling
+    of the agent processes from this release forth, the configuration option
+    is now named `internal_profiling` to avoid confusion. Please upgrade
+    your configuration accordingly.
 deprecations:
   - |
     For internal profiling of agent processes the `profiling` option
