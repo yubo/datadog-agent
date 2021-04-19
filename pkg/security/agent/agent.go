@@ -50,6 +50,7 @@ func NewRuntimeSecurityAgent(hostname string, reporter event.Reporter) (*Runtime
 		reporter: reporter,
 		hostname: hostname,
 	}, nil
+
 }
 
 // Start the runtime security agent

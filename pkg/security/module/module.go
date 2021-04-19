@@ -61,6 +61,7 @@ func (m *Module) Register(httpMux *http.ServeMux) error {
 	// force socket cleanup of previous socket not cleanup
 	os.Remove(m.config.SocketPath)
 
+	fmt.Println("REGISTERING SECURITY RUNTIME MODULE")
 	ln, err := net.Listen("unix", m.config.SocketPath)
 	if err != nil {
 		return errors.Wrap(err, "unable to register security runtime module")
@@ -243,6 +244,7 @@ func (m *Module) EventDiscarderFound(rs *rules.RuleSet, event eval.Event, field 
 
 // HandleEvent is called by the probe when an event arrives from the kernel
 func (m *Module) HandleEvent(event *sprobe.Event) {
+	fmt.Println("runtime-security module received event from kernel: ", event)
 	if ruleSet := m.ruleSets[atomic.LoadUint64(&m.currentRuleSet)]; ruleSet != nil {
 		ruleSet.Evaluate(event)
 	}
