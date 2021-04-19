@@ -11,7 +11,7 @@
         "WINDOWS_DDNPM_SHASUM": "61e13fccdca7bf6a356e7ef552a7845316b9905b5eee264811982e3034a3bb84"
     },
     "nightly-a7": {
-        "INTEGRATIONS_CORE_VERSION": "master",
+        "INTEGRATIONS_CORE_VERSION": "does-not-exist",
         "OMNIBUS_SOFTWARE_VERSION": "master",
         "OMNIBUS_RUBY_VERSION": "datadog-5.5.0",
         "JMXFETCH_VERSION": "0.43.0",
