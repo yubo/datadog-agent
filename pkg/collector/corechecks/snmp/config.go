@@ -105,16 +105,17 @@ func (c *snmpConfig) getStaticTags() []string {
 // toString used for logging snmpConfig without sensitive information
 func (c *snmpConfig) toString() string {
 	return fmt.Sprintf("snmpConfig: ipAddress=`%s`, port=`%d`, snmpVersion=`%s`, timeout=`%d`, retries=`%d`, "+
-		"user=`%s`, authProtocol=`%s`, privProtocol=`%s`, contextName=`%s`, oidConfig=`%#v`, "+
+		"user=`%s`, authProtocol=`%s`, privProtocol=`%s`, communityString=`%s`, contextName=`%s`, oidConfig=`%#v`, "+
 		"oidBatchSize=`%d`, profileTags=`%#v`, uptimeMetricAdded=`%t`",
 		c.ipAddress,
 		c.port,
 		c.snmpVersion,
 		c.timeout,
 		c.retries,
-		c.user,
-		c.authProtocol,
-		c.privProtocol,
+		obfuscateIfNotEmpty(c.user),
+		obfuscateIfNotEmpty(c.authProtocol),
+		obfuscateIfNotEmpty(c.privProtocol),
+		obfuscateIfNotEmpty(c.communityString),
 		c.contextName,
 		c.oidConfig,
 		c.oidBatchSize,
@@ -296,4 +297,12 @@ func getProfileForSysObjectID(profiles profileDefinitionMap, sysObjectID string)
 		return "", fmt.Errorf("failed to get most specific profile for sysObjectID `%s`, for matched oids %v: %s", sysObjectID, matchedOids, err)
 	}
 	return tmpSysOidToProfile[oid], nil
+}
+
+func obfuscateIfNotEmpty(sensitiveString string) string {
+	if sensitiveString == "" {
+		return ""
+	}
+
+	return "********"
 }
