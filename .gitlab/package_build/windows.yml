@@ -110,14 +110,14 @@ windows_dsd_msi_x64-a7:
     - set RELEASE_VERSION $RELEASE_VERSION_7
 
 # cloudfoundry IoT build for Windows
-windows_zip_agent_binaries_x64-a7:
+windows_zip_agent_binaries_x86-a7:
   rules:
     - <<: *if_version_7
   stage: package_build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   needs: ["go_mod_tidy_check"]
   variables:
-    ARCH: "x64"
+    ARCH: "x86"
     AGENT_MAJOR_VERSION: 7
     OMNIBUS_TARGET: agent_binaries
   before_script:
