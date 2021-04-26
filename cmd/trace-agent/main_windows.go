@@ -138,8 +138,13 @@ func Init() {
 			fmt.Printf("Panic: %+v\n", r)
 		}
 	}()
+
+	config_location, config_override_exists := os.LookupEnv("DD_APM_CONFIG_PATH")
+	if !config_override_exists {
+		config_location = "C:\\ProgramData\\Datadog\\datadog.yaml"
+	}
 	// Invoke the Agent
-	cfg, _ := config.Load("C:\\ProgramData\\Datadog\\datadog.yaml")
+	cfg, _ := config.Load(config_location)
 
 	agnt = agent.NewInProcessAgent(ctx, cfg)
 	agnt.Run()
