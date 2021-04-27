@@ -16,6 +16,7 @@ def build(
     rebuild=False,
     race=False,
     precompile_only=False,
+    build_shared_library=False,
     build_include=None,
     build_exclude=None,
     major_version='7',
@@ -66,6 +67,9 @@ def build(
 
     cmd = "go build -mod={go_mod} {race_opt} {build_type} -tags \"{go_build_tags}\" "
     cmd += "-o {agent_bin} -gcflags=\"{gcflags}\" -ldflags=\"{ldflags}\" {REPO_PATH}/cmd/trace-agent"
+
+    if build_shared_library:
+        cmd += " -buildmode=c-shared"
 
     args = {
         "go_mod": go_mod,
