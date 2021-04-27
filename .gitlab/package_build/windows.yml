@@ -139,7 +139,7 @@ windows_zip_agent_binaries_x64-a7:
       - .omnibus/pkg
 
 # Shared library build for x64
-windows_zip_agent_binaries_x64-a7:
+windows_zip_agent_libraries_x64-a7:
   rules:
     - <<: *if_version_7
   stage: package_build
