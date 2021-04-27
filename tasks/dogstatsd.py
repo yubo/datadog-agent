@@ -36,6 +36,7 @@ def build(
     rebuild=False,
     race=False,
     static=False,
+    build_shared_library=False,
     build_include=None,
     build_exclude=None,
     major_version='7',
@@ -82,6 +83,10 @@ def build(
     # NOTE: consider stripping symbols to reduce binary size
     cmd = "go build -mod={go_mod} {race_opt} {build_type} -tags \"{build_tags}\" -o {bin_name} "
     cmd += "-gcflags=\"{gcflags}\" -ldflags=\"{ldflags}\" {REPO_PATH}/cmd/dogstatsd"
+    
+    if build_shared_library:
+        cmd += " -buildmode=c-shared"
+
     args = {
         "go_mod": go_mod,
         "race_opt": "-race" if race else "",
