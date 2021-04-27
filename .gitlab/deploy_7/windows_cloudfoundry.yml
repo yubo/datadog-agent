@@ -23,7 +23,7 @@ deploy_staging_datadog_agent_windows_binaries_zip:
   stage: deploy7
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-builders/gitlab_agent_deploy:$DATADOG_AGENT_BUILDERS
   tags: ["runner:main", "size:large"]
-  dependencies: ["windows_zip_agent_binaries_x86-a7"]
+  dependencies: ["windows_zip_agent_binaries_x64-a7"]
   before_script:
     - ls $OMNIBUS_PACKAGE_DIR
   script:
