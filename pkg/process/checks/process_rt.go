@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"strconv"
 	"time"
 
 	model "github.com/DataDog/agent-payload/process"
@@ -190,7 +191,11 @@ func calculateRate(cur, prev uint64, before time.Time) float32 {
 
 // mergeStatWithSysprobeStats takes a process by PID map and fill the stats from system probe into the processes in the map
 func mergeStatWithSysprobeStats(stats map[int32]*procutil.Stats, pu *net.RemoteSysProbeUtil) {
-	pStats, err := pu.GetProcStats()
+	pidStrs := make([]string, 0, len(stats))
+	for pid := range stats {
+		pidStrs = append(pidStrs, strconv.Itoa(int(pid)))
+	}
+	pStats, err := pu.GetProcStats(pidStrs)
 	if err == nil {
 		for pid, stats := range stats {
 			if s, ok := pStats.StatsByPID[pid]; ok {

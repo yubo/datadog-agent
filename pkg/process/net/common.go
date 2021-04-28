@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -81,12 +82,15 @@ func GetRemoteSystemProbeUtil() (*RemoteSysProbeUtil, error) {
 }
 
 // GetProcStats returns a set of process stats by querying system-probe
-func (r *RemoteSysProbeUtil) GetProcStats() (*model.ProcStatsWithPermByPID, error) {
+func (r *RemoteSysProbeUtil) GetProcStats(pids []string) (*model.ProcStatsWithPermByPID, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s", procStatsURL), nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Accept", contentTypeProtobuf)
+	q := req.URL.Query()
+	q.Add("pids", strings.Join(pids, ","))
+
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, err

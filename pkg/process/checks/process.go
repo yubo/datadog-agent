@@ -2,6 +2,7 @@ package checks
 
 import (
 	"errors"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -407,7 +408,11 @@ func (p *ProcessCheck) createTimesforPIDs(pids []int32) map[int32]int64 {
 
 // mergeProcWithSysprobeStats takes a process by PID map and fill the stats from system probe into the processes in the map
 func mergeProcWithSysprobeStats(procs map[int32]*procutil.Process, pu *net.RemoteSysProbeUtil) {
-	pStats, err := pu.GetProcStats()
+	pidStrs := make([]string, 0, len(procs))
+	for pid := range procs {
+		pidStrs = append(pidStrs, strconv.Itoa(int(pid)))
+	}
+	pStats, err := pu.GetProcStats(pidStrs)
 	if err == nil {
 		for pid, proc := range procs {
 			if s, ok := pStats.StatsByPID[pid]; ok {

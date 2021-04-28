@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -48,8 +50,22 @@ func (t *process) GetStats() map[string]interface{} {
 func (t *process) Register(httpMux *http.ServeMux) error {
 	var runCounter uint64
 	httpMux.HandleFunc("/proc/stats", func(w http.ResponseWriter, req *http.Request) {
+		q := req.URL.Query()
+		pidStrs, ok := q["pids"]
+		if !ok {
+			return
+		}
+		pids := strings.Split(pidStrs[0], ",")
+		pidParsed := make([]int32, len(pids))
+		for i, pid := range pids {
+			p, err := strconv.ParseInt(pid, 10, 32)
+			if err != nil {
+				continue
+			}
+			pidParsed[i] = int32(p)
+		}
 		start := time.Now()
-		stats, err := t.probe.StatsWithPermByPID()
+		stats, err := t.probe.StatsWithPermByPID(pidParsed)
 		if err != nil {
 			log.Errorf("unable to retrieve stats using process_tracer: %s", err)
 			w.WriteHeader(500)
