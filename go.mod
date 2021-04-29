@@ -59,7 +59,6 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Microsoft/go-winio v0.4.17-0.20210211115548-6eac466e5fa3
-	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/alecthomas/participle v0.4.4
 	github.com/alecthomas/repr v0.0.0-20181024024818-d37bc2a10ba1
 	github.com/andybalholm/brotli v1.0.1 // indirect
@@ -91,7 +90,6 @@ require (
 	github.com/freddierice/go-losetup v0.0.0-20170407175016-fc9adea44124
 	github.com/go-ini/ini v1.55.0
 	github.com/go-ole/go-ole v1.2.5
-	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/go-test/deep v1.0.5 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/godbus/dbus v4.1.0+incompatible
@@ -99,8 +97,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 	github.com/golang/mock v1.5.0
 	github.com/golang/protobuf v1.5.2
-	github.com/golang/snappy v0.0.3 // indirect
-	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/gofuzz v1.2.0
 	github.com/google/gopacket v1.1.17
 	github.com/google/pprof v0.0.0-20210208152844-1612e9be7af6
@@ -143,7 +139,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.3 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
-	github.com/prometheus/prometheus v2.5.0+incompatible // indirect
 	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414
 	github.com/shirou/gopsutil v3.21.3+incompatible
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4
@@ -157,7 +152,6 @@ require (
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
 	github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00 // indirect
 	github.com/tinylib/msgp v1.1.2
-	github.com/tklauser/go-sysconf v0.3.4 // indirect
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31 // indirect
 	github.com/twmb/murmur3 v1.1.3
 	github.com/ulikunitz/xz v0.5.10 // indirect
@@ -168,9 +162,9 @@ require (
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	github.com/xeipuuv/gojsonschema v0.0.0-20180618132009-1d523034197f
 	go.etcd.io/etcd v0.5.0-alpha.5.0.20200910180754-dd1b699fc489
-	go.opentelemetry.io/collector v0.25.0 // indirect
+	go.opentelemetry.io/collector v0.25.0
 	go.uber.org/automaxprocs v1.4.0
-	go.uber.org/zap v1.16.0 // indirect
+	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670 // indirect
 	golang.org/x/mobile v0.0.0-20201217150744-e6ae53a27f4f
 	golang.org/x/net v0.0.0-20210415231046-e915ea6b2b7d
@@ -229,6 +223,8 @@ replace (
 	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.20.5
 	k8s.io/sample-controller => k8s.io/sample-controller v0.20.5
 )
+
+replace github.com/prometheus/prometheus => github.com/prometheus/prometheus v1.8.2-0.20210217141258-a6be548dbc17
 
 replace github.com/vishvananda/netlink => github.com/DataDog/netlink v1.0.1-0.20210312173533-6d628a7fc6f3
 

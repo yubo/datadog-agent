@@ -20,6 +20,7 @@ func zapWrapper() *zap.Logger {
 func getOTLPReceiverConfiguration() config.Receiver {
 	// TODO This configuration should be built from configuration that we
 	// get from pkg/config.
+	// The configuration has the supported protocols and the endpoints for these.
 	factory := otlpreceiver.NewFactory()
 	return factory.CreateDefaultConfig()
 }
@@ -63,6 +64,8 @@ type otlpTracesConsumer struct {
 func newConsumer() (otlpTracesConsumer, error) {
 	factory := loggingexporter.NewFactory()
 	config := factory.CreateDefaultConfig()
+
+	// This example consumer just logs the incoming traces
 	exampleConsumer, err := factory.CreateTracesExporter(
 		context.TODO(),
 		component.ExporterCreateParams{
