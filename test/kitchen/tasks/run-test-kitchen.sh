@@ -120,4 +120,4 @@ rm -f Berksfile.lock
 berks vendor ./cookbooks
 
 # Test every suite, as we only generate those we want to run
-bundle exec kitchen test ".*" --log-level debug --debug -c -d always
+bundle exec kitchen test ".*" --log-level debug -c -d always
