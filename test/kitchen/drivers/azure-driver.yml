@@ -118,9 +118,10 @@ platforms:
     vm_name: ddat<%= platform[0] %>
     winrm_powershell_script: |-
       winrm quickconfig -q
-      winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="1024"}'
-      winrm set winrm/config/winrs '@{MaxShellsPerUser="50"}'
-      winrm set winrm/config '@{MaxTimeoutms="1800000"}'
+      winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="0"}'
+      winrm set winrm/config/winrs '@{MaxProcessesPerShell="0"}'
+      winrm set winrm/config/winrs '@{MaxShellsPerUser="0"}'
+      winrm set winrm/config '@{MaxTimeoutms="3600000"}'
       winrm set winrm/config/service '@{AllowUnencrypted="true"}'
       winrm set winrm/config/service/auth '@{Basic="true"}'
       netsh advfirewall firewall set rule name="Windows Remote Management (HTTP-In)" profile=public protocol=tcp localport=5985 remoteip=localsubnet new remoteip=any
