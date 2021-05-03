@@ -31,6 +31,11 @@ const httpServerPort int = 8124
 
 const httpLogsCollectionRoute string = "/lambda/logs"
 
+// logsAgentShutdownDelay is the amount of time we wait before shutting down the logs agent
+// after we begin our final flush before shutting down. This allows for the final log messages
+// to arrive from the Logs API.
+const logsAgentShutdownDelay time.Duration = 1 * time.Second
+
 // Daemon is the communcation server for between the runtime and the serverless Agent.
 // The name "daemon" is just in order to avoid serverless.StartServer ...
 type Daemon struct {
@@ -55,9 +60,9 @@ type Daemon struct {
 	// aggregator used by the statsd server
 	aggregator *aggregator.BufferedAggregator
 
-	// logsCollectionDisabled blocks the collection of logs.
+	// logsCollectionSuspended blocks the collection of logs.
 	// It should be set to true before stopping the logs agent.
-	logsCollectionDisabled bool
+	logsCollectionSuspended bool
 
 	stopCh chan struct{}
 
@@ -124,9 +129,11 @@ func (d *Daemon) TriggerFlush(ctx context.Context, shutdown bool) {
 	// logs
 	go func() {
 		if shutdown {
+			// Wait for any remaining logs to arrive via the logs API
+			time.Sleep(logsAgentShutdownDelay)
 			// Stop collecting new logs before shutting down the logs agent
 			// Sending logs to the logs agent after it has shut down results in a panic
-			d.logsCollectionDisabled = true
+			d.logsCollectionSuspended = true
 			// Stop the logs agent; everything will be flushed
 			logs.Stop()
 		} else {
@@ -138,9 +145,7 @@ func (d *Daemon) TriggerFlush(ctx context.Context, shutdown bool) {
 	wg.Wait()
 	log.Debug("Flush done")
 
-	// we've just flushed, we can maybe try to change the flush strategy?
-	// (but do that only if the flush strategy hasn't be forced through configuration)
-	// note that we don't mind doing that if we are shutting down.
+	// After flushing, re-evaluate flush strategy (if applicable)
 	if d.useAdaptiveFlush && !shutdown {
 		newStrat := d.AutoSelectStrategy()
 		if newStrat.String() != d.flushStrategy.String() {
@@ -213,11 +218,6 @@ func (l *LogsCollection) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// If the DogStatsD daemon isn't ready, wait for it.
 	l.daemon.ReadyWg.Wait()
 
-	if l.daemon.logsCollectionDisabled {
-		w.WriteHeader(503)
-		return
-	}
-
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	var messages []aws.LogMessage
@@ -260,6 +260,15 @@ func (l *LogsCollection) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// However, if logs are not enabled, we do not send them to the intake.
 			if sendLogsToIntake {
 				logMessage := logConfig.NewChannelMessageFromLambda([]byte(message.StringRecord), message.Time, arn, lastRequestID, functionName)
+
+				// Do not publish logs to channel if logs collection is disabled
+				if l.daemon.logsCollectionSuspended {
+					log.Debug("Logs collection disabled, dropping log message")
+					w.WriteHeader(503)
+					return
+				}
+
+				log.Debug("Publishing log message ")
 				l.ch <- logMessage
 			}
 		}
