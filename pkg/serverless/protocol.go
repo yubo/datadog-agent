@@ -261,14 +261,13 @@ func (l *LogsCollection) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if sendLogsToIntake {
 				logMessage := logConfig.NewChannelMessageFromLambda([]byte(message.StringRecord), message.Time, arn, lastRequestID, functionName)
 
-				// Do not publish logs to channel if logs collection is disabled
+				// Do not publish logs to channel if logs collection has been suspended
 				if l.daemon.logsCollectionSuspended {
-					log.Debug("Logs collection disabled, dropping log message")
+					log.Debug("Received log message after logs collection suspended, dropping message")
 					w.WriteHeader(503)
 					return
 				}
 
-				log.Debug("Publishing log message ")
 				l.ch <- logMessage
 			}
 		}
