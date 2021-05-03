@@ -40,19 +40,26 @@ type Daemon struct {
 	statsdServer *dogstatsd.Server
 	traceAgent   *traceAgent.Agent
 
-	// lastInvocations stores last invocations time to be able to compute the
+	// lastInvocations stores last invocation times to be able to compute the
 	// interval of invocation of the function.
 	lastInvocations []time.Time
+
 	// flushStrategy is the currently selected flush strategy, defaulting to the
 	// the "flush at the end" naive strategy.
 	flushStrategy flush.Strategy
+
 	// useAdaptiveFlush is set to false when the flush strategy has been forced
 	// through configuration.
 	useAdaptiveFlush bool
 
 	// aggregator used by the statsd server
 	aggregator *aggregator.BufferedAggregator
-	stopCh     chan struct{}
+
+	// logsCollectionDisabled blocks the collection of logs.
+	// It should be set to true before stopping the logs agent.
+	logsCollectionDisabled bool
+
+	stopCh chan struct{}
 
 	// Wait on this WaitGroup in controllers to be sure that the Daemon is ready.
 	// (i.e. that the DogStatsD server is properly instantiated)
@@ -117,7 +124,11 @@ func (d *Daemon) TriggerFlush(ctx context.Context, shutdown bool) {
 	// logs
 	go func() {
 		if shutdown {
-			logs.Stop() // stop the logs agent, everything will be flushed
+			// Stop collecting new logs before shutting down the logs agent
+			// Sending logs to the logs agent after it has shut down results in a panic
+			d.logsCollectionDisabled = true
+			// Stop the logs agent; everything will be flushed
+			logs.Stop()
 		} else {
 			logs.Flush(ctx)
 		}
@@ -201,6 +212,11 @@ type LogsCollection struct {
 func (l *LogsCollection) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// If the DogStatsD daemon isn't ready, wait for it.
 	l.daemon.ReadyWg.Wait()
+
+	if l.daemon.logsCollectionDisabled {
+		w.WriteHeader(503)
+		return
+	}
 
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
