@@ -59,7 +59,7 @@ func (pc *ProcessCacheEntry) Fork(childEntry *ProcessCacheEntry) {
 	childEntry.BasenameStr = pc.BasenameStr
 	childEntry.Filesystem = pc.Filesystem
 	childEntry.ContainerPath = pc.ContainerPath
-	childEntry.ExecTimestamp = pc.ExecTimestamp
+	childEntry.ExecTime = pc.ExecTime
 	childEntry.Credentials = pc.Credentials
 	childEntry.Cookie = pc.Cookie
 
