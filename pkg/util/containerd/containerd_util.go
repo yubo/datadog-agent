@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/DataDog/datadog-agent/pkg/errors"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/util/retry"
 	"github.com/containerd/containerd"
@@ -20,6 +21,7 @@ import (
 	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
+	"github.com/docker/docker/errdefs"
 )
 
 const (
@@ -36,8 +38,10 @@ var (
 // ContainerdItf is the interface implementing a subset of methods that leverage the Containerd api.
 type ContainerdItf interface {
 	Containers() ([]containerd.Container, error)
+	LoadContainer(id string) (containerd.Container, error)
 	GetEvents() containerd.EventService
 	Info(ctn containerd.Container) (containers.Container, error)
+	Image(ctn containerd.Container) (containerd.Image, error)
 	ImageSize(ctn containerd.Container) (int64, error)
 	Spec(ctn containerd.Container) (*oci.Spec, error)
 	Metadata() (containerd.Version, error)
@@ -142,17 +146,38 @@ func (c *ContainerdUtil) Containers() ([]containerd.Container, error) {
 	return c.cl.Containers(ctxNamespace)
 }
 
+// Image interfaces with the containerd api to get an mage
+func (c *ContainerdUtil) Image(ctn containerd.Container) (containerd.Image, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.queryTimeout)
+	defer cancel()
+	ctxNamespace := namespaces.WithNamespace(ctx, c.namespace)
+
+	return ctn.Image(ctxNamespace)
+}
+
 // ImageSize interfaces with the containerd api to get the size of an image
 func (c *ContainerdUtil) ImageSize(ctn containerd.Container) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), c.queryTimeout)
 	defer cancel()
 	ctxNamespace := namespaces.WithNamespace(ctx, c.namespace)
 
-	img, err := ctn.Image(ctxNamespace)
+	img, err := c.Image(ctn)
 	if err != nil {
 		return 0, err
 	}
 	return img.Size(ctxNamespace)
+}
+
+func (c *ContainerdUtil) LoadContainer(id string) (containerd.Container, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.queryTimeout)
+	defer cancel()
+	ctxNamespace := namespaces.WithNamespace(ctx, c.namespace)
+
+	container, err := c.cl.LoadContainer(ctxNamespace, id)
+	if errdefs.IsNotFound(err) {
+		return nil, errors.NewNotFound(err.Error())
+	}
+	return container, err
 }
 
 // Info interfaces with the containerd api to get Container info
