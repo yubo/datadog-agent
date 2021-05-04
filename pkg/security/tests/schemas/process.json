@@ -36,6 +36,12 @@
         "tty": {
             "type": "string"
         },
+        "fork_time": {
+            "$ref": "file:///datetime.json"
+        },
+        "exec_time": {
+            "$ref": "file:///datetime.json"
+        },
         "credentials": {
             "type": "object",
             "properties": {
@@ -191,7 +197,9 @@
         "executable_inode",
         "executable_mount_id",
         "credentials",
-        "executable"
+        "executable",
+        "fork_time",
+        "exec_time"
     ],
     "dependencies": {
         "executable_container_path": ["container"],

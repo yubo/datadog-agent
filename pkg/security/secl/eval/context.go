@@ -6,6 +6,7 @@
 package eval
 
 import (
+	"time"
 	"unsafe"
 )
 
@@ -17,6 +18,16 @@ type Context struct {
 
 	// cache available across all the evaluations
 	Cache map[string]unsafe.Pointer
+
+	now time.Time
+}
+
+// Now return and cache the `now` timestamp
+func (c *Context) Now() time.Time {
+	if c.now.IsZero() {
+		c.now = time.Now()
+	}
+	return c.now
 }
 
 // SetObject set the given object to the context

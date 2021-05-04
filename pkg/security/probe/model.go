@@ -213,6 +213,11 @@ func (ev *Event) ResolveChownGID(e *model.ChownEvent) string {
 	return e.Group
 }
 
+// ResolveProcessCreatedAt resolves process creation time
+func (ev *Event) ResolveProcessCreatedAt(e *model.Process) uint64 {
+	return uint64(e.ExecTime.UnixNano())
+}
+
 // ResolveExecArgs resolves the args of the event
 func (ev *Event) ResolveExecArgs(e *model.ExecEvent) string {
 	if ev.Exec.Args == "" && len(e.ArgsArray) > 0 {
