@@ -83,6 +83,7 @@ require (
 	github.com/cobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249
 	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68
 	github.com/containerd/containerd v1.5.0-beta.4
+	github.com/containerd/cri v1.19.0
 	github.com/containerd/typeurl v1.0.1
 	github.com/coreos/go-semver v0.3.0
 	github.com/coreos/go-systemd v0.0.0-20190620071333-e64a0ec8b42a

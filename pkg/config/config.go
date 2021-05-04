@@ -453,6 +453,8 @@ func InitConfig(config Config) {
 	// Containerd
 	// We only support containerd in Kubernetes. By default containerd cri uses `k8s.io` https://github.com/containerd/cri/blob/release/1.2/pkg/constants/constants.go#L22-L23
 	config.BindEnvAndSetDefault("containerd_namespace", "k8s.io")
+	config.BindEnvAndSetDefault("containerd_labels_as_tags", map[string]string{})
+	config.BindEnvAndSetDefault("containerd_annotations_as_tags", map[string]string{})
 
 	// Kubernetes
 	config.BindEnvAndSetDefault("kubernetes_kubelet_host", "")
