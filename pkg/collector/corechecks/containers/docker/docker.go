@@ -67,7 +67,7 @@ func updateContainerRunningCount(images map[string]*containerPerImage, c *contai
 	} else {
 		containerTags, err = tagger.Tag(c.EntityID, collectors.LowCardinality)
 		if err != nil {
-			log.Errorf("Could not collect tags for container %s: %s", c.ID[:12], err)
+			log.Errorf("Could not collect tags for container %s: %s", containers.ShortContainerID(c.ID), err)
 			return
 		}
 		sort.Strings(containerTags)
@@ -145,7 +145,7 @@ func (d *DockerCheck) Run() error {
 		}
 		tags, err := tagger.Tag(c.EntityID, collectors.HighCardinality)
 		if err != nil {
-			log.Errorf("Could not collect tags for container %s: %s", c.ID[:12], err)
+			log.Errorf("Could not collect tags for container %s: %s", containers.ShortContainerID(c.ID), err)
 		}
 		// Track image_name and image_tag tags by image for use in countAndWeightImages
 		for _, t := range tags {
@@ -164,7 +164,7 @@ func (d *DockerCheck) Run() error {
 		if c.CPU != nil {
 			d.reportCPUMetrics(c.CPU, &c.Limits, c.StartedAt, tags, sender)
 		} else {
-			log.Debugf("Empty CPU metrics for container %s", c.ID[:12])
+			log.Debugf("Empty CPU metrics for container %s", containers.ShortContainerID(c.ID))
 		}
 
 		if c.Memory != nil {
@@ -207,13 +207,13 @@ func (d *DockerCheck) Run() error {
 				sender.Gauge("docker.mem.commit_peak_bytes", float64(c.Memory.CommitPeakBytes), "", tags)
 			}
 		} else {
-			log.Debugf("Empty memory metrics for container %s", c.ID[:12])
+			log.Debugf("Empty memory metrics for container %s", containers.ShortContainerID(c.ID))
 		}
 
 		if c.IO != nil {
 			d.reportIOMetrics(c.IO, tags, sender)
 		} else {
-			log.Debugf("Empty IO metrics for container %s", c.ID[:12])
+			log.Debugf("Empty IO metrics for container %s", containers.ShortContainerID(c.ID))
 		}
 
 		if c.Limits.ThreadLimit != 0 {
@@ -223,7 +223,7 @@ func (d *DockerCheck) Run() error {
 		if c.Network != nil {
 			for _, netStat := range c.Network {
 				if netStat.NetworkName == "" {
-					log.Debugf("Ignore network stat with empty name for container %s", c.ID[:12])
+					log.Debugf("Ignore network stat with empty name for container %s", containers.ShortContainerID(c.ID))
 					continue
 				}
 				ifaceTags := append(tags, fmt.Sprintf("docker_network:%s", netStat.NetworkName))
@@ -231,15 +231,15 @@ func (d *DockerCheck) Run() error {
 				sender.Rate("docker.net.bytes_rcvd", float64(netStat.BytesRcvd), "", ifaceTags)
 			}
 		} else {
-			log.Debugf("Empty network metrics for container %s", c.ID[:12])
+			log.Debugf("Empty network metrics for container %s", containers.ShortContainerID(c.ID))
 		}
 
 		if collectingContainerSizeDuringThisRun {
 			info, err := du.Inspect(c.ID, true)
 			if err != nil {
-				log.Errorf("Failed to inspect container %s - %s", c.ID[:12], err)
+				log.Errorf("Failed to inspect container %s - %s", containers.ShortContainerID(c.ID), err)
 			} else if info.SizeRw == nil || info.SizeRootFs == nil {
-				log.Warnf("Docker inspect did not return the container size: %s", c.ID[:12])
+				log.Warnf("Docker inspect did not return the container size: %s", containers.ShortContainerID(c.ID))
 			} else {
 				sender.Gauge("docker.container.size_rw", float64(*info.SizeRw), "", tags)
 				sender.Gauge("docker.container.size_rootfs", float64(*info.SizeRootFs), "", tags)

@@ -79,14 +79,14 @@ func (ku *KubeUtil) getContainerDetails(ctn *containers.Container) {
 	var err error
 	ctn.StartedAt, err = providers.ContainerImpl().GetContainerStartTime(ctn.ID)
 	if err != nil {
-		log.Debugf("ContainerImplementation cannot get StartTime for container %s, err: %s", ctn.ID[:12], err)
+		log.Debugf("ContainerImplementation cannot get StartTime for container %s, err: %s", containers.ShortContainerID(ctn.ID), err)
 		return
 	}
 
 	var limits *metrics.ContainerLimits
 	limits, err = providers.ContainerImpl().GetContainerLimits(ctn.ID)
 	if err != nil {
-		log.Debugf("ContainerImplementation cannot get limits for container %s, err: %s", ctn.ID[:12], err)
+		log.Debugf("ContainerImplementation cannot get limits for container %s, err: %s", containers.ShortContainerID(ctn.ID), err)
 		return
 	}
 	ctn.SetLimits(limits)
@@ -96,14 +96,14 @@ func (ku *KubeUtil) getContainerDetails(ctn *containers.Container) {
 func (ku *KubeUtil) getContainerMetrics(ctn *containers.Container) {
 	metrics, err := providers.ContainerImpl().GetContainerMetrics(ctn.ID)
 	if err != nil {
-		log.Debugf("MetricsProvider cannot get metrics for container %s, err: %s", ctn.ID[:12], err)
+		log.Debugf("MetricsProvider cannot get metrics for container %s, err: %s", containers.ShortContainerID(ctn.ID), err)
 		return
 	}
 	ctn.SetMetrics(metrics)
 
 	pids, err := providers.ContainerImpl().GetPIDs(ctn.ID)
 	if err != nil {
-		log.Debugf("ContainerImplementation cannot get PIDs for container %s, err: %s", ctn.ID[:12], err)
+		log.Debugf("ContainerImplementation cannot get PIDs for container %s, err: %s", containers.ShortContainerID(ctn.ID), err)
 		return
 	}
 	ctn.Pids = pids

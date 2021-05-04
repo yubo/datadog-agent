@@ -17,6 +17,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/docker"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
@@ -95,7 +96,7 @@ func zipDockerPs(tempDir, hostname string) error {
 	fmt.Fprintln(w, "CONTAINER ID\tIMAGE\tCOMMAND\tSTATUS\tPORTS\tNAMES\t")
 	for _, c := range containerList {
 		fmt.Fprintf(w, "%s\t%s\t%q\t%s\t%v\t%v\t\n",
-			c.ID[:12], c.Image, trimCommand(c.Command), c.Status, c.Ports, c.Names)
+			containers.ShortContainerID(c.ID), c.Image, trimCommand(c.Command), c.Status, c.Ports, c.Names)
 	}
 	err = w.Flush()
 	if err != nil {

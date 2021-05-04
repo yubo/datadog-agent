@@ -143,11 +143,7 @@ func (l *ECSListener) refreshServices(firstRun bool) {
 		}
 		// Detect AD exclusion
 		if l.filters.IsExcluded(containers.GlobalFilter, c.DockerName, c.Image, "") {
-			dockerID := c.DockerID
-			if len(c.DockerID) >= 12 {
-				dockerID = c.DockerID[:12]
-			}
-			log.Debugf("container %s filtered out: name %q image %q", dockerID, c.DockerName, c.Image)
+			log.Debugf("container %s filtered out: name %q image %q", containers.ShortContainerID(c.DockerID), c.DockerName, c.Image)
 			continue
 		}
 		s, err := l.createService(c, firstRun)

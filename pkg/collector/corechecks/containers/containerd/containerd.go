@@ -29,8 +29,8 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
-	cutil "github.com/DataDog/datadog-agent/pkg/util/containerd"
-	ddContainers "github.com/DataDog/datadog-agent/pkg/util/containers"
+	"github.com/DataDog/datadog-agent/pkg/util/containerd"
+	cutil "github.com/DataDog/datadog-agent/pkg/util/containers"
 	cgroup "github.com/DataDog/datadog-agent/pkg/util/containers/providers/cgroup"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/util/system"
@@ -45,7 +45,7 @@ type ContainerdCheck struct {
 	core.CheckBase
 	instance *ContainerdConfig
 	sub      *subscriber
-	filters  *ddContainers.Filter
+	filters  *cutil.Filter
 }
 
 // ContainerdConfig contains the custom options and configurations set by the user.
@@ -87,7 +87,7 @@ func (c *ContainerdCheck) Configure(config, initConfig integration.Data, source 
 	}
 	c.sub.Filters = c.instance.ContainerdFilters
 	// GetSharedMetricFilter should not return a nil instance of *Filter if there is an error during its setup.
-	fil, err := ddContainers.GetSharedMetricFilter()
+	fil, err := cutil.GetSharedMetricFilter()
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (c *ContainerdCheck) Run() error {
 	defer sender.Commit()
 
 	// As we do not rely on a singleton, we ensure connectivity every check run.
-	cu, errHealth := cutil.GetContainerdUtil()
+	cu, errHealth := containerd.GetContainerdUtil()
 	if errHealth != nil {
 		sender.ServiceCheck("containerd.health", metrics.ServiceCheckCritical, "", nil, fmt.Sprintf("Connectivity error %v", errHealth))
 		log.Infof("Error ensuring connectivity with Containerd daemon %v", errHealth)
@@ -133,7 +133,7 @@ func (c *ContainerdCheck) Run() error {
 }
 
 // compute events converts Containerd events into Datadog events
-func computeEvents(events []containerdEvent, sender aggregator.Sender, fil *ddContainers.Filter) {
+func computeEvents(events []containerdEvent, sender aggregator.Sender, fil *cutil.Filter) {
 	for _, e := range events {
 		split := strings.Split(e.Topic, "/")
 		if len(split) != 3 {
@@ -162,7 +162,7 @@ func computeEvents(events []containerdEvent, sender aggregator.Sender, fil *ddCo
 		output.Title = fmt.Sprintf("Event on %s from Containerd", split[1])
 		if split[1] == "containers" || split[1] == "tasks" {
 			// For task events, we use the container ID in order to query the Tagger's API
-			tags, err := tagger.Tag(ddContainers.ContainerEntityPrefix+e.ID, collectors.HighCardinality)
+			tags, err := tagger.Tag(cutil.ContainerEntityPrefix+e.ID, collectors.HighCardinality)
 			if err != nil {
 				// If there is an error retrieving tags from the Tagger, we can still submit the event as is.
 				log.Errorf("Could not retrieve tags for the container %s: %v", e.ID, err)
@@ -173,7 +173,7 @@ func computeEvents(events []containerdEvent, sender aggregator.Sender, fil *ddCo
 	}
 }
 
-func computeMetrics(sender aggregator.Sender, cu cutil.ContainerdItf, fil *ddContainers.Filter) {
+func computeMetrics(sender aggregator.Sender, cu containerd.ContainerdItf, fil *cutil.Filter) {
 	containers, err := cu.Containers()
 	if err != nil {
 		log.Errorf(err.Error())
@@ -183,7 +183,7 @@ func computeMetrics(sender aggregator.Sender, cu cutil.ContainerdItf, fil *ddCon
 	for _, ctn := range containers {
 		info, err := cu.Info(ctn)
 		if err != nil {
-			log.Errorf("Could not retrieve the metadata of the container: %s", ctn.ID()[:12])
+			log.Errorf("Could not retrieve the metadata of the container: %s", cutil.ShortContainerID(ctn.ID()))
 			continue
 		}
 		if isExcluded(info, fil) {
@@ -192,10 +192,10 @@ func computeMetrics(sender aggregator.Sender, cu cutil.ContainerdItf, fil *ddCon
 
 		tags, err := collectTags(info)
 		if err != nil {
-			log.Errorf("Could not collect tags for container %s: %s", ctn.ID()[:12], err)
+			log.Errorf("Could not collect tags for container %s: %s", cutil.ShortContainerID(ctn.ID()), err)
 		}
 		// Tagger tags
-		taggerTags, err := tagger.Tag(ddContainers.ContainerEntityPrefix+ctn.ID(), collectors.HighCardinality)
+		taggerTags, err := tagger.Tag(cutil.ContainerEntityPrefix+ctn.ID(), collectors.HighCardinality)
 		if err != nil {
 			log.Errorf(err.Error())
 			continue
@@ -204,7 +204,7 @@ func computeMetrics(sender aggregator.Sender, cu cutil.ContainerdItf, fil *ddCon
 
 		metricTask, errTask := cu.TaskMetrics(ctn)
 		if errTask != nil {
-			log.Tracef("Could not retrieve metrics from task %s: %s", ctn.ID()[:12], errTask.Error())
+			log.Tracef("Could not retrieve metrics from task %s: %s", cutil.ShortContainerID(ctn.ID()), errTask.Error())
 			continue
 		}
 
@@ -247,7 +247,7 @@ func computeMetrics(sender aggregator.Sender, cu cutil.ContainerdItf, fil *ddCon
 		// Collect open file descriptor counts
 		processes, errTask := cu.TaskPids(ctn)
 		if errTask != nil {
-			log.Tracef("Could not retrieve pids from task %s: %s", ctn.ID()[:12], errTask.Error())
+			log.Tracef("Could not retrieve pids from task %s: %s", cutil.ShortContainerID(ctn.ID()), errTask.Error())
 			continue
 		}
 		fileDescCount := 0
@@ -255,7 +255,7 @@ func computeMetrics(sender aggregator.Sender, cu cutil.ContainerdItf, fil *ddCon
 			pid := p.Pid
 			fdCount, err := cgroup.GetFileDescriptorLen(int(pid))
 			if err != nil {
-				log.Debugf("Failed to get file desc length for pid %d, container %s: %s", pid, ctn.ID()[:12], err)
+				log.Debugf("Failed to get file desc length for pid %d, container %s: %s", pid, cutil.ShortContainerID(ctn.ID()), err)
 				continue
 			}
 			fileDescCount += fdCount
@@ -264,8 +264,8 @@ func computeMetrics(sender aggregator.Sender, cu cutil.ContainerdItf, fil *ddCon
 	}
 }
 
-func isExcluded(ctn containers.Container, fil *ddContainers.Filter) bool {
-	if config.Datadog.GetBool("exclude_pause_container") && ddContainers.IsPauseContainer(ctn.Labels) {
+func isExcluded(ctn containers.Container, fil *cutil.Filter) bool {
+	if config.Datadog.GetBool("exclude_pause_container") && cutil.IsPauseContainer(ctn.Labels) {
 		return true
 	}
 	// The container name is not available in Containerd, we only rely on image name and kube namespace based exclusion

@@ -143,7 +143,7 @@ func (mp *provider) GetNetworkMetrics(containerID string, networks map[string]st
 
 	metrics, err := collectNetworkStats(int(cg.Pids[0]), networks)
 	if err != nil {
-		return nil, fmt.Errorf("Could not collect network stats for container %s: %s", containerID[:12], err)
+		return nil, fmt.Errorf("Could not collect network stats for container %s: %s", containers.ShortContainerID(containerID), err)
 	}
 
 	return metrics, nil
@@ -208,7 +208,7 @@ func (mp *provider) getCgroup(containerID string) (*ContainerCgroup, error) {
 
 	cg, ok := mp.cgroups[containerID]
 	if !ok || cg == nil {
-		return nil, fmt.Errorf("Cgroup not found for container: %s", containerID[:12])
+		return nil, fmt.Errorf("Cgroup not found for container: %s", containers.ShortContainerID(containerID))
 	}
 
 	return cg, nil

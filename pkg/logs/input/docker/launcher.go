@@ -19,6 +19,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/pipeline"
 	"github.com/DataDog/datadog-agent/pkg/logs/restart"
 	"github.com/DataDog/datadog-agent/pkg/logs/service"
+	cutil "github.com/DataDog/datadog-agent/pkg/util/containers"
 	dockerutil "github.com/DataDog/datadog-agent/pkg/util/docker"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
@@ -210,11 +211,11 @@ func (l *Launcher) overrideSource(container *Container, source *config.LogSource
 	shortName, err := container.getShortImageName()
 	containerID := container.service.Identifier
 	if err != nil {
-		log.Warnf("Could not get short image name for container %v: %v", ShortContainerID(containerID), err)
+		log.Warnf("Could not get short image name for container %v: %v", cutil.ShortContainerID(containerID), err)
 		return source
 	}
 
-	l.collectAllInfo.SetMessage(containerID, fmt.Sprintf("Container ID: %s, Image: %s, Created: %s, Tailing from the Docker socket", ShortContainerID(containerID), shortName, container.container.Created))
+	l.collectAllInfo.SetMessage(containerID, fmt.Sprintf("Container ID: %s, Image: %s, Created: %s, Tailing from the Docker socket", cutil.ShortContainerID(containerID), shortName, container.container.Created))
 
 	newSource := newOverridenSource(standardService, shortName, source.Status)
 	newSource.ParentSource = source
@@ -242,11 +243,11 @@ func (l *Launcher) getFileSource(container *Container, source *config.LogSource)
 	shortName, err := container.getShortImageName()
 
 	if err != nil {
-		log.Warnf("Could not get short image name for container %v: %v", ShortContainerID(containerID), err)
+		log.Warnf("Could not get short image name for container %v: %v", cutil.ShortContainerID(containerID), err)
 	}
 
 	// Update parent source with additional information
-	sourceInfo.SetMessage(containerID, fmt.Sprintf("Container ID: %s, Image: %s, Created: %s, Tailing from file: %s", ShortContainerID(containerID), shortName, container.container.Created, l.getPath(containerID)))
+	sourceInfo.SetMessage(containerID, fmt.Sprintf("Container ID: %s, Image: %s, Created: %s, Tailing from file: %s", cutil.ShortContainerID(containerID), shortName, container.container.Created, l.getPath(containerID)))
 
 	var serviceName string
 	if source.Name != config.ContainerCollectAll && source.Config.Service != "" {
@@ -325,7 +326,7 @@ func (l *Launcher) shouldTailFromFile(container *Container) bool {
 func (l *Launcher) scheduleFileSource(container *Container, source *config.LogSource) {
 	containerID := container.service.Identifier
 	if _, isTailed := l.fileSourcesByContainer[containerID]; isTailed {
-		log.Warnf("Can't tail twice the same container: %v", ShortContainerID(containerID))
+		log.Warnf("Can't tail twice the same container: %v", cutil.ShortContainerID(containerID))
 		return
 	}
 	// fileSource is a new source using the original source as its parent
@@ -346,7 +347,7 @@ func (l *Launcher) unscheduleFileSource(containerID string) {
 func (l *Launcher) startSocketTailer(container *Container, source *config.LogSource) {
 	containerID := container.service.Identifier
 	if _, isTailed := l.getTailer(containerID); isTailed {
-		log.Warnf("Can't tail twice the same container: %v", ShortContainerID(containerID))
+		log.Warnf("Can't tail twice the same container: %v", cutil.ShortContainerID(containerID))
 		return
 	}
 	dockerutil, err := dockerutil.GetDockerUtil()
@@ -361,7 +362,7 @@ func (l *Launcher) startSocketTailer(container *Container, source *config.LogSou
 	// compute the offset to prevent from missing or duplicating logs
 	since, err := Since(l.registry, tailer.Identifier(), container.service.CreationTime)
 	if err != nil {
-		log.Warnf("Could not recover tailing from last committed offset %v: %v", ShortContainerID(containerID), err)
+		log.Warnf("Could not recover tailing from last committed offset %v: %v", cutil.ShortContainerID(containerID), err)
 	}
 
 	// start the tailer
@@ -431,19 +432,19 @@ func (l *Launcher) restartTailer(containerID string) {
 	// compute the offset to prevent from missing or duplicating logs
 	since, err := Since(l.registry, tailer.Identifier(), service.Before)
 	if err != nil {
-		log.Warnf("Could not recover last committed offset for container %v: %v", ShortContainerID(containerID), err)
+		log.Warnf("Could not recover last committed offset for container %v: %v", cutil.ShortContainerID(containerID), err)
 	}
 
 	for {
 		if backoffDuration > backoffMaxDuration {
-			log.Warnf("Could not resume tailing container %v", ShortContainerID(containerID))
+			log.Warnf("Could not resume tailing container %v", cutil.ShortContainerID(containerID))
 			return
 		}
 
 		// start the tailer
 		err = tailer.Start(since)
 		if err != nil {
-			log.Warnf("Could not start tailer for container %v: %v", ShortContainerID(containerID), err)
+			log.Warnf("Could not start tailer for container %v: %v", cutil.ShortContainerID(containerID), err)
 			time.Sleep(backoffDuration)
 			cumulatedBackoff += backoffDuration
 			backoffDuration *= 2

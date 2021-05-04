@@ -114,7 +114,7 @@ func (c *CRICheck) generateMetrics(sender aggregator.Sender, containerStats map[
 		entityID := containers.BuildTaggerEntityName(cid)
 		tags, err := tagger.Tag(entityID, collectors.HighCardinality)
 		if err != nil {
-			log.Errorf("Could not collect tags for container %s: %s", cid[:12], err)
+			log.Errorf("Could not collect tags for container %s: %s", containers.ShortContainerID(cid), err)
 		}
 		tags = append(tags, "runtime:"+criUtil.GetRuntime())
 

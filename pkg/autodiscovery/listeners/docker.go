@@ -213,7 +213,7 @@ func (l *DockerListener) processEvent(e *docker.ContainerEvent) {
 			})
 		default:
 			// FIXME sometimes the agent's container's events are picked up twice at startup
-			log.Debugf("Expected die for container %s got %s: skipping event", cID[:12], e.Action)
+			log.Debugf("Expected die for container %s got %s: skipping event", containers.ShortContainerID(cID), e.Action)
 			return
 		}
 	} else {
@@ -236,7 +236,7 @@ func (l *DockerListener) createService(cID string) {
 	var isKube bool
 	cInspect, err := l.dockerUtil.Inspect(cID, false)
 	if err != nil {
-		log.Errorf("Failed to inspect container '%s', not creating AD service, err: %s", cID[:12], err)
+		log.Errorf("Failed to inspect container '%s', not creating AD service, err: %s", containers.ShortContainerID(cID), err)
 		return
 	}
 
@@ -248,7 +248,7 @@ func (l *DockerListener) createService(cID string) {
 	// Detect AD exclusion
 	containerName = cInspect.Name
 	if l.filters.IsExcluded(containers.GlobalFilter, containerName, containerImage, "") {
-		log.Debugf("container %s filtered out: name %q image %q", cID[:12], containerName, containerImage)
+		log.Debugf("container %s filtered out: name %q image %q", containers.ShortContainerID(cID), containerName, containerImage)
 		return
 	}
 	if findKubernetesInLabels(cInspect.Config.Labels) {
@@ -279,23 +279,23 @@ func (l *DockerListener) createService(cID string) {
 
 	_, err = svc.GetADIdentifiers()
 	if err != nil {
-		log.Errorf("Failed to inspect container %s - %s", cID[:12], err)
+		log.Errorf("Failed to inspect container %s - %s", containers.ShortContainerID(cID), err)
 	}
 	_, err = svc.GetHosts()
 	if err != nil {
-		log.Errorf("Failed to inspect container %s - %s", cID[:12], err)
+		log.Errorf("Failed to inspect container %s - %s", containers.ShortContainerID(cID), err)
 	}
 	_, err = svc.GetPorts()
 	if err != nil {
-		log.Errorf("Failed to inspect container %s - %s", cID[:12], err)
+		log.Errorf("Failed to inspect container %s - %s", containers.ShortContainerID(cID), err)
 	}
 	_, err = svc.GetPid()
 	if err != nil {
-		log.Errorf("Failed to inspect container %s - %s", cID[:12], err)
+		log.Errorf("Failed to inspect container %s - %s", containers.ShortContainerID(cID), err)
 	}
 	_, _, err = svc.GetTags()
 	if err != nil {
-		log.Errorf("Failed to inspect container %s - %s", cID[:12], err)
+		log.Errorf("Failed to inspect container %s - %s", containers.ShortContainerID(cID), err)
 	}
 
 	l.m.Lock()
@@ -321,7 +321,7 @@ func (l *DockerListener) removeService(cID string) {
 			l.delService <- svc
 		})
 	} else {
-		log.Debugf("Container %s not found, not removing", cID[:12])
+		log.Debugf("Container %s not found, not removing", containers.ShortContainerID(cID))
 	}
 }
 
@@ -401,7 +401,7 @@ func (l *DockerListener) isExcluded(co types.Container) bool {
 	}
 	for _, name := range co.Names {
 		if l.filters.IsExcluded(containers.GlobalFilter, name, image, "") {
-			log.Debugf("container %s filtered out: name %q image %q", co.ID[:12], name, image)
+			log.Debugf("container %s filtered out: name %q image %q", containers.ShortContainerID(co.ID), name, image)
 			return true
 		}
 	}
@@ -456,7 +456,7 @@ func (s *DockerService) GetHosts() (map[string]string, error) {
 	}
 	cInspect, err := du.Inspect(s.cID, false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inspect container %s", s.cID[:12])
+		return nil, fmt.Errorf("failed to inspect container %s", containers.ShortContainerID(s.cID))
 	}
 	if cInspect.NetworkSettings != nil {
 		for net, settings := range cInspect.NetworkSettings.Networks {
@@ -497,7 +497,7 @@ func (s *DockerService) GetPorts() ([]ContainerPort, error) {
 	}
 	cInspect, err := du.Inspect(s.cID, false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inspect container %s", s.cID[:12])
+		return nil, fmt.Errorf("failed to inspect container %s", containers.ShortContainerID(s.cID))
 	}
 
 	switch {
@@ -511,7 +511,7 @@ func (s *DockerService) GetPorts() ([]ContainerPort, error) {
 			ports = append(ports, out...)
 		}
 	case cInspect.Config != nil && len(cInspect.Config.ExposedPorts) > 0:
-		log.Infof("using ExposedPorts for container %s as no port bindings are listed", s.cID[:12])
+		log.Infof("using ExposedPorts for container %s as no port bindings are listed", containers.ShortContainerID(s.cID))
 		for p := range cInspect.Config.ExposedPorts {
 			out, err := parseDockerPort(p)
 			if err != nil {
@@ -586,13 +586,13 @@ func (s *DockerService) GetHostname() (string, error) {
 	}
 	cInspect, err := du.Inspect(s.cID, false)
 	if err != nil {
-		return "", fmt.Errorf("failed to inspect container %s", s.cID[:12])
+		return "", fmt.Errorf("failed to inspect container %s", containers.ShortContainerID(s.cID))
 	}
 	if cInspect.Config == nil {
-		return "", fmt.Errorf("invalid inspect for container %s", s.cID[:12])
+		return "", fmt.Errorf("invalid inspect for container %s", containers.ShortContainerID(s.cID))
 	}
 	if cInspect.Config.Hostname == "" {
-		return "", fmt.Errorf("empty hostname for container %s", s.cID[:12])
+		return "", fmt.Errorf("empty hostname for container %s", containers.ShortContainerID(s.cID))
 	}
 
 	s.hostname = cInspect.Config.Hostname

@@ -141,16 +141,16 @@ func (gu *GardenUtil) ListContainers() ([]*containers.Container, error) {
 
 	for _, container := range cList {
 		if container.State != containers.ContainerActiveState {
-			log.Debugf("Container %s not in state %s, skipping", container.ID[:12], containers.ContainerActiveState)
+			log.Debugf("Container %s not in state %s, skipping", containers.ShortContainerID(container.ID), containers.ContainerActiveState)
 			continue
 		}
 		if !providers.ContainerImpl().ContainerExists(container.ID) {
-			log.Debugf("Container %s not found, skipping", container.ID[:12])
+			log.Debugf("Container %s not found, skipping", containers.ShortContainerID(container.ID))
 			continue
 		}
 		limits, err := providers.ContainerImpl().GetContainerLimits(container.ID)
 		if err != nil {
-			log.Debugf("Cannot get limits for container %s: %s, skipping", container.ID[:12], err)
+			log.Debugf("Cannot get limits for container %s: %s, skipping", containers.ShortContainerID(container.ID), err)
 			continue
 		}
 		container.SetLimits(limits)
@@ -166,11 +166,11 @@ func (gu *GardenUtil) UpdateContainerMetrics(cList []*containers.Container) erro
 	}
 	for _, container := range cList {
 		if container.State != containers.ContainerActiveState {
-			log.Debugf("Container %s not in state %s, skipping", container.ID[:12], containers.ContainerActiveState)
+			log.Debugf("Container %s not in state %s, skipping", containers.ShortContainerID(container.ID), containers.ContainerActiveState)
 			continue
 		}
 		if !providers.ContainerImpl().ContainerExists(container.ID) {
-			log.Debugf("Container %s not found, skipping", container.ID[:12])
+			log.Debugf("Container %s not found, skipping", containers.ShortContainerID(container.ID))
 			continue
 		}
 
@@ -183,14 +183,14 @@ func (gu *GardenUtil) UpdateContainerMetrics(cList []*containers.Container) erro
 func (gu *GardenUtil) getContainerMetrics(ctn *containers.Container) {
 	metrics, err := providers.ContainerImpl().GetContainerMetrics(ctn.ID)
 	if err != nil {
-		log.Debugf("ContainerImplementation cannot get metrics for container %s, err: %s", ctn.ID[:12], err)
+		log.Debugf("ContainerImplementation cannot get metrics for container %s, err: %s", containers.ShortContainerID(ctn.ID), err)
 		return
 	}
 	ctn.SetMetrics(metrics)
 
 	pids, err := providers.ContainerImpl().GetPIDs(ctn.ID)
 	if err != nil {
-		log.Debugf("ContainerImplementation cannot get PIDs for container %s, err: %s", ctn.ID[:12], err)
+		log.Debugf("ContainerImplementation cannot get PIDs for container %s, err: %s", containers.ShortContainerID(ctn.ID), err)
 		return
 	}
 	ctn.Pids = pids

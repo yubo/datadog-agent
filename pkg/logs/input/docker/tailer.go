@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	dockerutil "github.com/DataDog/datadog-agent/pkg/util/docker"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
@@ -81,7 +82,7 @@ func (t *Tailer) Identifier() string {
 // Stop stops the tailer from reading new container logs,
 // this call blocks until the decoder is completely flushed
 func (t *Tailer) Stop() {
-	log.Infof("Stop tailing container: %v", ShortContainerID(t.ContainerID))
+	log.Infof("Stop tailing container: %v", containers.ShortContainerID(t.ContainerID))
 	t.stop <- struct{}{}
 
 	t.reader.Close()
@@ -97,7 +98,7 @@ func (t *Tailer) Stop() {
 // start from now if the container has been created before the agent started
 // start from oldest log otherwise
 func (t *Tailer) Start(since time.Time) error {
-	log.Debugf("Start tailing container: %v", ShortContainerID(t.ContainerID))
+	log.Debugf("Start tailing container: %v", containers.ShortContainerID(t.ContainerID))
 	return t.tail(since.Format(config.DateFormat))
 }
 
@@ -141,11 +142,11 @@ func (t *Tailer) setupReader() error {
 }
 
 func (t *Tailer) tryRestartReader(reason string) error {
-	log.Debugf("%s for container %v", reason, ShortContainerID(t.ContainerID))
+	log.Debugf("%s for container %v", reason, containers.ShortContainerID(t.ContainerID))
 	t.wait()
 	err := t.setupReader()
 	if err != nil {
-		log.Warnf("Could not restart the docker reader for container %v: %v:", ShortContainerID(t.ContainerID), err)
+		log.Warnf("Could not restart the docker reader for container %v: %v:", containers.ShortContainerID(t.ContainerID), err)
 		t.erroredContainerID <- t.ContainerID
 	}
 	return err
@@ -218,14 +219,14 @@ func (t *Tailer) readForever() {
 					// * when the container has not started to output logs yet.
 					// * during a file rotation.
 					// restart the reader (restartReader() include 1second wait)
-					t.source.Status.Error(fmt.Errorf("log decoder returns an EOF error that will trigger a Reader restart, container: %v", ShortContainerID(t.ContainerID)))
+					t.source.Status.Error(fmt.Errorf("log decoder returns an EOF error that will trigger a Reader restart, container: %v", containers.ShortContainerID(t.ContainerID)))
 					if err := t.tryRestartReader("log decoder returns an EOF error that will trigger a Reader restart"); err != nil {
 						return
 					}
 					continue
 				default:
 					t.source.Status.Error(err)
-					log.Errorf("Could not tail logs for container %v: %v", ShortContainerID(t.ContainerID), err)
+					log.Errorf("Could not tail logs for container %v: %v", containers.ShortContainerID(t.ContainerID), err)
 					t.erroredContainerID <- t.ContainerID
 					return
 				}
