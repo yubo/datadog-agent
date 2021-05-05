@@ -55,11 +55,11 @@ func (f *AssetFile) Stat() (os.FileInfo, error) {
 	return nil, nil
 }
 
-func validateExecSchema(t *testing.T, event *sprobe.Event) bool {
+func validateSchema(t *testing.T, event *sprobe.Event, path string) bool {
 	fs := NewAssetFileSystem()
 
 	documentLoader := gojsonschema.NewStringLoader(event.String())
-	schemaLoader := gojsonschema.NewReferenceLoaderFileSystem("file:///exec.schema.json", fs)
+	schemaLoader := gojsonschema.NewReferenceLoaderFileSystem(path, fs)
 
 	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 	if err != nil {
@@ -74,4 +74,12 @@ func validateExecSchema(t *testing.T, event *sprobe.Event) bool {
 	}
 
 	return true
+}
+
+func validateExecSchema(t *testing.T, event *sprobe.Event) bool {
+	return validateSchema(t, event, "file:///exec.schema.json")
+}
+
+func validateOpenSchema(t *testing.T, event *sprobe.Event) bool {
+	return validateSchema(t, event, "file:///open.schema.json")
 }
