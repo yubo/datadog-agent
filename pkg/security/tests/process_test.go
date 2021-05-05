@@ -115,13 +115,6 @@ func TestProcessContext(t *testing.T) {
 		},
 	}
 
-	var rhel7 bool
-
-	kv, err := probe.NewKernelVersion()
-	if err == nil {
-		rhel7 = kv.IsRH7Kernel()
-	}
-
 	test, err := newTestModule(nil, ruleDefs, testOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -173,7 +166,7 @@ func TestProcessContext(t *testing.T) {
 		} else {
 			assertTriggeredRule(t, rule, "test_exec_time")
 
-			if !rhel7 && !validateExecSchema(t, event) {
+			if !validateExecSchema(t, event) {
 				t.Fatal(event.String())
 			}
 
@@ -276,7 +269,7 @@ func TestProcessContext(t *testing.T) {
 				t.Error("secret or env values exposed")
 			}
 
-			if !rhel7 && !validateExecSchema(t, event) {
+			if !validateExecSchema(t, event) {
 				t.Fatal(event.String())
 			}
 
@@ -381,7 +374,7 @@ func TestProcessContext(t *testing.T) {
 				t.Errorf("arg not truncated: %s", args.(string))
 			}
 
-			if !rhel7 && !validateExecSchema(t, event) {
+			if !validateExecSchema(t, event) {
 				t.Fatal(event.String())
 			}
 
@@ -485,7 +478,7 @@ func TestProcessContext(t *testing.T) {
 			assertTriggeredRule(t, rule, "test_rule_ancestors")
 			assert.Equal(t, event.ProcessContext.Ancestor.Comm, "sh")
 
-			if !rhel7 && !validateExecSchema(t, event) {
+			if !validateExecSchema(t, event) {
 				t.Fatal(event.String())
 			}
 
