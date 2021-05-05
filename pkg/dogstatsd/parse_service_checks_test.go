@@ -8,7 +8,7 @@ import (
 )
 
 func parseServiceCheck(rawServiceCheck []byte) (dogstatsdServiceCheck, error) {
-	parser := newParser(newFloat64ListPool())
+	parser := newParser()
 	return parser.parseServiceCheck(rawServiceCheck)
 }
 
