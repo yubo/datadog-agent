@@ -4,7 +4,9 @@ package checks
 
 import (
 	"bytes"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -30,6 +32,9 @@ var (
 	cachedProcesses  = map[uint32]cachedProcess{}
 	checkCount       = 0
 	haveWarnedNoArgs = false
+
+	// brute force mutex for getAllProcesses
+	allProcessesMutex sync.Mutex
 )
 
 type SystemProcessInformation struct {
@@ -93,6 +98,13 @@ func getAllProcStats(probe *procutil.Probe, pids []int32) (map[int32]*procutil.S
 }
 
 func getAllProcesses(probe *procutil.Probe) (map[int32]*procutil.Process, error) {
+	// brute force mutex for getAllProcesses
+	allProcessesMutex.Lock()
+	defer allProcessesMutex.Unlock()
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	allProcsSnap := w32.CreateToolhelp32Snapshot(w32.TH32CS_SNAPPROCESS, 0)
 	if allProcsSnap == 0 {
 		return nil, windows.GetLastError()
