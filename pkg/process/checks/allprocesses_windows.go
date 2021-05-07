@@ -211,7 +211,6 @@ func getAllProcesses(probe *procutil.Probe) (map[int32]*procutil.Process, error)
 	for pid := range knownPids {
 		cp := cachedProcesses[pid]
 		log.Debugf("removing process %v %v", pid, cp.executablePath)
-		cp.close()
 		delete(cachedProcesses, pid)
 	}
 
