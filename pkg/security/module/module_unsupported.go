@@ -4,6 +4,7 @@
 // Copyright 2016-present Datadog, Inc.
 
 // +build !linux
+// +build !windows
 
 package module
 
