@@ -13,7 +13,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"github.com/DataDog/datadog-agent/pkg/util/winutil"
 	process "github.com/DataDog/gopsutil/process"
 
 	"github.com/shirou/w32"
@@ -289,6 +288,7 @@ func parseCmdLineArgs(cmdline string) (res []string) {
 			donestring = false
 		}
 	}
+
 	return res
 }
 
@@ -318,15 +318,15 @@ func (cp *cachedProcess) fillFromProcEntry(pe32 *w32.PROCESSENTRY32) (err error)
 	if usererr != nil {
 		log.Debugf("Couldn't get process username %v %v", pe32.Th32ProcessID, err)
 	}
-	var cmderr error
+	//var cmderr error
 	cp.executablePath = convertWindowsString(pe32.SzExeFile[:])
-	cp.commandLine, cmderr = winutil.GetCommandLineForProcess(cp.procHandle)
-	if cmderr != nil {
-		log.Debugf("Error retrieving full command line %v", cmderr)
-		cp.commandLine = cp.executablePath
-	}
+	//cp.commandLine, cmderr = winutil.GetCommandLineForProcess(cp.procHandle)
+	//if cmderr != nil {
+	//	log.Debugf("Error retrieving full command line %v", cmderr)
+	cp.commandLine = cp.executablePath
+	//}
 
-	cp.parsedArgs = parseCmdLineArgs(cp.commandLine)
+	cp.parsedArgs = []string{} //parseCmdLineArgs(cp.commandLine)
 	return
 }
 
