@@ -13,136 +13,140 @@ type EventType uint64
 const (
 	// UnknownEventType unknow event
 	UnknownEventType EventType = iota
-	// FileOpenEventType File open event
-	FileOpenEventType
-	// FileMkdirEventType Folder creation event
-	FileMkdirEventType
-	// FileLinkEventType Hard link creation event
-	FileLinkEventType
-	// FileRenameEventType File or folder rename event
-	FileRenameEventType
-	// FileUnlinkEventType Unlink event
-	FileUnlinkEventType
-	// FileRmdirEventType Rmdir event
-	FileRmdirEventType
-	// FileChmodEventType Chmod event
-	FileChmodEventType
-	// FileChownEventType Chown event
-	FileChownEventType
-	// FileUtimeEventType Utime event
-	FileUtimeEventType
-	// FileSetXAttrEventType Setxattr event
-	FileSetXAttrEventType
-	// FileRemoveXAttrEventType Removexattr event
-	FileRemoveXAttrEventType
-	// FileMountEventType Mount event
-	FileMountEventType
-	// FileUmountEventType Umount event
-	FileUmountEventType
-	// ForkEventType Fork event
-	ForkEventType
-	// ExecEventType Exec event
-	ExecEventType
-	// ExitEventType Exit event
-	ExitEventType
-	// InvalidateDentryEventType Dentry invalidated event
-	InvalidateDentryEventType
-	// SetuidEventType setuid event
-	SetuidEventType
-	// SetgidEventType setgid event
-	SetgidEventType
-	// CapsetEventType capset event
-	CapsetEventType
-	// ArgsEnvsEventType args and envs event
-	ArgsEnvsEventType
-	// MountReleasedEventType sent when a mount point is released
-	MountReleasedEventType
+	//// FileOpenEventType File open event
+	//FileOpenEventType
+	//// FileMkdirEventType Folder creation event
+	//FileMkdirEventType
+	//// FileLinkEventType Hard link creation event
+	//FileLinkEventType
+	//// FileRenameEventType File or folder rename event
+	//FileRenameEventType
+	//// FileUnlinkEventType Unlink event
+	//FileUnlinkEventType
+	//// FileRmdirEventType Rmdir event
+	//FileRmdirEventType
+	//// FileChmodEventType Chmod event
+	//FileChmodEventType
+	//// FileChownEventType Chown event
+	//FileChownEventType
+	//// FileUtimeEventType Utime event
+	//FileUtimeEventType
+	//// FileSetXAttrEventType Setxattr event
+	//FileSetXAttrEventType
+	//// FileRemoveXAttrEventType Removexattr event
+	//FileRemoveXAttrEventType
+	//// FileMountEventType Mount event
+	//FileMountEventType
+	//// FileUmountEventType Umount event
+	//FileUmountEventType
+	//// ForkEventType Fork event
+	//ForkEventType
+	//// ExecEventType Exec event
+	//ExecEventType
+	//// ExitEventType Exit event
+	//ExitEventType
+	//// InvalidateDentryEventType Dentry invalidated event
+	//InvalidateDentryEventType
+	//// SetuidEventType setuid event
+	//SetuidEventType
+	//// SetgidEventType setgid event
+	//SetgidEventType
+	//// CapsetEventType capset event
+	//CapsetEventType
+	//// ArgsEnvsEventType args and envs event
+	//ArgsEnvsEventType
+	//// MountReleasedEventType sent when a mount point is released
+	//MountReleasedEventType
+	// WinIoEventType
+	WinIoEventType
 	// MaxEventType is used internally to get the maximum number of kernel events.
 	MaxEventType
 
-	// FirstDiscarderEventType first event that accepts discarders
-	FirstDiscarderEventType = FileOpenEventType
-
-	// LastDiscarderEventType last event that accepts discarders
-	LastDiscarderEventType = FileRemoveXAttrEventType
-
-	// CustomLostReadEventType is the custom event used to report lost events detected in user space
-	CustomLostReadEventType EventType = iota
-	// CustomLostWriteEventType is the custom event used to report lost events detected in kernel space
-	CustomLostWriteEventType
-	// CustomRulesetLoadedEventType is the custom event used to report that a new ruleset was loaded
-	CustomRulesetLoadedEventType
-	// CustomNoisyProcessEventType is the custom event used to report the detection of a noisy process
-	CustomNoisyProcessEventType
-	// CustomForkBombEventType is the custom event used to report the detection of a fork bomb
-	CustomForkBombEventType
-	// CustomTruncatedParentsEventType is the custom event used to report that the parents of a path were truncated
-	CustomTruncatedParentsEventType
-	// CustomTruncatedSegmentEventType is the custom event used to report that a segment of a path was truncated
-	CustomTruncatedSegmentEventType
+	//// FirstDiscarderEventType first event that accepts discarders
+	//FirstDiscarderEventType = FileOpenEventType
+	//
+	//// LastDiscarderEventType last event that accepts discarders
+	//LastDiscarderEventType = FileRemoveXAttrEventType
+	//
+	//// CustomLostReadEventType is the custom event used to report lost events detected in user space
+	//CustomLostReadEventType EventType = iota
+	//// CustomLostWriteEventType is the custom event used to report lost events detected in kernel space
+	//CustomLostWriteEventType
+	//// CustomRulesetLoadedEventType is the custom event used to report that a new ruleset was loaded
+	//CustomRulesetLoadedEventType
+	//// CustomNoisyProcessEventType is the custom event used to report the detection of a noisy process
+	//CustomNoisyProcessEventType
+	//// CustomForkBombEventType is the custom event used to report the detection of a fork bomb
+	//CustomForkBombEventType
+	//// CustomTruncatedParentsEventType is the custom event used to report that the parents of a path were truncated
+	//CustomTruncatedParentsEventType
+	//// CustomTruncatedSegmentEventType is the custom event used to report that a segment of a path was truncated
+	//CustomTruncatedSegmentEventType
 )
 
 func (t EventType) String() string {
 	switch t {
-	case FileOpenEventType:
-		return "open"
-	case FileMkdirEventType:
-		return "mkdir"
-	case FileLinkEventType:
-		return "link"
-	case FileRenameEventType:
-		return "rename"
-	case FileUnlinkEventType:
-		return "unlink"
-	case FileRmdirEventType:
-		return "rmdir"
-	case FileChmodEventType:
-		return "chmod"
-	case FileChownEventType:
-		return "chown"
-	case FileUtimeEventType:
-		return "utimes"
-	case FileMountEventType:
-		return "mount"
-	case FileUmountEventType:
-		return "umount"
-	case FileSetXAttrEventType:
-		return "setxattr"
-	case FileRemoveXAttrEventType:
-		return "removexattr"
-	case ForkEventType:
-		return "fork"
-	case ExecEventType:
-		return "exec"
-	case ExitEventType:
-		return "exit"
-	case InvalidateDentryEventType:
-		return "invalidate_dentry"
-	case SetuidEventType:
-		return "setuid"
-	case SetgidEventType:
-		return "setgid"
-	case CapsetEventType:
-		return "capset"
-	case ArgsEnvsEventType:
-		return "args_envs"
-	case MountReleasedEventType:
-		return "mount_released"
+	//case FileOpenEventType:
+	//	return "open"
+	//case FileMkdirEventType:
+	//	return "mkdir"
+	//case FileLinkEventType:
+	//	return "link"
+	//case FileRenameEventType:
+	//	return "rename"
+	//case FileUnlinkEventType:
+	//	return "unlink"
+	//case FileRmdirEventType:
+	//	return "rmdir"
+	//case FileChmodEventType:
+	//	return "chmod"
+	//case FileChownEventType:
+	//	return "chown"
+	//case FileUtimeEventType:
+	//	return "utimes"
+	//case FileMountEventType:
+	//	return "mount"
+	//case FileUmountEventType:
+	//	return "umount"
+	//case FileSetXAttrEventType:
+	//	return "setxattr"
+	//case FileRemoveXAttrEventType:
+	//	return "removexattr"
+	//case ForkEventType:
+	//	return "fork"
+	//case ExecEventType:
+	//	return "exec"
+	//case ExitEventType:
+	//	return "exit"
+	//case InvalidateDentryEventType:
+	//	return "invalidate_dentry"
+	//case SetuidEventType:
+	//	return "setuid"
+	//case SetgidEventType:
+	//	return "setgid"
+	//case CapsetEventType:
+	//	return "capset"
+	//case ArgsEnvsEventType:
+	//	return "args_envs"
+	//case MountReleasedEventType:
+	//	return "mount_released"
+	case WinIoEventType:
+		return "win_io"
 
-	case CustomLostReadEventType:
-		return "lost_events_read"
-	case CustomLostWriteEventType:
-		return "lost_events_write"
-	case CustomRulesetLoadedEventType:
-		return "ruleset_loaded"
-	case CustomNoisyProcessEventType:
-		return "noisy_process"
-	case CustomForkBombEventType:
-		return "fork_bomb"
-	case CustomTruncatedParentsEventType:
-		return "truncated_parents"
-	case CustomTruncatedSegmentEventType:
-		return "truncated_segment"
+	//case CustomLostReadEventType:
+	//	return "lost_events_read"
+	//case CustomLostWriteEventType:
+	//	return "lost_events_write"
+	//case CustomRulesetLoadedEventType:
+	//	return "ruleset_loaded"
+	//case CustomNoisyProcessEventType:
+	//	return "noisy_process"
+	//case CustomForkBombEventType:
+	//	return "fork_bomb"
+	//case CustomTruncatedParentsEventType:
+	//	return "truncated_parents"
+	//case CustomTruncatedSegmentEventType:
+	//	return "truncated_segment"
 	default:
 		return "unknown"
 	}
