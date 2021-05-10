@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: dd-agent-install
-# Recipe:: _repair_windows_install
+# Recipe:: _repair_windows_install_rollback
 #
 # Copyright (C) 2021-present Datadog
 
@@ -14,6 +14,6 @@
 powershell_script "repair-agent" do
   code <<-EOF
   $product_code = (Get-WmiObject Win32_Product | Where-Object -Property Name -eq 'Datadog Agent').IdentifyingNumber
-  Start-Process msiexec.exe -Wait -ArgumentList '/q','/log','repair.log','/fecmus',$product_code
+  Start-Process msiexec.exe -Wait -ArgumentList '/q','/log','repair.log','/fecmus',$product_code,'WIXFAILWHENDEFERRED=1'
   EOF
 end
