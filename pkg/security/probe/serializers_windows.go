@@ -16,143 +16,143 @@ import (
 // Event categories for JSON serialization
 const (
 	FIMCategory     = "File Activity"
-	ProcessActivity = "Process Activity"
+//	ProcessActivity = "Process Activity"
 )
 
-// FileSerializer serializes a file to JSON
-// easyjson:json
-type FileSerializer struct {
-	Path                string     `json:"path,omitempty"`
-	Name                string     `json:"name,omitempty"`
-	ContainerPath       string     `json:"container_path,omitempty"`
-	PathResolutionError string     `json:"path_resolution_error,omitempty"`
-	Inode               *uint64    `json:"inode,omitempty"`
-	Mode                *uint32    `json:"mode,omitempty"`
-	InUpperLayer        *bool      `json:"in_upper_layer,omitempty"`
-	MountID             *uint32    `json:"mount_id,omitempty"`
-	Filesystem          string     `json:"filesystem,omitempty"`
-	UID                 uint32     `json:"uid,omitempty"`
-	GID                 uint32     `json:"gid,omitempty"`
-	User                string     `json:"user,omitempty"`
-	Group               string     `json:"group,omitempty"`
-	XAttrName           string     `json:"attribute_name,omitempty"`
-	XAttrNamespace      string     `json:"attribute_namespace,omitempty"`
-	Flags               []string   `json:"flags,omitempty"`
-	Atime               *time.Time `json:"access_time,omitempty"`
-	Mtime               *time.Time `json:"modification_time,omitempty"`
-	Ctime               *time.Time `json:"change_time,omitempty"`
-}
-
-// UserContextSerializer serializes a user context to JSON
-// easyjson:json
-type UserContextSerializer struct {
-	User  string `json:"id,omitempty"`
-	Group string `json:"group,omitempty"`
-}
-
-// CredentialsSerializer serializes a set credentials to JSON
-// easyjson:json
-type CredentialsSerializer struct {
-	UID          int      `json:"uid"`
-	User         string   `json:"user,omitempty"`
-	GID          int      `json:"gid"`
-	Group        string   `json:"group,omitempty"`
-	EUID         int      `json:"euid"`
-	EUser        string   `json:"euser,omitempty"`
-	EGID         int      `json:"egid"`
-	EGroup       string   `json:"egroup,omitempty"`
-	FSUID        int      `json:"fsuid"`
-	FSUser       string   `json:"fsuser,omitempty"`
-	FSGID        int      `json:"fsgid"`
-	FSGroup      string   `json:"fsgroup,omitempty"`
-	CapEffective []string `json:"cap_effective,omitempty"`
-	CapPermitted []string `json:"cap_permitted,omitempty"`
-}
-
-// SetuidSerializer serializes a setuid event
-// easyjson:json
-type SetuidSerializer struct {
-	UID    int    `json:"uid"`
-	User   string `json:"user,omitempty"`
-	EUID   int    `json:"euid"`
-	EUser  string `json:"euser,omitempty"`
-	FSUID  int    `json:"fsuid"`
-	FSUser string `json:"fsuser,omitempty"`
-}
-
-// SetgidSerializer serializes a setgid event
-// easyjson:json
-type SetgidSerializer struct {
-	GID     int    `json:"gid"`
-	Group   string `json:"group,omitempty"`
-	EGID    int    `json:"egid"`
-	EGroup  string `json:"egroup,omitempty"`
-	FSGID   int    `json:"fsgid"`
-	FSGroup string `json:"fsgroup,omitempty"`
-}
-
-// CapsetSerializer serializes a capset event
-// easyjson:json
-type CapsetSerializer struct {
-	CapEffective []string `json:"cap_effective,omitempty"`
-	CapPermitted []string `json:"cap_permitted,omitempty"`
-}
-
-// ProcessCredentialsSerializer serializes the process credentials to JSON
-// easyjson:json
-type ProcessCredentialsSerializer struct {
-	*CredentialsSerializer `json:",omitempty"`
-	Destination            interface{} `json:"destination,omitempty"`
-}
-
-// ProcessCacheEntrySerializer serializes a process cache entry to JSON
-// easyjson:json
-type ProcessCacheEntrySerializer struct {
-	Pid                 uint32                        `json:"pid,omitempty"`
-	PPid                uint32                        `json:"ppid,omitempty"`
-	Tid                 uint32                        `json:"tid,omitempty"`
-	UID                 int                           `json:"uid"`
-	GID                 int                           `json:"gid"`
-	User                string                        `json:"user,omitempty"`
-	Group               string                        `json:"group,omitempty"`
-	ContainerPath       string                        `json:"executable_container_path,omitempty"`
-	Path                string                        `json:"executable_path,omitempty"`
-	PathResolutionError string                        `json:"path_resolution_error,omitempty"`
-	Comm                string                        `json:"comm,omitempty"`
-	Inode               uint64                        `json:"executable_inode,omitempty"`
-	MountID             uint32                        `json:"executable_mount_id,omitempty"`
-	Filesystem          string                        `json:"executable_filesystem,omitempty"`
-	TTY                 string                        `json:"tty,omitempty"`
-	ForkTime            *time.Time                    `json:"fork_time,omitempty"`
-	ExecTime            *time.Time                    `json:"exec_time,omitempty"`
-	ExitTime            *time.Time                    `json:"exit_time,omitempty"`
-	Credentials         *ProcessCredentialsSerializer `json:"credentials,omitempty"`
-	Executable          *FileSerializer               `json:"executable,omitempty"`
-	Container           *ContainerContextSerializer   `json:"container,omitempty"`
-	Args                []string                      `json:"args,omitempty"`
-	ArgsTruncated       bool                          `json:"args_truncated,omitempty"`
-	Envs                []string                      `json:"envs,omitempty"`
-	EnvsTruncated       bool                          `json:"envs_truncated,omitempty"`
-}
-
-// ContainerContextSerializer serializes a container context to JSON
-// easyjson:json
-type ContainerContextSerializer struct {
-	ID string `json:"id,omitempty"`
-}
-
-// FileEventSerializer serializes a file event to JSON
-// easyjson:json
-type FileEventSerializer struct {
-	FileSerializer `json:",omitempty"`
-	Destination    *FileSerializer `json:"destination,omitempty"`
-
-	// Specific to mount events
-	NewMountID uint32 `json:"new_mount_id,omitempty"`
-	GroupID    uint32 `json:"group_id,omitempty"`
-	Device     uint32 `json:"device,omitempty"`
-	FSType     string `json:"fstype,omitempty"`
-}
+//// FileSerializer serializes a file to JSON
+//// easyjson:json
+//type FileSerializer struct {
+//	Path                string     `json:"path,omitempty"`
+//	Name                string     `json:"name,omitempty"`
+//	ContainerPath       string     `json:"container_path,omitempty"`
+//	PathResolutionError string     `json:"path_resolution_error,omitempty"`
+//	Inode               *uint64    `json:"inode,omitempty"`
+//	Mode                *uint32    `json:"mode,omitempty"`
+//	InUpperLayer        *bool      `json:"in_upper_layer,omitempty"`
+//	MountID             *uint32    `json:"mount_id,omitempty"`
+//	Filesystem          string     `json:"filesystem,omitempty"`
+//	UID                 uint32     `json:"uid,omitempty"`
+//	GID                 uint32     `json:"gid,omitempty"`
+//	User                string     `json:"user,omitempty"`
+//	Group               string     `json:"group,omitempty"`
+//	XAttrName           string     `json:"attribute_name,omitempty"`
+//	XAttrNamespace      string     `json:"attribute_namespace,omitempty"`
+//	Flags               []string   `json:"flags,omitempty"`
+//	Atime               *time.Time `json:"access_time,omitempty"`
+//	Mtime               *time.Time `json:"modification_time,omitempty"`
+//	Ctime               *time.Time `json:"change_time,omitempty"`
+//}
+//
+//// UserContextSerializer serializes a user context to JSON
+//// easyjson:json
+//type UserContextSerializer struct {
+//	User  string `json:"id,omitempty"`
+//	Group string `json:"group,omitempty"`
+//}
+//
+//// CredentialsSerializer serializes a set credentials to JSON
+//// easyjson:json
+//type CredentialsSerializer struct {
+//	UID          int      `json:"uid"`
+//	User         string   `json:"user,omitempty"`
+//	GID          int      `json:"gid"`
+//	Group        string   `json:"group,omitempty"`
+//	EUID         int      `json:"euid"`
+//	EUser        string   `json:"euser,omitempty"`
+//	EGID         int      `json:"egid"`
+//	EGroup       string   `json:"egroup,omitempty"`
+//	FSUID        int      `json:"fsuid"`
+//	FSUser       string   `json:"fsuser,omitempty"`
+//	FSGID        int      `json:"fsgid"`
+//	FSGroup      string   `json:"fsgroup,omitempty"`
+//	CapEffective []string `json:"cap_effective,omitempty"`
+//	CapPermitted []string `json:"cap_permitted,omitempty"`
+//}
+//
+//// SetuidSerializer serializes a setuid event
+//// easyjson:json
+//type SetuidSerializer struct {
+//	UID    int    `json:"uid"`
+//	User   string `json:"user,omitempty"`
+//	EUID   int    `json:"euid"`
+//	EUser  string `json:"euser,omitempty"`
+//	FSUID  int    `json:"fsuid"`
+//	FSUser string `json:"fsuser,omitempty"`
+//}
+//
+//// SetgidSerializer serializes a setgid event
+//// easyjson:json
+//type SetgidSerializer struct {
+//	GID     int    `json:"gid"`
+//	Group   string `json:"group,omitempty"`
+//	EGID    int    `json:"egid"`
+//	EGroup  string `json:"egroup,omitempty"`
+//	FSGID   int    `json:"fsgid"`
+//	FSGroup string `json:"fsgroup,omitempty"`
+//}
+//
+//// CapsetSerializer serializes a capset event
+//// easyjson:json
+//type CapsetSerializer struct {
+//	CapEffective []string `json:"cap_effective,omitempty"`
+//	CapPermitted []string `json:"cap_permitted,omitempty"`
+//}
+//
+//// ProcessCredentialsSerializer serializes the process credentials to JSON
+//// easyjson:json
+//type ProcessCredentialsSerializer struct {
+//	*CredentialsSerializer `json:",omitempty"`
+//	Destination            interface{} `json:"destination,omitempty"`
+//}
+//
+//// ProcessCacheEntrySerializer serializes a process cache entry to JSON
+//// easyjson:json
+//type ProcessCacheEntrySerializer struct {
+//	Pid                 uint32                        `json:"pid,omitempty"`
+//	PPid                uint32                        `json:"ppid,omitempty"`
+//	Tid                 uint32                        `json:"tid,omitempty"`
+//	UID                 int                           `json:"uid"`
+//	GID                 int                           `json:"gid"`
+//	User                string                        `json:"user,omitempty"`
+//	Group               string                        `json:"group,omitempty"`
+//	ContainerPath       string                        `json:"executable_container_path,omitempty"`
+//	Path                string                        `json:"executable_path,omitempty"`
+//	PathResolutionError string                        `json:"path_resolution_error,omitempty"`
+//	Comm                string                        `json:"comm,omitempty"`
+//	Inode               uint64                        `json:"executable_inode,omitempty"`
+//	MountID             uint32                        `json:"executable_mount_id,omitempty"`
+//	Filesystem          string                        `json:"executable_filesystem,omitempty"`
+//	TTY                 string                        `json:"tty,omitempty"`
+//	ForkTime            *time.Time                    `json:"fork_time,omitempty"`
+//	ExecTime            *time.Time                    `json:"exec_time,omitempty"`
+//	ExitTime            *time.Time                    `json:"exit_time,omitempty"`
+//	Credentials         *ProcessCredentialsSerializer `json:"credentials,omitempty"`
+//	Executable          *FileSerializer               `json:"executable,omitempty"`
+//	Container           *ContainerContextSerializer   `json:"container,omitempty"`
+//	Args                []string                      `json:"args,omitempty"`
+//	ArgsTruncated       bool                          `json:"args_truncated,omitempty"`
+//	Envs                []string                      `json:"envs,omitempty"`
+//	EnvsTruncated       bool                          `json:"envs_truncated,omitempty"`
+//}
+//
+//// ContainerContextSerializer serializes a container context to JSON
+//// easyjson:json
+//type ContainerContextSerializer struct {
+//	ID string `json:"id,omitempty"`
+//}
+//
+//// FileEventSerializer serializes a file event to JSON
+//// easyjson:json
+//type FileEventSerializer struct {
+//	FileSerializer `json:",omitempty"`
+//	Destination    *FileSerializer `json:"destination,omitempty"`
+//
+//	// Specific to mount events
+//	NewMountID uint32 `json:"new_mount_id,omitempty"`
+//	GroupID    uint32 `json:"group_id,omitempty"`
+//	Device     uint32 `json:"device,omitempty"`
+//	FSType     string `json:"fstype,omitempty"`
+//}
 
 // EventContextSerializer serializes an event context to JSON
 // easyjson:json
@@ -162,22 +162,23 @@ type EventContextSerializer struct {
 	Outcome  string `json:"outcome,omitempty"`
 }
 
-// ProcessContextSerializer serializes a process context to JSON
-// easyjson:json
-type ProcessContextSerializer struct {
-	*ProcessCacheEntrySerializer
-	Parent    *ProcessCacheEntrySerializer   `json:"parent,omitempty"`
-	Ancestors []*ProcessCacheEntrySerializer `json:"ancestors,omitempty"`
-}
+//// ProcessContextSerializer serializes a process context to JSON
+//// easyjson:json
+//type ProcessContextSerializer struct {
+//	*ProcessCacheEntrySerializer
+//	Parent    *ProcessCacheEntrySerializer   `json:"parent,omitempty"`
+//	Ancestors []*ProcessCacheEntrySerializer `json:"ancestors,omitempty"`
+//}
 
 // EventSerializer serializes an event to JSON
 // easyjson:json
 type EventSerializer struct {
 	*EventContextSerializer    `json:"evt,omitempty"`
-	*FileEventSerializer       `json:"file,omitempty"`
-	UserContextSerializer      UserContextSerializer       `json:"usr,omitempty"`
-	ProcessContextSerializer   *ProcessContextSerializer   `json:"process,omitempty"`
-	ContainerContextSerializer *ContainerContextSerializer `json:"container,omitempty"`
+	//*FileEventSerializer       `json:"file,omitempty"`
+	//UserContextSerializer      UserContextSerializer       `json:"usr,omitempty"`
+	//ProcessContextSerializer   *ProcessContextSerializer   `json:"process,omitempty"`
+	//ContainerContextSerializer *ContainerContextSerializer `json:"container,omitempty"`
+	winIo *model.WinIoEvent
 	Date                       time.Time                   `json:"date,omitempty"`
 }
 
@@ -490,8 +491,8 @@ func newEventSerializer(event *Event) *EventSerializer {
 	//	s.ContainerContextSerializer = newContainerContextSerializer(&event.ContainerContext, event)
 	//}
 
-	s.UserContextSerializer.User = s.ProcessContextSerializer.User
-	s.UserContextSerializer.Group = s.ProcessContextSerializer.Group
+	//s.UserContextSerializer.User = s.ProcessContextSerializer.User
+	//s.UserContextSerializer.Group = s.ProcessContextSerializer.Group
 
 	switch model.EventType(event.Type) {
 	//case model.FileChmodEventType:
@@ -649,9 +650,7 @@ func newEventSerializer(event *Event) *EventSerializer {
 	//	s.EventContextSerializer.Outcome = serializeSyscallRetval(0)
 	//	s.Category = ProcessActivity
 	case model.WinIoEventType:
-		s.WinIoEventSerializer = &FileEventSerializer{
-			FileSerializer: *newProcessFileSerializer(&event.processCacheEntry.Process, event),
-		}
+		s.winIo = &event.WinIo
 		//s.EventContextSerializer.Outcome = serializeSyscallRetval(0)
 		//s.Category = ProcessActivity
 	}

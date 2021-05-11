@@ -498,6 +498,7 @@ func (ev *Event) MarshalJSON() ([]byte, error) {
 }
 
 // ExtractEventInfo extracts cpu and timestamp from the raw data event
+// NB: mikezhu bloody hell
 func ExtractEventInfo(data []byte) (uint64, uint64, error) {
 	if len(data) < 16 {
 		return 0, 0, model.ErrNotEnoughData
