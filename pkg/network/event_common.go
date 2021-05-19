@@ -105,6 +105,7 @@ type ConnectionsTelemetry struct {
 type RuntimeCompilationTelemetry struct {
 	RuntimeCompilationEnabled  bool
 	RuntimeCompilationResult   int32
+	KernelHeaderFetchResult    int32
 	RuntimeCompilationDuration int64
 }
 
