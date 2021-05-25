@@ -18,6 +18,7 @@ ADD https://github.com/just-containers/s6-overlay/releases/download/${S6_VERSION
 RUN date
 RUN apt update \
  && apt install --no-install-recommends -y gpg gpg-agent curl ca-certificates \
+ && date \
  && curl https://keybase.io/justcontainers/key.asc | gpg --import \
  && gpg --verify /tmp/s6.tgz.sig /output/s6.tgz
 
