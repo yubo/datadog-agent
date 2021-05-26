@@ -139,6 +139,7 @@ type Server struct {
 
 	// ServerlessMode is set to true if we're running in a serverless environment.
 	ServerlessMode     bool
+	MetricCount        *int32
 	UdsListenerRunning bool
 }
 
@@ -379,7 +380,6 @@ func (s *Server) handleMessages() {
 	if workersCount < 2 {
 		workersCount = 2
 	}
-
 	for i := 0; i < workersCount; i++ {
 		worker := newWorker(s)
 		go worker.run()
@@ -548,6 +548,7 @@ func (s *Server) errLog(format string, params ...interface{}) {
 }
 
 func (s *Server) parseMetricMessage(metricSamples []metrics.MetricSample, parser *parser, message []byte, origin string) ([]metrics.MetricSample, error) {
+	log.Infof("[metrics received] %s", string(message))
 	sample, err := parser.parseMetricSample(message)
 	if err != nil {
 		dogstatsdMetricParseErrors.Add(1)
@@ -562,7 +563,7 @@ func (s *Server) parseMetricMessage(metricSamples []metrics.MetricSample, parser
 			sample.tags = append(sample.tags, mapResult.Tags...)
 		}
 	}
-	metricSamples = enrichMetricSample(metricSamples, sample, s.metricPrefix, s.metricPrefixBlacklist, s.defaultHostname, origin, s.entityIDPrecedenceEnabled, s.ServerlessMode)
+	metricSamples = enrichMetricSample(metricSamples, sample, s.metricPrefix, s.metricPrefixBlacklist, s.defaultHostname, origin, s.entityIDPrecedenceEnabled, s.ServerlessMode, s.MetricCount)
 
 	if len(sample.values) > 0 {
 		s.sharedFloat64List.put(sample.values)

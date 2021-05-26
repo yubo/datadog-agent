@@ -7,10 +7,12 @@ package serverless
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
@@ -70,11 +72,16 @@ type Daemon struct {
 	stopped bool
 	// Wait on this WaitGroup in controllers to be sure that the Daemon is ready.
 	// (i.e. that the DogStatsD server is properly instantiated)
-	ReadyWg *sync.WaitGroup
+	ReadyWg     *sync.WaitGroup
+	MetricCount *int32
 
 	// Wait on this WaitGroup to be sure that the daemon isn't doing any pending
 	// work before finishing an invocation
 	InvcWg *sync.WaitGroup
+}
+
+type FlushPayload struct {
+	MetricCount int32
 }
 
 // SetStatsdServer sets the DogStatsD server instance running when it is ready.
@@ -207,6 +214,7 @@ func StartDaemon(stopTraceAgent context.CancelFunc) *Daemon {
 		mux:              mux,
 		ReadyWg:          &sync.WaitGroup{},
 		InvcWg:           &sync.WaitGroup{},
+		MetricCount:      new(int32),
 		lastInvocations:  make([]time.Time, 0),
 		useAdaptiveFlush: true,
 		clientLibReady:   false,
@@ -245,6 +253,7 @@ func (d *Daemon) EnableLogsCollection() (string, chan *logConfig.ChannelMessage,
 // StartInvocation tells the daemon the invocation began
 func (d *Daemon) StartInvocation() {
 	d.InvcWg.Add(1)
+	atomic.StoreInt32(d.MetricCount, 0)
 }
 
 // FinishInvocation finishes the current invocation
@@ -367,6 +376,26 @@ type Flush struct {
 // ServeHTTP - see type Flush comment.
 func (f *Flush) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Hit on the serverless.Flush route.")
+
+	var payload FlushPayload
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&payload); err != nil {
+		log.Debug("Invalid request payload")
+	}
+	defer r.Body.Close()
+
+	if payload.MetricCount != 0 {
+		log.Debugf("Metric payload OK %d", payload.MetricCount)
+		log.Debugf("Metric current count %d", *f.daemon.MetricCount)
+		timeout := time.Now().Add(5 * time.Second)
+		for *f.daemon.MetricCount != payload.MetricCount {
+			if timeout.Before(time.Now()) {
+				log.Error("Not all metrics have been processed, they likely be available on the next invocation")
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
 
 	if !f.daemon.flushStrategy.ShouldFlush(flush.Stopping, time.Now()) {
 		log.Debug("The flush strategy", f.daemon.flushStrategy, " has decided to not flush in moment:", flush.Stopping)

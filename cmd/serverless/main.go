@@ -346,6 +346,7 @@ func runAgent(stopCh chan struct{}) (daemon *serverless.Daemon, err error) {
 		log.Errorf("Unable to start the DogStatsD server: %s", err)
 	}
 	statsdServer.ServerlessMode = true // we're running in a serverless environment (will removed host field from samples)
+	statsdServer.MetricCount = daemon.MetricCount
 
 	// initializes the trace agent
 	// --------------------------------

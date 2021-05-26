@@ -2,9 +2,12 @@ package dogstatsd
 
 import (
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/kubelet"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 var (
@@ -84,7 +87,8 @@ func isExcluded(metricName, namespace string, excludedNamespaces []string) bool 
 }
 
 func enrichMetricSample(metricSamples []metrics.MetricSample, ddSample dogstatsdMetricSample, namespace string, excludedNamespaces []string,
-	defaultHostname string, origin string, entityIDPrecedenceEnabled bool, serverlessMode bool) []metrics.MetricSample {
+	defaultHostname string, origin string, entityIDPrecedenceEnabled bool, serverlessMode bool, metricCount *int32) []metrics.MetricSample {
+
 	metricName := ddSample.name
 	tags, hostnameFromTags, originID, k8sOriginID, cardinality := extractTagsMetadata(ddSample.tags, defaultHostname, origin, entityIDPrecedenceEnabled)
 
@@ -121,7 +125,7 @@ func enrichMetricSample(metricSamples []metrics.MetricSample, ddSample dogstatsd
 	}
 
 	// only one value contained, simple append it
-	return append(metricSamples, metrics.MetricSample{
+	metricSample := metrics.MetricSample{
 		Host:        hostnameFromTags,
 		Name:        metricName,
 		Tags:        tags,
@@ -132,7 +136,15 @@ func enrichMetricSample(metricSamples []metrics.MetricSample, ddSample dogstatsd
 		OriginID:    originID,
 		K8sOriginID: k8sOriginID,
 		Cardinality: cardinality,
-	})
+	}
+	if serverlessMode {
+		t := time.Now()
+		timeStamp := float64(t.UnixNano())
+		log.Infof("Setting metric timestamp for %s to (%f) - %s", metricName, timeStamp, t.String())
+		metricSample.Timestamp = timeStamp
+		atomic.AddInt32(metricCount, 1)
+	}
+	return append(metricSamples, metricSample)
 }
 
 func enrichEventPriority(priority eventPriority) metrics.EventPriority {
