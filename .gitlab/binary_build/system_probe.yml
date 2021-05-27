@@ -20,10 +20,10 @@
     - mkdir -p $DATADOG_AGENT_EMBEDDED_PATH
     - tar -xvf /tmp/libbcc.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
     - tar -xvf /tmp/clang.tar.xz -C $DATADOG_AGENT_EMBEDDED_PATH
-    # Retrieve nikos-libs from S3
-    - $S3_CP_CMD $S3_ARTIFACTS_URI/nikos-libs-$ARCH.tar.gz /tmp/nikos-libs.tar.gz
+    # Retrieve nikos from S3
+    - $S3_CP_CMD $S3_ARTIFACTS_URI/nikos-$ARCH.tar.gz /tmp/nikos.tar.gz
     - mkdir -p $NIKOS_EMBEDDED_PATH
-    - tar -xvf /tmp/nikos-libs.tar.gz -C $NIKOS_EMBEDDED_PATH
+    - tar -xvf /tmp/nikos.tar.gz -C $NIKOS_EMBEDDED_PATH
   script:
     - inv -e system-probe.build --embedded-path=$DATADOG_AGENT_EMBEDDED_PATH --nikos-embedded-path=$NIKOS_EMBEDDED_PATH
     # fail if references to glibc >= 2.18
