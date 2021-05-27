@@ -9,6 +9,8 @@ package_name 'datadog-agent'
 
 homepage 'http://www.datadoghq.com'
 
+third_party_licenses "../LICENSE-3rdparty.csv"
+
 if ohai['platform'] == "windows"
   # Note: this is the path used by Omnibus to build the agent, the final install
   # dir will be determined by the Windows installer. This path must not contain
