@@ -139,6 +139,12 @@ def build_dev_image(ctx, image=None, push=False, base_image="datadog/agent:lates
             ctx.run("touch {tmp_dir}/agent".format(tmp_dir=docker_context))
             core_agent_dest = "/dev/null"
 
+        if os.path.isdir("/opt/nikos/embedded"):
+            ctx.run("cp -R /opt/nikos/embedded {to}".format(to=docker_context + "/nikos"))
+        else:
+            # this is necessary so that the docker build doesn't fail while attempting to copy this folder
+            ctx.run("mkdir {tmp_dir}/nikos".format(tmp_dir=docker_context))
+
         ctx.run("cp pkg/ebpf/bytecode/build/*.o {to}".format(to=docker_context))
         ctx.run("cp pkg/ebpf/bytecode/build/runtime/*.c {to}".format(to=docker_context))
 
