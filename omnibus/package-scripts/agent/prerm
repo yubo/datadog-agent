@@ -1,5 +1,5 @@
 #!/bin/sh
-#
+# test
 # Perform necessary datadog-agent setup steps prior to remove the old package.
 #
 # .deb: STEP 1 of 5
