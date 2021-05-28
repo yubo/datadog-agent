@@ -58,12 +58,13 @@ kitchen_ubuntu_install_script_agent-a6:
 kitchen_ubuntu_install_script_agent-a7:
   # Run install script test on branches, on a reduced number of platforms
   rules:
-    - <<: *if_not_version_7
-      when: never
-    - <<: *if_kitchen
-    - <<: *if_default_kitchen
-      variables:
-        KITCHEN_OSVERS: "ubuntu-20-04"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH
+      changes:
+        - omnibus/package-scripts/agent/*
+      when: manual
+      allow_failure: true
+  variables:
+    KITCHEN_OSVERS: "ubuntu-20-04"
   extends:
     - .kitchen_scenario_ubuntu_a7
     - .kitchen_test_install_script_agent
