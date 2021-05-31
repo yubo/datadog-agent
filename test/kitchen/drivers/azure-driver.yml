@@ -23,6 +23,10 @@ provisioner:
   install_strategy: always
   # the following settings make it possible to do a reboot during setup
   # (necessary for FIPS tests which reboot to enable FIPS mode)
+  retry_on_exit_code:
+    - 35 # reboot
+    - 1
+    - 213
   max_retries: 3
   wait_for_retry: 90
   client_rb:
