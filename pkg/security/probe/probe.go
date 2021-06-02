@@ -442,6 +442,10 @@ func (p *Probe) handleEvent(CPU uint64, data []byte) {
 			return
 		}
 
+		if event.processCacheEntry.Process.Pid != 1 && event.processCacheEntry.Process.PPid == 0 {
+			return
+		}
+
 		p.resolvers.ProcessResolver.ApplyBootTime(event.processCacheEntry)
 
 		p.resolvers.ProcessResolver.AddForkEntry(event.ProcessContext.Pid, event.processCacheEntry)
@@ -508,6 +512,10 @@ func (p *Probe) handleEvent(CPU uint64, data []byte) {
 			}
 		} else {
 			event.ProcessContext = event.processCacheEntry.ProcessContext
+		}
+
+		if event.ProcessContext.IsKThread() {
+			return
 		}
 	}
 

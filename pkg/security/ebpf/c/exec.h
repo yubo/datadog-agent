@@ -312,6 +312,10 @@ int kprobe__do_fork(struct pt_regs *ctx) {
     return handle_do_fork(ctx);
 }
 
+int __attribute__((always_inline)) is_kthread(int pid, int ppid) {
+    return (pid == 2 && ppid == 0) || ppid == 2;
+}
+
 SEC("tracepoint/sched/sched_process_fork")
 int sched_process_fork(struct _tracepoint_sched_process_fork *args) {
     // check if this is a thread first
@@ -338,6 +342,9 @@ int sched_process_fork(struct _tracepoint_sched_process_fork *args) {
     // sched::sched_process_fork is triggered from the parent process, update the pid / tid to the child value
     event.process.pid = pid;
     event.process.tid = pid;
+
+    if (is_kthread(pid, ppid))
+        return 0;
 
     struct pid_cache_t *parent_pid_entry = (struct pid_cache_t *) bpf_map_lookup_elem(&pid_cache, &ppid);
     if (parent_pid_entry) {
@@ -454,6 +461,9 @@ int kprobe_security_bprm_committed_creds(struct pt_regs *ctx) {
 
     struct pid_cache_t *pid_entry = (struct pid_cache_t *) bpf_map_lookup_elem(&pid_cache, &tgid);
     if (pid_entry) {
+        if (is_kthread(tgid, pid_entry->ppid))
+            return 0;
+
         u32 cookie = pid_entry->cookie;
         struct proc_cache_t *proc_entry = bpf_map_lookup_elem(&proc_cache, &cookie);
         if (proc_entry) {

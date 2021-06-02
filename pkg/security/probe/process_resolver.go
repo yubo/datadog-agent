@@ -46,6 +46,8 @@ const (
 
 const procResolveMaxDepth = 16
 
+var errIsKWorker = errors.New("process is a kernel thread")
+
 func getAttr2(probe *Probe) uint64 {
 	if probe.kernelVersion.IsRH7Kernel() {
 		return 1
@@ -223,6 +225,9 @@ func (p *ProcessResolver) enrichEventFromProc(entry *model.ProcessCacheEntry, pr
 	pid := uint32(proc.Pid)
 	// the provided process is a kernel process if its virtual memory size is null
 	isKernelProcess := filledProc.MemInfo.VMS == 0
+	if isKernelProcess {
+		return errIsKWorker
+	}
 
 	if !isKernelProcess {
 		// Get process filename and pre-fill the cache

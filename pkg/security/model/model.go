@@ -213,14 +213,6 @@ type Credentials struct {
 	CapPermitted uint64 `field:"cap_permitted"`
 }
 
-// GetPathResolutionError returns the path resolution error as a string if there is one
-func (e *Process) GetPathResolutionError() string {
-	if e.PathResolutionError != nil {
-		return e.PathResolutionError.Error()
-	}
-	return ""
-}
-
 // Process represents a process
 type Process struct {
 	// proc_cache_t
@@ -260,6 +252,19 @@ type Process struct {
 	ArgsTruncated bool       `field:"-"`
 	EnvsEntry     *EnvsEntry `field:"-"`
 	EnvsTruncated bool       `field:"-"`
+}
+
+// GetPathResolutionError returns the path resolution error as a string if there is one
+func (p *Process) GetPathResolutionError() string {
+	if p.PathResolutionError != nil {
+		return p.PathResolutionError.Error()
+	}
+	return ""
+}
+
+// IsKThread returns true if the process is a kernel thread
+func (p *Process) IsKThread() bool {
+	return (p.Pid == 2 && p.PPid == 0) || p.PPid == 2
 }
 
 // ExecEvent represents a exec event
