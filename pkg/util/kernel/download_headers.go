@@ -41,7 +41,7 @@ func downloadHeaders(headerDownloadDir string) ([]string, error) {
 	)
 
 	// Before downloading new kernel headers, we'll delete anything we previously downloaded (if it exists)
-	deleteDirContents(headerDownloadDir)
+	// deleteDirContents(headerDownloadDir)
 
 	if outputDir, err = createOutputDir(headerDownloadDir); err != nil {
 		return nil, fmt.Errorf("unable create output directory %s: %s", headerDownloadDir, err)

@@ -58,7 +58,8 @@ func GetKernelHeaders(headerDirs []string, headerDownloadDir string) ([]string, 
 	} else {
 		dirs = getDefaultHeaderDirs()
 		if err = validateHeaderDirs(hv, dirs); err == nil {
-			return dirs, nil, defaultHeadersFound
+			log.Debugf("Default kernel headers found: %s", dirs)
+			// return dirs, nil, defaultHeadersFound
 		}
 		log.Debugf("unable to find default kernel headers: %s", err)
 
@@ -66,14 +67,16 @@ func GetKernelHeaders(headerDirs []string, headerDownloadDir string) ([]string, 
 		// which is enabled via the `kheaders` kernel module and the `CONFIG_KHEADERS` kernel config option.
 		// The `kheaders` module will be automatically added and removed if present and needed.
 		if dirs, err = getSysfsHeaderDirs(hv); err == nil {
-			return dirs, nil, sysfsHeadersFound
+			log.Debugf("Sysfs kernel headers found: %s", dirs)
+			// return dirs, nil, sysfsHeadersFound
 		}
 		log.Debugf("unable to find system kernel headers: %s", err)
 	}
 
 	dirs = getDownloadedHeaderDirs(headerDownloadDir)
 	if err = validateHeaderDirs(hv, dirs); err == nil {
-		return dirs, nil, downloadedHeadersFound
+		log.Debugf("Downloaded kernel headers found: %s", dirs)
+		// return dirs, nil, downloadedHeadersFound
 	}
 	log.Debugf("unable to find downloaded kernel headers: %s", err)
 
