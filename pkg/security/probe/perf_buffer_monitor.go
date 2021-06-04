@@ -12,6 +12,8 @@ import (
 	"runtime"
 	"sync/atomic"
 
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+
 	"github.com/DataDog/datadog-go/statsd"
 	lib "github.com/DataDog/ebpf"
 	"github.com/DataDog/ebpf/manager"
@@ -127,6 +129,8 @@ func NewPerfBufferMonitor(p *Probe, client *statsd.Client) (*PerfBufferMonitor, 
 			es.perfBufferSize[m.Name] = float64(m.PerfRingBufferSize)
 		}
 	}
+
+	log.Debugf("monitoring perf ring buffer on %d CPU, %d events", es.cpuCount, model.MaxEventType)
 	return &es, nil
 }
 
@@ -399,6 +403,7 @@ func (pbm *PerfBufferMonitor) collectAndSendKernelStats(client *statsd.Client) e
 				//   - check if we collect some data on the provided perf map
 				//   - check if the computed event id is below the current max event id
 				if (pbm.stats[perfMapName] == nil) || (len(pbm.stats[perfMapName]) <= cpu) || (len(pbm.stats[perfMapName][cpu]) <= int(evtType)) {
+					log.Debugf("invalid combo: %s / %d / %s", perfMapName, cpu, evtType)
 					return nil
 				}
 
@@ -433,6 +438,7 @@ func (pbm *PerfBufferMonitor) collectAndSendKernelStats(client *statsd.Client) e
 				total += stats.Lost
 				perEvent[evtType.String()] += stats.Lost
 			}
+			log.Debugf("collected stats for event %s: %v", id, cpuStats)
 		}
 		if iterator.Err() != nil {
 			return errors.Wrapf(iterator.Err(), "failed to dump the statistics buffer of map %s", perfMapName)
