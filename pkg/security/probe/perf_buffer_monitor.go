@@ -9,10 +9,7 @@ package probe
 
 import (
 	"fmt"
-	"runtime"
 	"sync/atomic"
-
-	"github.com/DataDog/datadog-agent/pkg/util/log"
 
 	"github.com/DataDog/datadog-go/statsd"
 	lib "github.com/DataDog/ebpf"
@@ -22,6 +19,8 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/security/ebpf/probes"
 	"github.com/DataDog/datadog-agent/pkg/security/metrics"
 	"github.com/DataDog/datadog-agent/pkg/security/model"
+	"github.com/DataDog/datadog-agent/pkg/security/utils"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 // PerfMapStats contains the collected metrics for one event and one cpu in a perf buffer statistics map
@@ -49,8 +48,8 @@ type PerfBufferMonitor struct {
 	probe *Probe
 	// statsdClient is a pointer to the statsdClient used to report the metrics of the perf buffer monitor
 	statsdClient *statsd.Client
-	// cpuCount holds the current count of CPU
-	cpuCount int
+	// numCPU holds the current count of CPU
+	numCPU int
 	// perfBufferStatsMaps holds the pointers to the statistics kernel maps
 	perfBufferStatsMaps map[string]*lib.Map
 	// perfBufferSize holds the size of each perf buffer, indexed by the name of the perf buffer
@@ -77,7 +76,6 @@ func NewPerfBufferMonitor(p *Probe, client *statsd.Client) (*PerfBufferMonitor, 
 	es := PerfBufferMonitor{
 		probe:               p,
 		statsdClient:        client,
-		cpuCount:            runtime.NumCPU(),
 		perfBufferStatsMaps: make(map[string]*lib.Map),
 		perfBufferSize:      make(map[string]float64),
 
@@ -88,6 +86,12 @@ func NewPerfBufferMonitor(p *Probe, client *statsd.Client) (*PerfBufferMonitor, 
 		kernelStats:    make(map[string][][model.MaxEventType]PerfMapStats),
 		readLostEvents: make(map[string][]uint64),
 	}
+
+	numCPU, err := utils.NumCPU()
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't fetch the host CPU count")
+	}
+	es.numCPU = numCPU
 
 	// compute statsMapPerfMap
 	for perfMap, statsMap := range es.perfBufferMapNameToStatsMapsName {
@@ -114,7 +118,7 @@ func NewPerfBufferMonitor(p *Probe, client *statsd.Client) (*PerfBufferMonitor, 
 		var stats, kernelStats [][model.MaxEventType]PerfMapStats
 		var usrLostEvents []uint64
 
-		for i := 0; i < es.cpuCount; i++ {
+		for i := 0; i < es.numCPU; i++ {
 			stats = append(stats, [model.MaxEventType]PerfMapStats{})
 			kernelStats = append(kernelStats, [model.MaxEventType]PerfMapStats{})
 			usrLostEvents = append(usrLostEvents, 0)
@@ -130,7 +134,7 @@ func NewPerfBufferMonitor(p *Probe, client *statsd.Client) (*PerfBufferMonitor, 
 		}
 	}
 
-	log.Debugf("monitoring perf ring buffer on %d CPU, %d events", es.cpuCount, model.MaxEventType)
+	log.Debugf("monitoring perf ring buffer on %d CPU, %d events", es.numCPU, model.MaxEventType)
 	return &es, nil
 }
 
@@ -150,7 +154,7 @@ func (pbm *PerfBufferMonitor) GetLostCount(perfMap string, cpu int) uint64 {
 			total += pbm.getLostCount(perfMap, i)
 		}
 		break
-	case cpu >= 0 && pbm.cpuCount > cpu:
+	case cpu >= 0 && pbm.numCPU > cpu:
 		total += pbm.getLostCount(perfMap, cpu)
 	}
 
@@ -209,7 +213,7 @@ func (pbm *PerfBufferMonitor) GetAndResetLostCount(perfMap string, cpu int) uint
 			total += pbm.getAndResetReadLostCount(perfMap, i)
 		}
 		break
-	case cpu >= 0 && pbm.cpuCount > cpu:
+	case cpu >= 0 && pbm.numCPU > cpu:
 		total += pbm.getAndResetReadLostCount(perfMap, cpu)
 	}
 	return total
@@ -268,7 +272,7 @@ func (pbm *PerfBufferMonitor) GetEventStats(eventType model.EventType, perfMap s
 				stats.Bytes += pbm.getEventBytes(eventType, perfMap, i)
 			}
 			break
-		case cpu >= 0 && pbm.cpuCount > cpu:
+		case cpu >= 0 && pbm.numCPU > cpu:
 			stats.Count += pbm.getEventCount(eventType, perfMap, cpu)
 			stats.Bytes += pbm.getEventBytes(eventType, perfMap, cpu)
 		}
@@ -382,7 +386,7 @@ func (pbm *PerfBufferMonitor) collectAndSendKernelStats(client *statsd.Client) e
 		tags     []string
 		tmpCount uint64
 	)
-	cpuStats := make([]PerfMapStats, runtime.NumCPU())
+	cpuStats := make([]PerfMapStats, pbm.numCPU)
 
 	// loop through the statistics buffers of each perf map
 	for perfMapName, statsMap := range pbm.perfBufferStatsMaps {
