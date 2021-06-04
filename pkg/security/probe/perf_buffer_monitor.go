@@ -397,6 +397,10 @@ func (pbm *PerfBufferMonitor) collectAndSendKernelStats(client *statsd.Client) e
 		// loop through all the values of the active buffer
 		iterator = statsMap.Iterate()
 		for iterator.Next(&id, &cpuStats) {
+			if id == 0 {
+				continue
+			}
+
 			// retrieve event type from key
 			evtType := model.EventType(id % uint32(model.MaxEventType))
 
@@ -407,7 +411,7 @@ func (pbm *PerfBufferMonitor) collectAndSendKernelStats(client *statsd.Client) e
 				//   - check if we collect some data on the provided perf map
 				//   - check if the computed event id is below the current max event id
 				if (pbm.stats[perfMapName] == nil) || (len(pbm.stats[perfMapName]) <= cpu) || (len(pbm.stats[perfMapName][cpu]) <= int(evtType)) {
-					log.Debugf("invalid combo: %s / %d / %s", perfMapName, cpu, evtType)
+					log.Debugf("invalid combo: %s / %d / %d / %s", perfMapName, cpu, evtType, evtType)
 					return nil
 				}
 
