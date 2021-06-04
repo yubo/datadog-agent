@@ -442,10 +442,6 @@ func (p *Probe) handleEvent(CPU uint64, data []byte) {
 			return
 		}
 
-		if event.processCacheEntry.Process.Pid != 1 && event.processCacheEntry.Process.PPid == 0 {
-			return
-		}
-
 		p.resolvers.ProcessResolver.ApplyBootTime(event.processCacheEntry)
 
 		p.resolvers.ProcessResolver.AddForkEntry(event.ProcessContext.Pid, event.processCacheEntry)
@@ -503,10 +499,6 @@ func (p *Probe) handleEvent(CPU uint64, data []byte) {
 	// resolve event context
 	if eventType != model.ExitEventType {
 		event.ResolveProcessCacheEntry()
-
-		if event.ProcessContext.Pid != 1 && event.processCacheEntry.ProcessContext.PPid == 0 {
-			return
-		}
 
 		// in case of exec event we take the parent a process context as this
 		// the parent which generated the exec
