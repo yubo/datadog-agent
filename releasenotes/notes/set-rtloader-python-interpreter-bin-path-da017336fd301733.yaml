@@ -1,0 +1,5 @@
+---
+enhancements:
+  - |
+    Python interpreter ``sys.executable`` is now set to the appropriate interpreter's
+    executable path.
