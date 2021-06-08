@@ -14,7 +14,7 @@ var (
 	//ErrNotEnoughData = errors.New("not enough data")
 
 	// ErrStringArrayOverflow returned when there is a string array overflow
-	ErrStringArrayOverflow = errors.New("string array overflow")
+	// ErrStringArrayOverflow = errors.New("string array overflow")
 
 	// ErrNonPrintable returned when a string contains non printable char
 	ErrNonPrintable = errors.New("non printable")
