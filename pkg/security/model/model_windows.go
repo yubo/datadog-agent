@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
+//go:generate go run github.com/DataDog/datadog-agent/pkg/security/secl/generators/accessors -mock -tags windows -output accessors_windows.go
+//go:generate go run github.com/DataDog/datadog-agent/pkg/security/secl/generators/accessors -tags windows -output ../probe/accessors_windows.go
+
 package model
 
 import (
