@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -20,19 +21,77 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 	pb "github.com/DataDog/datadog-agent/pkg/proto/pbgo"
 	mocks "github.com/DataDog/datadog-agent/pkg/proto/pbgo/mocks"
+	"github.com/DataDog/datadog-agent/pkg/util/containers"
+	"github.com/DataDog/datadog-agent/pkg/util/containers/metrics"
+	"github.com/DataDog/datadog-agent/pkg/util/containers/providers"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
+type fakeContainerImpl struct {
+}
+
+func (f fakeContainerImpl) Prefetch() error {
+	return nil
+}
+
+func (f fakeContainerImpl) ContainerExists(containerID string) bool {
+	return true
+}
+
+func (f fakeContainerImpl) GetContainerStartTime(containerID string) (int64, error) {
+	panic("implement me")
+}
+
+func (f fakeContainerImpl) DetectNetworkDestinations(pid int) ([]containers.NetworkDestination, error) {
+	panic("implement me")
+}
+
+func (f fakeContainerImpl) GetAgentCID() (string, error) {
+	panic("implement me")
+}
+
+func (f fakeContainerImpl) GetPIDs(containerID string) ([]int32, error) {
+	return []int32{123}, nil
+}
+
+func (f fakeContainerImpl) ContainerIDForPID(pid int) (string, error) {
+	panic("implement me")
+}
+
+func (f fakeContainerImpl) GetDefaultGateway() (net.IP, error) {
+	panic("implement me")
+}
+
+func (f fakeContainerImpl) GetDefaultHostIPs() ([]string, error) {
+	panic("implement me")
+}
+
+func (f fakeContainerImpl) GetContainerMetrics(containerID string) (*metrics.ContainerMetrics, error) {
+	return nil, nil
+}
+
+func (f fakeContainerImpl) GetContainerLimits(containerID string) (*metrics.ContainerLimits, error) {
+	return nil, nil
+}
+
+func (f fakeContainerImpl) GetNetworkMetrics(containerID string, networks map[string]string) (metrics.ContainerNetStats, error) {
+	return nil, nil
+}
+
 var originalConfig = config.Datadog
 
 func restoreGlobalConfig() {
+	providers.Deregister()
+
 	config.Datadog = originalConfig
 }
 
 func newConfig() {
+	providers.Register(fakeContainerImpl{})
+
 	config.Datadog = config.NewConfig("datadog", "DD", strings.NewReplacer(".", "_"))
 	config.InitConfig(config.Datadog)
 	// force timeout to 0s, otherwise each test waits 60s
@@ -578,6 +637,9 @@ func TestGetHostnameFromCmd(t *testing.T) {
 }
 
 func TestInvalidHostname(t *testing.T) {
+	providers.Register(fakeContainerImpl{})
+	defer providers.Deregister()
+
 	// Input yaml file has an invalid hostname (localhost) so we expect to configure via environment
 	agentConfig, err := NewAgentConfig(
 		"test",
