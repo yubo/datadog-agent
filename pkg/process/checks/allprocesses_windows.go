@@ -141,13 +141,7 @@ func getAllProcesses(probe *procutil.Probe) (map[int32]*procutil.Process, error)
 				continue
 			}
 			cachedProcesses[pid] = cp
-		} else {
-			if err := cp.openProcHandle(pe32.Th32ProcessID); err != nil {
-				log.Debugf("Could not reopen process handle for pid %v %v", pid, err)
-				continue
-			}
 		}
-		defer cp.close()
 
 		procHandle := cp.procHandle
 
@@ -214,6 +208,7 @@ func getAllProcesses(probe *procutil.Probe) (map[int32]*procutil.Process, error)
 	}
 	for pid := range knownPids {
 		cp := cachedProcesses[pid]
+		cp.close()
 		log.Debugf("removing process %v %v", pid, cp.executablePath)
 		delete(cachedProcesses, pid)
 	}
