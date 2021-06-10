@@ -15,4 +15,8 @@ elsif ['suse', 'opensuseleap'].include?(node[:platform])
   execute 'disable all zypper repositories' do
     command 'zypper mr -da'
   end
+elsif ['ubuntu', 'debian'].include?(node[:platform])
+  execute 'disable all apt repositories' do
+    command 'mv /etc/apt/sources.list /etc/apt/sources.list.disabled'
+  end
 end
