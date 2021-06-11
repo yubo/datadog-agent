@@ -12,7 +12,8 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
-	logConfig "github.com/DataDog/datadog-agent/pkg/logs/config"
+	"github.com/DataDog/datadog-agent/pkg/logs/scheduler"
+	"github.com/DataDog/datadog-agent/pkg/logs/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -146,29 +147,26 @@ func TestParseLogsAPIPayloadNotWellFormatedButNotRecoverable(t *testing.T) {
 }
 
 func TestGetLambdaSourceNilScheduler(t *testing.T) {
-	assert.Nil(t, GetLambdaSource(nil))
-}
-
-type mockedServerlessScheduler struct {
-	validLogSource bool
+	assert.Nil(t, GetLambdaSource())
 }
 
 func TestGetLambdaSourceNilSource(t *testing.T) {
-	serverlessScheduler := mockedServerlessScheduler{false}
-	assert.Nil(t, GetLambdaSource(&serverlessScheduler))
+	logSources := config.NewLogSources()
+	services := service.NewServices()
+	scheduler.CreateScheduler(logSources, services)
+	assert.Nil(t, GetLambdaSource())
 }
 
 func TestGetLambdaSourceValidSource(t *testing.T) {
-	serverlessScheduler := mockedServerlessScheduler{true}
-	assert.NotNil(t, GetLambdaSource(&serverlessScheduler))
-}
-
-func (m *mockedServerlessScheduler) GetSourceFromName(name string) *logConfig.LogSource {
-	if m.validLogSource {
-		return config.NewLogSource(
-			"test",
-			&config.LogsConfig{},
-		)
-	}
-	return nil
+	logSources := config.NewLogSources()
+	chanSource := config.NewLogSource("TestLog", &config.LogsConfig{
+		Type:    config.StringChannelType,
+		Source:  "lambda",
+		Tags:    nil,
+		Channel: nil,
+	})
+	logSources.AddSource(chanSource)
+	services := service.NewServices()
+	scheduler.CreateScheduler(logSources, services)
+	assert.NotNil(t, GetLambdaSource())
 }
