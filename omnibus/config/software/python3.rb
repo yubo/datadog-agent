@@ -1,6 +1,6 @@
 name "python3"
 
-default_version "3.8.10"
+default_version "3.9.5"
 
 if ohai["platform"] != "windows"
   dependency "libffi"
@@ -14,7 +14,7 @@ if ohai["platform"] != "windows"
   dependency "libyaml"
 
   source :url => "https://python.org/ftp/python/#{version}/Python-#{version}.tgz",
-         :sha256 => "b37ac74d2cbad2590e7cd0dd2b3826c29afe89a734090a87bf8c03c45066cb65"
+         :sha256 => "e0fbd5b6e1ee242524430dee3c91baf4cbbaba4a72dd1674b90fda87b713c7ab"
 
   relative_path "Python-#{version}"
 
