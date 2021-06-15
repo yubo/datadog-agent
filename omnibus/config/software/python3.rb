@@ -70,12 +70,12 @@ else
     dependency "vc_ucrt_redist"
 
     source :url => "https://dd-agent-omnibus.s3.amazonaws.com/python-windows-#{version}-x86.zip",
-            :sha256 => "ac6acfa3d1f6a73e0e0580debdd5a813961d4054a7da6038780bf5d47e4ae647"
+            :sha256 => "b430f72c2af2f051e14da411f0c1babf5ff1f85eede0dae8972e00d02599dd74"
   else
 
     # note that startring with 3.7.3 on Windows, the zip should be created without the built-in pip
     source :url => "https://dd-agent-omnibus.s3.amazonaws.com/python-windows-#{version}-amd64.zip",
-         :sha256 => "3f1533fb5d3944c57f554c9e80f4d77d953eb64e9eca68bb055642f9a8fe5a23"
+         :sha256 => "40879c3e159e7a1dbb0a2ee5dfd977a6715308b1f00f9dc4acfc5df4a381ed18"
 
   end
   vcrt140_root = "#{Omnibus::Config.source_dir()}/vc_redist_140/expanded"
