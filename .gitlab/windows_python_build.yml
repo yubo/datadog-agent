@@ -28,7 +28,7 @@ build_windows_python3_zip_x64:
   extends: .build_windows_python_common
   variables:
     ARCH: "x64"
-    WINDOWS_PYTHON_VERSION: "3.8.10"
+    WINDOWS_PYTHON_VERSION: "3.9.5"
   artifacts:
     expire_in: 2 weeks
     paths:
@@ -38,7 +38,7 @@ build_windows_python3_zip_x86:
   extends: .build_windows_python_common
   variables:
     ARCH: "x86"
-    WINDOWS_PYTHON_VERSION: "3.8.10"
+    WINDOWS_PYTHON_VERSION: "3.9.5"
   artifacts:
     expire_in: 2 weeks
     paths:
