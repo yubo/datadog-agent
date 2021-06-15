@@ -1,5 +1,5 @@
 name "setuptools3"
-default_version "40.9.0"
+default_version "57.0.0"
 skip_transitive_dependency_licensing true
 
 dependency "python3"
@@ -7,7 +7,7 @@ dependency "python3"
 relative_path "setuptools-#{version}"
 
 source :url => "https://github.com/pypa/setuptools/archive/v#{version}.tar.gz",
-       :sha256 => "9ef6623c057d6e46ada8156bb48dc72ef6dbe721768720cc66966cca4097061c",
+       :sha256 => "283e97578ebe125dee7b64bc5b12d7cb1252a61284e7a50c6bbad294361041a9",
        :extract => :seven_zip
 
 build do
@@ -20,8 +20,7 @@ build do
   end
 
   ship_license "PSFL"
-  command "#{python_bin} bootstrap.py"
-  command "#{python_bin} setup.py install --prefix=#{python_prefix}"
+  command "#{python_bin} -mpip install --prefix=#{python_prefix} ."
 
   if ohai["platform"] != "windows"
     block do
