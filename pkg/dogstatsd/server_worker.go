@@ -1,7 +1,11 @@
 package dogstatsd
 
 import (
+	"time"
+
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"github.com/DataDog/datadog-agent/pkg/serverless/aws"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 var (
@@ -47,7 +51,12 @@ func (w *worker) run() {
 			w.samples = w.samples[0:0]
 			// we return the samples in case the slice was extended
 			// when parsing the packets
+			if w.server.ServerlessMode && len(aws.GetARN()) == 0 {
+				log.Debug("ARN is not yet set -> tags are not computed")
+				time.Sleep(1 * time.Millisecond)
+			}
 			w.samples = w.server.parsePackets(w.batcher, w.parser, packets, w.samples)
+
 		}
 	}
 }
