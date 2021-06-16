@@ -47,7 +47,7 @@ deploy_google_container_registry_linux-a7:
   ## For Future Reference.  Must update to do this job from the newest OS version
   ## that we're publishing (.e.g. adding windows2104 will require also using the
   ## 2104 builder)
-  tags: ["runner:windows-docker", "windowsversion:2004"]
+  tags: ["runner:windows-docker", "windowsversion:2004_test"]
   dependencies: []
   variables:
     VARIANT: 2004
