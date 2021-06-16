@@ -20,6 +20,7 @@ build do
   end
 
   ship_license "PSFL"
+  command "#{python_bin} -mensurepip"
   command "#{python_bin} -mpip install --prefix=#{python_prefix} ."
 
   if ohai["platform"] != "windows"
