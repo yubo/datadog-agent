@@ -53,7 +53,7 @@ func (w *worker) run() {
 			// when parsing the packets
 			if w.server.ServerlessMode && len(aws.GetARN()) == 0 {
 				log.Debug("ARN is not yet set -> tags are not computed")
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 			}
 			w.samples = w.server.parsePackets(w.batcher, w.parser, packets, w.samples)
 
