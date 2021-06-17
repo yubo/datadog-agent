@@ -140,9 +140,9 @@ build do
     # Prepare the build env, these dependencies are only needed to build and
     # install the core integrations.
     #
-    command "#{pip} install wheel==0.34.1"
+    command "#{pip} install wheel==0.36.2"
     command "#{pip} install setuptools-scm==5.0.2" # Pin to the last version that supports Python 2
-    command "#{pip} install pip-tools==5.4.0"
+    command "#{pip} install pip-tools==5.5.0"
     uninstall_buildtime_deps = ['rtloader', 'click', 'first', 'pip-tools']
     nix_build_env = {
       "CFLAGS" => "-I#{install_dir}/embedded/include -I/opt/mqm/inc",
