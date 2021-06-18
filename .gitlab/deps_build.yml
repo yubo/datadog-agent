@@ -97,3 +97,24 @@ build_clang_arm64:
   tags: ["runner:docker-arm", "platform:arm64"]
   variables:
     ARCH: arm64
+
+build_orjson_x64:
+  rules:
+    !reference [.manual]
+  stage: deps_build
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/deb_x64
+  tags: ["runner:main", "size:2xlarge"]
+  script:
+    - curl -sSf -o openssl-1.1.1e.tar.gz https://www.openssl.org/source/openssl-1.1.1e.tar.gz
+    - tar xzvf openssl-1.1.1e.tar.gz
+    - (cd openssl-1.1.1e && ./config --prefix=/usr/local && make -j9 && make -j9 install)
+    - ldconfig
+    - curl --proto '=https' -sSfL -o Python-3.9.5.tar.gz https://www.python.org/ftp/python/3.9.5/Python-3.9.5.tgz
+    - tar xzf Python-3.9.5.tar.gz
+    - (cd Python-3.9.5 && ./configure --prefix=$HOME/py && make -j9 && make -j9 install)
+    - $HOME/py/bin/pip3 install --upgrade maturin==0.10.6 twine auditwheel
+    - curl --proto '=https' -sSf https://sh.rustup.rs | sh -s -- --default-toolchain nightly-2021-05-25 --profile minimal -y
+    - curl --proto '=https' -sSfL -o orjson-3.5.3.tar.gz https://github.com/ijl/orjson/archive/refs/tags/3.5.3.tar.gz
+    - tar xzf orjson-3.5.3.tar.gz
+    - (cd orjson-3.5.3 && PATH="$HOME/.cargo/bin:$PATH" $HOME/py/bin/maturin build --no-sdist --release --strip --manylinux 2010 --interpreter $HOME/py/bin/python3 --target x86_64-unknown-linux-gnu)
+    - $S3_CP_CMD orjson-3.5.3/target/wheels/orjson-3.5.3-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl $S3_PERMANENT_ARTIFACTS_URI/orjson-3.5.3-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
