@@ -23,7 +23,7 @@ import (
 )
 
 // scanPeriod represents the period of time between two scans.
-const scanPeriod = 10 * time.Second
+const scanPeriod = 1 * time.Second
 
 // rxContainerID is used in the shouldIgnore func to do a best-effort validation
 // that the file currently scanned for a source is attached to the proper container.
