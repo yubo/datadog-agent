@@ -107,11 +107,6 @@ func TestTailerIdentifier(t *testing.T) {
 	assert.Equal(t, "docker:test", tailer.Identifier())
 }
 
-func TestGetLastSince(t *testing.T) {
-	tailer := &Tailer{lastSince: "2008-01-12T01:01:01.000000001Z"}
-	assert.Equal(t, "2008-01-12T01:01:01.000000002Z", tailer.getLastSince())
-}
-
 func TestRead(t *testing.T) {
 	tailer := NewTestTailer(&mockReaderNoSleep{}, nil, func() {})
 	inBuf := make([]byte, 4096)
