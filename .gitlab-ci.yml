@@ -147,7 +147,7 @@ variables:
   DOCKER_REGISTRY_PWD_SSM_KEY: docker_hub_pwd
   DOCKER_REGISTRY_URL: docker.io
   KITCHEN_INFRASTRUCTURE_FLAKES_RETRY: 2
-  ORJSON_WHEEL_NAME: orjson-3.5.3-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
+  ORJSON_WHEEL_NAME: orjson-3.5.3-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl
 
 #
 # Condition mixins for simplification of rules
