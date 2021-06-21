@@ -104,7 +104,8 @@ end
 # _64_bit checks the kernel arch.  On windows, the builder is 64 bit
 # even when doing a 32 bit build.  Do a specific check for the 32 bit
 # build
-if arm? || !_64_bit? || (windows? && windows_arch_i386?)
+install_local_orjson_build = !arm? && _64_bit? && (debian? || redhat? || suse?)
+if arm? || !_64_bit? || (windows? && windows_arch_i386?) || install_local_orjson_build
   blacklist_packages.push(/^orjson==/)
 end
 
@@ -187,6 +188,10 @@ build do
         end
       end
 
+      # FIXME: avoid two stage upgrade.
+      # 2.6.1 does not support py3.9, but 3.5.3 upstream does not support our old linuxes.
+      line.gsub!(/^orjson==2.6.1/, 'orjson==3.5.3')
+
       if !blacklist_flag
         requirements.push(line)
       end
@@ -216,7 +221,6 @@ build do
       command "#{pip} install datadog_checks_base --no-deps --no-index --find-links=#{wheel_build_dir}"
       command "#{pip} wheel . --no-deps --no-index --wheel-dir=#{wheel_build_dir}", :env => nix_build_env, :cwd => "#{project_dir}/datadog_checks_downloader"
       command "#{pip} install datadog_checks_downloader --no-deps --no-index --find-links=#{wheel_build_dir}"
-      command "#{pip} install /tmp/orjson-3.5.3-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl"
       command "#{python} -m piptools compile --generate-hashes --output-file #{install_dir}/#{agent_requirements_file} #{static_reqs_out_file}", :env => nix_build_env
     end
 
@@ -236,6 +240,11 @@ build do
       command "#{python} -m pip install --no-deps --require-hashes -r #{windows_safe_path(install_dir)}\\#{agent_requirements_file}"
     else
       command "#{pip} install --no-deps --require-hashes -r #{install_dir}/#{agent_requirements_file}", :env => nix_build_env
+    end
+
+    # Use internally built orjson on 64-bit linux.
+    if install_local_orjson_build
+      command "#{pip} install /tmp/#{ENV['ORJSON_WHEEL_NAME']}"
     end
 
     #

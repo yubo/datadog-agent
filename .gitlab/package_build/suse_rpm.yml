@@ -54,6 +54,7 @@ agent_suse-x64-a6:
   before_script:
     - source /root/.bashrc && conda activate ddpy3
     - export RELEASE_VERSION=$RELEASE_VERSION_6
+    - $S3_CP_CMD $S3_PERMANENT_ARTIFACTS_URI/$ORJSON_WHEEL_NAME /tmp
 
 # build Agent package for suse-x64
 agent_suse-x64-a7:
@@ -72,6 +73,7 @@ agent_suse-x64-a7:
   before_script:
     - source /root/.bashrc && conda activate ddpy3
     - export RELEASE_VERSION=$RELEASE_VERSION_7
+    - $S3_CP_CMD $S3_PERMANENT_ARTIFACTS_URI/$ORJSON_WHEEL_NAME /tmp
 
 iot_agent_suse-x64:
   rules:
