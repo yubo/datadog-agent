@@ -112,7 +112,7 @@ build_orjson_x64:
     MATURIN_VERSION: 0.11.0-beta.3 # unreleaseed 0.11 adds support for manylinux1 wheels
     RUST_TOOLCHAIN: nightly-2021-05-25 # keep in sync with https://github.com/ijl/orjson/blob/3.5.3/ci/azure-pipelines.yml
     PACKAGE_TAGS: manylinux_2_5_x86_64.manylinux1_x86_64
-    CURL_CMD: curl --proto '=https' -sSfL
+    CURL_CMD: curl --proto =https -sSfL
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:openssl[collapsed=true]\r\e[0Kopenssl"
     - $CURL_CMD -o openssl-$OPENSSL_VERSION.tar.gz https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
@@ -138,4 +138,4 @@ build_orjson_x64:
     - (cd orjson-$ORJSON_VERSION && PATH="$HOME/.cargo/bin:$PATH" $HOME/py/bin/maturin build --no-sdist --release --strip --manylinux 1 --interpreter $HOME/py/bin/python3 --target x86_64-unknown-linux-gnu)
     - echo -e "\e[0Ksection_end:`date +%s`:orjson\r\e[0K"
 
-    - $S3_CP_CMD orjson-$ORJSON_VERSION/target/wheels/orjson-$ORJSON_VERSION-$PYTHON_ABI-$PYTHON_ABI-$PACKAGE_TAGS.whl $S3_PERMANENT_ARTIFACTS_URI/
+    - echo $S3_CP_CMD orjson-$ORJSON_VERSION/target/wheels/orjson-$ORJSON_VERSION-$PYTHON_ABI-$PYTHON_ABI-$PACKAGE_TAGS.whl $S3_PERMANENT_ARTIFACTS_URI/
