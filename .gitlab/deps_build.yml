@@ -97,3 +97,45 @@ build_clang_arm64:
   tags: ["runner:docker-arm", "platform:arm64"]
   variables:
     ARCH: arm64
+
+build_orjson_x64:
+  rules:
+    !reference [.manual]
+  stage: deps_build
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/deb_x64
+  tags: ["runner:main", "size:2xlarge"]
+  variables:
+    OPENSSL_VERSION: 1.1.1e
+    PYTHON_VERSION: 3.8.10
+    PYTHON_ABI: cp38
+    ORJSON_VERSION: 3.5.3
+    MATURIN_VERSION: 0.11.0-beta.3 # unreleaseed 0.11 adds support for manylinux1 wheels
+    RUST_TOOLCHAIN: nightly-2021-05-25 # keep in sync with https://github.com/ijl/orjson/blob/3.5.3/ci/azure-pipelines.yml
+    PACKAGE_TAGS: manylinux_2_5_x86_64.manylinux1_x86_64
+    CURL_CMD: curl --proto '=https' -sSfL
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:openssl[collapsed=true]\r\e[0Kopenssl"
+    - $CURL_CMD -o openssl-$OPENSSL_VERSION.tar.gz https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
+    - tar xzf openssl-$OPENSSL_VERSION.tar.gz
+    - (cd openssl-$OPENSSL_VERSION && ./config --prefix=/usr/local && make -j9 && make -j9 install)
+    - ldconfig
+    - echo -e "\e[0Ksection_end:`date +%s`:openssl\r\e[0K"
+
+    - echo -e "\e[0Ksection_start:`date +%s`:python[collapsed=true]\r\e[0Kpython"
+    - $CURL_CMD -o Python-$PYTHON_VERSION.tar.gz https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz
+    - tar xzf Python-$PYTHON_VERSION.tar.gz
+    - (cd Python-$PYTHON_VERSION && ./configure --prefix=$HOME/py && make -j9 && make -j9 install)
+    - $HOME/py/bin/pip3 install --upgrade maturin==$MATURIN_VERSION twine auditwheel
+    - echo -e "\e[0Ksection_end:`date +%s`:python\r\e[0K"
+
+    - echo -e "\e[0Ksection_start:`date +%s`:rust[collapsed=true]\r\e[0Krust"
+    - $CURL_CMD https://sh.rustup.rs | sh -s -- --default-toolchain $RUST_TOOLCHAIN --profile minimal -y
+    - echo -e "\e[0Ksection_end:`date +%s`:rust\r\e[0K"
+
+    - echo -e "\e[0Ksection_start:`date +%s`:orjson\r\e[0Korjson"
+    - $CURL_CMD -o orjson-$ORJSON_VERSION.tar.gz https://github.com/ijl/orjson/archive/refs/tags/$ORJSON_VERSION.tar.gz
+    - tar xzf orjson-$ORJSON_VERSION.tar.gz
+    - (cd orjson-$ORJSON_VERSION && PATH="$HOME/.cargo/bin:$PATH" $HOME/py/bin/maturin build --no-sdist --release --strip --manylinux 1 --interpreter $HOME/py/bin/python3 --target x86_64-unknown-linux-gnu)
+    - echo -e "\e[0Ksection_end:`date +%s`:orjson\r\e[0K"
+
+    - $S3_CP_CMD orjson-$ORJSON_VERSION/target/wheels/orjson-$ORJSON_VERSION-$PYTHON_ABI-$PYTHON_ABI-$PACKAGE_TAGS.whl $S3_PERMANENT_ARTIFACTS_URI/

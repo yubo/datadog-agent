@@ -57,6 +57,7 @@ agent_deb-x64-a6:
   before_script:
     - source /root/.bashrc && conda activate ddpy3
     - export RELEASE_VERSION=$RELEASE_VERSION_6
+    - $S3_CP_CMD $S3_PERMANENT_ARTIFACTS_URI/$ORJSON_WHEEL_NAME /tmp
 
 agent_deb-x64-a7:
   extends: .agent_build_common_deb
@@ -76,6 +77,7 @@ agent_deb-x64-a7:
   before_script:
     - source /root/.bashrc && conda activate ddpy3
     - export RELEASE_VERSION=$RELEASE_VERSION_7
+    - $S3_CP_CMD $S3_PERMANENT_ARTIFACTS_URI/$ORJSON_WHEEL_NAME /tmp
 
 agent_deb-arm64-a6:
   extends: .agent_build_common_deb

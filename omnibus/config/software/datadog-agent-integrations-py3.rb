@@ -101,10 +101,14 @@ if arm?
   blacklist_packages.push(/^pymqi==/)
 end
 
+# Recent versions do not provide binary wheels for old libc versions; we don't ship orjson
+# on arm at all.
+install_local_orjson_build = !arm? && linux?
+
 # _64_bit checks the kernel arch.  On windows, the builder is 64 bit
 # even when doing a 32 bit build.  Do a specific check for the 32 bit
 # build
-if arm? || !_64_bit? || (windows? && windows_arch_i386?)
+if arm? || !_64_bit? || (windows? && windows_arch_i386?) || install_local_orjson_build
   blacklist_packages.push(/^orjson==/)
 end
 
@@ -235,6 +239,11 @@ build do
       command "#{python} -m pip install --no-deps --require-hashes -r #{windows_safe_path(install_dir)}\\#{agent_requirements_file}"
     else
       command "#{pip} install --no-deps --require-hashes -r #{install_dir}/#{agent_requirements_file}", :env => nix_build_env
+    end
+
+    # Use internally built orjson on 64-bit linux.
+    if install_local_orjson_build
+      command "#{pip} install /tmp/#{ENV['ORJSON_WHEEL_NAME']}"
     end
 
     #

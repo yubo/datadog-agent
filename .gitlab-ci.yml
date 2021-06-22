@@ -147,6 +147,7 @@ variables:
   DOCKER_REGISTRY_PWD_SSM_KEY: docker_hub_pwd
   DOCKER_REGISTRY_URL: docker.io
   KITCHEN_INFRASTRUCTURE_FLAKES_RETRY: 2
+  ORJSON_WHEEL_NAME: orjson-3.5.3-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl
 
 #
 # Condition mixins for simplification of rules
@@ -189,7 +190,7 @@ variables:
 # - on main and deploy pipelines, all builds are run
 # - on branch pipelines, only a subset of build jobs are run (the ARM and MacOS jobs are not run).
 # RUN_ALL_BUILDS can be set to true to force all build jobs to be run on a branch pipeline.
-# RUN_ALL_BUILDS has no effect on main/deploy pipelines: they always run all builds (as some jobs 
+# RUN_ALL_BUILDS has no effect on main/deploy pipelines: they always run all builds (as some jobs
 # on main and deploy pipelines depend on jobs that are only run if we run all builds).
 .if_run_all_builds: &if_run_all_builds
   if: $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $DEPLOY_AGENT == "true" || $RUN_ALL_BUILDS == "true"
