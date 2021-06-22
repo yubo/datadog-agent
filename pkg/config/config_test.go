@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"log"
 	"os"
+	"time"
 	"strings"
 	"testing"
 
@@ -16,6 +17,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func setupConf() Config {
@@ -69,6 +71,44 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, "", config.GetString("site"))
 	assert.Equal(t, "", config.GetString("dd_url"))
 	assert.Equal(t, []string{"aws", "gcp", "azure", "alibaba"}, config.GetStringSlice("cloud_provider_metadata"))
+}
+
+func TestDefaultTagsDuration(t *testing.T) {
+	datadogYaml := `
+logs_config:
+  # expected_tags_duration: 600000000000 # 10m in nanoseconds, makes the tests pass when uncommented (and the line below is commented out), which is expected since GetDuration casts integers to a duration in nanoseconds
+  expected_tags_duration: "10m" # makes the test fail, unexpected
+`
+
+	testConfig := setupConfFromYAML(datadogYaml)
+
+	expectedDuration := time.Duration(10)*time.Minute
+
+	assert.Equal(t, expectedDuration, testConfig.GetDuration("logs_config.expected_tags_duration"))
+
+	// get the whole config with AllSettings, which is what the `agent config` command returns, and then inspect the config value set in AllSettings
+	allSettings := testConfig.AllSettings()
+	allSettingsLogsConfig := allSettings["logs_config"].(map[string]interface{})
+	allSettingsRawDuration, found := allSettingsLogsConfig["expected_tags_duration"]
+	assert.True(t, found)
+	var allSettingsDuration time.Duration
+	switch allSettingsRawDuration.(type) {
+	case int:
+		allSettingsDuration = time.Duration(allSettingsRawDuration.(int))
+	case string:
+		var err error
+		allSettingsDuration, err = time.ParseDuration(allSettingsRawDuration.(string))
+		assert.Nil(t, err)
+	default:
+		require.FailNow(t, "unexpected type", allSettingsRawDuration)
+	}
+	assert.Equal(t, expectedDuration, allSettingsDuration)
+
+	// replicate the logic that's used by secrets resolution to merge the resolved secrets into the original config object
+	yamlConf, err := yaml.Marshal(allSettings)
+	assert.Nil(t, err)
+	testConfig.MergeConfigOverride(bytes.NewReader(yamlConf))
+	assert.Equal(t, expectedDuration, testConfig.GetDuration("logs_config.expected_tags_duration"))
 }
 
 func TestDefaultSite(t *testing.T) {
