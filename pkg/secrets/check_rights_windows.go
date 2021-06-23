@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/sys/windows"
 
+	"github.com/DataDog/datadog-agent/pkg/api/security"
 	"github.com/DataDog/datadog-agent/pkg/util/winutil"
 )
 
@@ -79,7 +80,7 @@ func checkRights(filename string, allowGroupExec bool) error {
 	}
 	defer windows.FreeSid(administrators)
 
-	secretuser, err := platform.GetSidFromUser()
+	secretuser, err := security.GetSidFromUser()
 	defer windows.FreeSid(secretuser)
 
 	bSecretUserExplicitlyAllowed := false
