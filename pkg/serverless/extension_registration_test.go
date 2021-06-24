@@ -94,3 +94,30 @@ func TestSendRequestSuccess(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, response)
 }
+
+func TestRegisterFailure(t *testing.T) {
+	func Register(prefix string, url string) (ID, error) {
+		payload := createRegistrationPayload()
+	
+		request, err := buildRegisterRequest(headerExtName, extensionName, buildURL(prefix, url), payload)
+		if err != nil {
+			return "", fmt.Errorf("Register: can't create the POST register request: %v", err)
+		}
+	
+		response, err := sendRequest(&http.Client{Timeout: 5 * time.Second}, request)
+		if err != nil {
+			return "", fmt.Errorf("Register: error while POST register route: %v", err)
+		}
+	
+		if !isAValidResponse(response) {
+			return "", fmt.Errorf("Register: didn't receive an HTTP 200")
+		}
+	
+		id := extractId(response)
+		if len(id) == 0 {
+			return "", fmt.Errorf("Register: didn't receive an identifier")
+		}
+	
+		return ID(id), nil
+	}
+}

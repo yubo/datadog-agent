@@ -21,8 +21,6 @@ type HttpClient interface {
 // Returns either (the serverless ID assigned by the serverless daemon + the api key as read from
 // the environment) or an error.
 func Register(prefix string, url string) (ID, error) {
-	var err error
-
 	payload := createRegistrationPayload()
 
 	request, err := buildRegisterRequest(headerExtName, extensionName, buildURL(prefix, url), payload)
