@@ -13,6 +13,10 @@ const (
 	headerExtID   string = "Lambda-Extension-Identifier"
 )
 
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 // Register registers the serverless daemon and subscribe to INVOKE and SHUTDOWN messages.
 // Returns either (the serverless ID assigned by the serverless daemon + the api key as read from
 // the environment) or an error.
@@ -26,7 +30,7 @@ func Register(prefix string, url string) (ID, error) {
 		return "", fmt.Errorf("Register: can't create the POST register request: %v", err)
 	}
 
-	response, err := sendRequest(request)
+	response, err := sendRequest(&http.Client{Timeout: 5 * time.Second}, request)
 	if err != nil {
 		return "", fmt.Errorf("Register: error while POST register route: %v", err)
 	}
@@ -69,15 +73,15 @@ func buildRegisterRequest(headerExtensionName string, extensionName string, url 
 	if err != nil {
 		return nil, err
 	}
-	request.Header.Set(headerExtName, extensionName)
+	request.Header.Set(headerExtensionName, extensionName)
 	return request, nil
 }
 
-func sendRequest(request *http.Request) (*http.Response, error) {
-	client := &http.Client{Timeout: 5 * time.Second}
-	response, err := client.Do(request)
+func sendRequest(httpClient HttpClient, request *http.Request) (*http.Response, error) {
+	response, err := httpClient.Do(request)
 	if err != nil {
 		return nil, err
 	}
 	return response, nil
+
 }
