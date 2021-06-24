@@ -19,13 +19,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/DataDog/datadog-agent/cmd/agent/common"
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
-	"github.com/DataDog/datadog-agent/pkg/autodiscovery"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/dogstatsd"
 	"github.com/DataDog/datadog-agent/pkg/forwarder"
-	"github.com/DataDog/datadog-agent/pkg/logs"
 	"github.com/DataDog/datadog-agent/pkg/serializer"
 	"github.com/DataDog/datadog-agent/pkg/serverless"
 	"github.com/DataDog/datadog-agent/pkg/serverless/aws"
@@ -72,7 +69,22 @@ where they can be graphed on dashboards. The Datadog Serverless Agent implements
 	apiKeyEnvVar               = "DD_API_KEY"
 	logLevelEnvVar             = "DD_LOG_LEVEL"
 	flushStrategyEnvVar        = "DD_SERVERLESS_FLUSH_STRATEGY"
-	logsLogsTypeSubscribed     = "DD_LOGS_CONFIG_LAMBDA_LOGS_TYPE"
+
+	// FatalNoAPIKey is the error reported to the AWS Extension environment when
+	// no API key has been set. Unused until we can report error
+	// without stopping the extension.
+	FatalNoAPIKey ErrorEnum = "Fatal.NoAPIKey"
+	// FatalDogstatsdInit is the error reported to the AWS Extension environment when
+	// DogStatsD fails to initialize properly. Unused until we can report error
+	// without stopping the extension.
+	FatalDogstatsdInit ErrorEnum = "Fatal.DogstatsdInit"
+	// FatalBadEndpoint is the error reported to the AWS Extension environment when
+	// bad endpoints have been configured. Unused until we can report error
+	// without stopping the extension.
+	FatalBadEndpoint ErrorEnum = "Fatal.BadEndpoint"
+	// FatalConnectFailed is the error reported to the AWS Extension environment when
+	// a connection failed.
+	FatalConnectFailed ErrorEnum = "Fatal.ConnectFailed"
 
 	// AWS Lambda is writing the Lambda function files in /var/task, we want the
 	// configuration file to be at the root of this directory.
@@ -246,42 +258,6 @@ func runAgent(stopCh chan struct{}) (daemon *serverless.Daemon, err error) {
 
 	// starts logs collection
 	// ----------------------
-
-	// type of logs we are subscribing to
-	var logsType []string
-	if envLogsType, exists := os.LookupEnv(logsLogsTypeSubscribed); exists {
-		parts := strings.Split(strings.TrimSpace(envLogsType), " ")
-		for _, part := range parts {
-			part = strings.ToLower(strings.TrimSpace(part))
-			switch part {
-			case "function", "platform", "extension":
-				logsType = append(logsType, part)
-			default:
-				log.Warn("While subscribing to logs, unknown log type", part)
-			}
-		}
-	} else {
-		logsType = append(logsType, "platform", "function", "extension")
-	}
-
-	log.Debug("Enabling logs collection HTTP route")
-	if httpAddr, logsChan, err := daemon.EnableLogsCollection(); err != nil {
-		log.Error("While starting the HTTP Logs Server:", err)
-	} else {
-		// subscribe to the logs on the platform
-		if err := serverless.SubscribeLogs(serverlessID, httpAddr, logsType); err != nil {
-			log.Error("Can't subscribe to logs:", err)
-		} else {
-			// we subscribed to the logs collection on the platform, let's instantiate
-			// a logs agent to collect/process/flush the logs.
-			if err := logs.StartServerless(
-				func() *autodiscovery.AutoConfig { return common.AC },
-				logsChan, nil,
-			); err != nil {
-				log.Error("Could not start an instance of the Logs Agent:", err)
-			}
-		}
-	}
 
 	// setup the forwarder, serializer and aggregator
 	// ----------------------------------------------
