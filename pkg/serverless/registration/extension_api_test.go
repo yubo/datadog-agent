@@ -61,14 +61,6 @@ func TestBuildRegisterRequestFailure(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestFlareHasRightForm(t *testing.T) {
-	ts1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer ts1.Close()
-
-}
-
 func TestSendRequestFailure(t *testing.T) {
 	response, err := sendRequest(&http.Client{}, &http.Request{})
 	assert.Nil(t, response)

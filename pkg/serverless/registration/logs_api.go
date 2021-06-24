@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -26,10 +27,9 @@ const (
 // call from the Lambda function / client.
 // logsType contains the type of logs for which we are subscribing, possible
 // value: platform, extension and function.
-func SubscribeLogs(id ID, url string, logsType []string, timeout time.Duration) error {
-	log.Debug("Subscribing to Logs for types:", logsType)
+func SubscribeLogs(id ID, url string, timeout time.Duration, payload json.Marshaler) error {
 
-	jsonBytes, err := buildLogRegistrationPayload(url, logsType, 1000, 262144, 1000)
+	jsonBytes, err := payload.MarshalJSON()
 	if err != nil {
 		return fmt.Errorf("SubscribeLogs: can't marshal subscribe JSON %v", err)
 	}
@@ -54,19 +54,23 @@ func SubscribeLogs(id ID, url string, logsType []string, timeout time.Duration) 
 	return nil
 }
 
-func buildLogRegistrationPayload(httpAddr string, logsType []string, timeoutMs int, maxBytes int, maxItems int) ([]byte, error) {
-	return json.Marshal(map[string]interface{}{
-		"destination": map[string]string{
-			"URI":      httpAddr,
-			"protocol": "HTTP",
-		},
-		"types": logsType,
-		"buffering": map[string]int{
-			"timeoutMs": timeoutMs,
-			"maxBytes":  maxBytes,
-			"maxItems":  maxItems,
-		},
-	})
+func BuildLogRegistrationPayload(uri string, logsType string, timeoutMs int, maxBytes int, maxItems int) *LogSubscriptionPayload {
+	logsTypeArray := getLogTypesToSubscribe(logsType)
+	destination := &Destination{
+		URI:      uri,
+		Protocol: "HTTP",
+	}
+	buffering := &Buffering{
+		TimeoutMs: timeoutMs,
+		MaxBytes:  maxBytes,
+		MaxItems:  maxItems,
+	}
+	payload := &LogSubscriptionPayload{
+		Destination: *destination,
+		Types:       logsTypeArray,
+		Buffering:   *buffering,
+	}
+	return payload
 }
 
 func buildLogRegistrationRequest(url string, headerExtID string, headerContentType string, id ID, payload []byte) (*http.Request, error) {
@@ -85,4 +89,24 @@ func sendLogRegistrationRequest(httpClient HttpClient, request *http.Request) (*
 
 func isValidHttpCode(statusCode int) bool {
 	return statusCode < 300
+}
+
+func getLogTypesToSubscribe(envLogsType string) []string {
+	var logsType []string
+	if len(envLogsType) > 0 {
+		var logsType []string
+		parts := strings.Split(strings.TrimSpace(envLogsType), " ")
+		for _, part := range parts {
+			part = strings.ToLower(strings.TrimSpace(part))
+			switch part {
+			case "function", "platform", "extension":
+				logsType = append(logsType, part)
+			default:
+				log.Warn("While subscribing to logs, unknown log type", part)
+			}
+		}
+	} else {
+		logsType = []string{"platform", "function", "extension"}
+	}
+	return logsType
 }

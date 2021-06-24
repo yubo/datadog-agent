@@ -27,6 +27,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/serverless"
 	"github.com/DataDog/datadog-agent/pkg/serverless/aws"
 	"github.com/DataDog/datadog-agent/pkg/serverless/flush"
+	"github.com/DataDog/datadog-agent/pkg/serverless/registration"
 	traceAgent "github.com/DataDog/datadog-agent/pkg/trace/agent"
 	traceConfig "github.com/DataDog/datadog-agent/pkg/trace/config"
 	"github.com/DataDog/datadog-agent/pkg/util/flavor"
@@ -172,8 +173,8 @@ func runAgent(stopCh chan struct{}) (daemon *serverless.Daemon, err error) {
 	// ----------------
 
 	// register
-	url := serverless.BuildURL(prefix, routeRegister)
-	serverlessID, err := serverless.Register(url, 5*time.Second)
+	url := registration.BuildURL(prefix, routeRegister)
+	serverlessID, err := registration.Register(url, 5*time.Second)
 	if err != nil {
 		// at this point, we were not even able to register, thus, we don't have
 		// any ID assigned, thus, we can't report an error to the init error route

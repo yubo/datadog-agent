@@ -1,6 +1,7 @@
 package registration
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,10 +13,13 @@ import (
 const registerLogsTimeout = 10 * time.Millisecond
 
 func TestBuildLogRegistrationPayload(t *testing.T) {
-	payload, err := buildLogRegistrationPayload("myHttpAddr", []string{"logType1", "logType2"}, 10, 100, 1000)
-	assert.Nil(t, err)
-	assert.Equal(t, "{\"buffering\":{\"maxBytes\":100,\"maxItems\":1000,\"timeoutMs\":10},\"destination\":{\"URI\":\"myHttpAddr\",\"protocol\":\"HTTP\"},\"types\":[\"logType1\",\"logType2\"]}", string(payload))
-
+	payload := BuildLogRegistrationPayload("myUri", []string{"logType1", "logType2"}, 10, 100, 1000)
+	assert.Equal(t, "HTTP", payload.Destination.Protocol)
+	assert.Equal(t, "myUri", payload.Destination.URI)
+	assert.Equal(t, 10, payload.Buffering.TimeoutMs)
+	assert.Equal(t, 100, payload.Buffering.MaxBytes)
+	assert.Equal(t, 1000, payload.Buffering.MaxItems)
+	assert.Equal(t, []string{"logType1", "logType2"}, payload.Types)
 }
 
 func TestBuildLogRegistrationRequestSuccess(t *testing.T) {
@@ -59,17 +63,19 @@ func TestSendLogRegistrationRequestSuccess(t *testing.T) {
 }
 
 func TestSubscribeLogsSuccess(t *testing.T) {
+	payload := BuildLogRegistrationPayload("myUri", []string{"logType1", "logType2"}, 10, 100, 1000)
 	//fake the register route
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	}))
 	defer ts.Close()
 
-	err := SubscribeLogs("myId", ts.URL, []string{"logType1", "logType2"}, registerLogsTimeout)
+	err := SubscribeLogs("myId", ts.URL, registerLogsTimeout, payload)
 	assert.Nil(t, err)
 }
 
 func TestSubscribeLogsTimeout(t *testing.T) {
+	payload := BuildLogRegistrationPayload("myUri", []string{"logType1", "logType2"}, 10, 100, 1000)
 	//fake the register route
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// timeout
@@ -78,11 +84,12 @@ func TestSubscribeLogsTimeout(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	err := SubscribeLogs("myId", ts.URL, []string{"logType1", "logType2"}, registerLogsTimeout)
+	err := SubscribeLogs("myId", ts.URL, registerLogsTimeout, payload)
 	assert.NotNil(t, err)
 }
 
 func TestSubscribeLogsInvalidHttpCode(t *testing.T) {
+	payload := BuildLogRegistrationPayload("myUri", []string{"logType1", "logType2"}, 10, 100, 1000)
 	//fake the register route
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// invalid code
@@ -90,16 +97,24 @@ func TestSubscribeLogsInvalidHttpCode(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	err := SubscribeLogs("myId", ts.URL, []string{"logType1", "logType2"}, registerLogsTimeout)
+	err := SubscribeLogs("myId", ts.URL, registerLogsTimeout, payload)
 	assert.NotNil(t, err)
 }
 
 func TestSubscribeLogsInvalidUrl(t *testing.T) {
-	err := SubscribeLogs("myId", ":invalid:", []string{"logType1", "logType2"}, registerLogsTimeout)
+	payload := BuildLogRegistrationPayload("myUri", []string{"logType1", "logType2"}, 10, 100, 1000)
+	err := SubscribeLogs("myId", ":invalid:", registerLogsTimeout, payload)
 	assert.NotNil(t, err)
 }
 
-func TestSubscribeLogsImpossibleToMarshalPayload(t *testing.T) {
-	err := SubscribeLogs("myId", ":invalid:", []string{"logType1", "logType2"}, registerLogsTimeout)
+type ImpossibleToMarshall struct{}
+
+func (p *ImpossibleToMarshall) MarshalJSON() ([]byte, error) {
+	return nil, fmt.Errorf("should fail")
+}
+
+func TestSubscribeLogsInvalidPayloadObject(t *testing.T) {
+	payload := &ImpossibleToMarshall{}
+	err := SubscribeLogs("myId", ":invalid:", registerLogsTimeout, payload)
 	assert.NotNil(t, err)
 }
