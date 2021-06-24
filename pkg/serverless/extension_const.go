@@ -20,16 +20,8 @@ type ShutdownReason string
 // RuntimeEvent is an AWS Runtime event
 type RuntimeEvent string
 
-// ID is the extension ID within the AWS Extension environment.
-type ID string
-
 // ErrorEnum are errors reported to the AWS Extension environment.
 type ErrorEnum string
-
-// String returns the string value for this ID.
-func (i ID) String() string {
-	return string(i)
-}
 
 // String returns the string value for this ErrorEnum.
 func (e ErrorEnum) String() string {

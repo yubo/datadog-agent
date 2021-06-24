@@ -172,7 +172,8 @@ func runAgent(stopCh chan struct{}) (daemon *serverless.Daemon, err error) {
 	// ----------------
 
 	// register
-	serverlessID, err := serverless.Register(prefix, routeRegister)
+	url := serverless.BuildURL(prefix, routeRegister)
+	serverlessID, err := serverless.Register(url, 5*time.Second)
 	if err != nil {
 		// at this point, we were not even able to register, thus, we don't have
 		// any ID assigned, thus, we can't report an error to the init error route

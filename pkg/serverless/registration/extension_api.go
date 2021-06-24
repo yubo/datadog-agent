@@ -1,4 +1,4 @@
-package serverless
+package registration
 
 import (
 	"bytes"
@@ -8,27 +8,23 @@ import (
 )
 
 const (
-	extensionName        = "datadog-agent"
-	headerExtName        = "Lambda-Extension-Name"
-	headerExtID   string = "Lambda-Extension-Identifier"
+	extensionName = "datadog-agent"
+	headerExtName = "Lambda-Extension-Name"
+	HeaderExtID   = "Lambda-Extension-Identifier"
 )
-
-type HttpClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
 
 // Register registers the serverless daemon and subscribe to INVOKE and SHUTDOWN messages.
 // Returns either (the serverless ID assigned by the serverless daemon + the api key as read from
 // the environment) or an error.
-func Register(prefix string, url string) (ID, error) {
+func Register(url string, timeout time.Duration) (ID, error) {
 	payload := createRegistrationPayload()
 
-	request, err := buildRegisterRequest(headerExtName, extensionName, buildURL(prefix, url), payload)
+	request, err := buildRegisterRequest(headerExtName, extensionName, url, payload)
 	if err != nil {
 		return "", fmt.Errorf("Register: can't create the POST register request: %v", err)
 	}
 
-	response, err := sendRequest(&http.Client{Timeout: 5 * time.Second}, request)
+	response, err := sendRequest(&http.Client{Timeout: timeout}, request)
 	if err != nil {
 		return "", fmt.Errorf("Register: error while POST register route: %v", err)
 	}
@@ -45,13 +41,6 @@ func Register(prefix string, url string) (ID, error) {
 	return ID(id), nil
 }
 
-func buildURL(prefix string, route string) string {
-	if len(prefix) == 0 {
-		return fmt.Sprintf("http://localhost:9001%s", route)
-	}
-	return fmt.Sprintf("http://%s%s", prefix, route)
-}
-
 func createRegistrationPayload() *bytes.Buffer {
 	payload := bytes.NewBuffer(nil)
 	payload.Write([]byte(`{"events":["INVOKE", "SHUTDOWN"]}`))
@@ -59,7 +48,7 @@ func createRegistrationPayload() *bytes.Buffer {
 }
 
 func extractId(response *http.Response) string {
-	return response.Header.Get(headerExtID)
+	return response.Header.Get(HeaderExtID)
 }
 
 func isAValidResponse(response *http.Response) bool {
@@ -76,10 +65,5 @@ func buildRegisterRequest(headerExtensionName string, extensionName string, url 
 }
 
 func sendRequest(httpClient HttpClient, request *http.Request) (*http.Response, error) {
-	response, err := httpClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	return response, nil
-
+	return httpClient.Do(request)
 }

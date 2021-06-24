@@ -3,26 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2016-present Datadog, Inc.
 
-package serverless
+package registration
 
 import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBuildUrlPrefixEmpty(t *testing.T) {
-	builtUrl := buildURL("", "/myPath")
-	assert.Equal(t, "http://localhost:9001/myPath", builtUrl)
-}
-
-func TestBuildUrlWithPrefix(t *testing.T) {
-	builtUrl := buildURL("myPrefix:3000", "/myPath")
-	assert.Equal(t, "http://myPrefix:3000/myPath", builtUrl)
-}
+const registerExtensionTimeout = 10 * time.Millisecond
 
 func TestCreateRegistrationPayload(t *testing.T) {
 	payload := createRegistrationPayload()
@@ -33,7 +26,7 @@ func TestExtractId(t *testing.T) {
 	expectedId := "blablabla"
 	response := &http.Response{
 		Header: map[string][]string{
-			headerExtID: []string{expectedId},
+			HeaderExtID: []string{expectedId},
 		},
 	}
 	assert.Equal(t, expectedId, extractId(response))
@@ -76,13 +69,6 @@ func TestFlareHasRightForm(t *testing.T) {
 
 }
 
-type ClientMock struct {
-}
-
-func (c *ClientMock) Do(req *http.Request) (*http.Response, error) {
-	return &http.Response{}, nil
-}
-
 func TestSendRequestFailure(t *testing.T) {
 	response, err := sendRequest(&http.Client{}, &http.Request{})
 	assert.Nil(t, response)
@@ -95,29 +81,65 @@ func TestSendRequestSuccess(t *testing.T) {
 	assert.NotNil(t, response)
 }
 
-func TestRegisterFailure(t *testing.T) {
-	func Register(prefix string, url string) (ID, error) {
-		payload := createRegistrationPayload()
-	
-		request, err := buildRegisterRequest(headerExtName, extensionName, buildURL(prefix, url), payload)
-		if err != nil {
-			return "", fmt.Errorf("Register: can't create the POST register request: %v", err)
-		}
-	
-		response, err := sendRequest(&http.Client{Timeout: 5 * time.Second}, request)
-		if err != nil {
-			return "", fmt.Errorf("Register: error while POST register route: %v", err)
-		}
-	
-		if !isAValidResponse(response) {
-			return "", fmt.Errorf("Register: didn't receive an HTTP 200")
-		}
-	
-		id := extractId(response)
-		if len(id) == 0 {
-			return "", fmt.Errorf("Register: didn't receive an identifier")
-		}
-	
-		return ID(id), nil
-	}
+func TestRegisterSuccess(t *testing.T) {
+	//fake the register route
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//add the extension id
+		w.Header().Add(HeaderExtID, "myGeneratedId")
+		w.WriteHeader(200)
+	}))
+	defer ts.Close()
+
+	id, err := Register(ts.URL, registerExtensionTimeout)
+
+	assert.Equal(t, "myGeneratedId", id.String())
+	assert.Nil(t, err)
+}
+
+func TestRegisterErrorNoExtensionId(t *testing.T) {
+	//fake the register route
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//no the extension id
+		w.WriteHeader(200)
+	}))
+	defer ts.Close()
+
+	id, err := Register(ts.URL, registerExtensionTimeout)
+
+	assert.Empty(t, id.String())
+	assert.NotNil(t, err)
+}
+
+func TestRegisterErrorHttp(t *testing.T) {
+	//fake the register route
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// non 200 http code
+		w.WriteHeader(500)
+	}))
+	defer ts.Close()
+
+	id, err := Register(ts.URL, registerExtensionTimeout)
+
+	assert.Empty(t, id.String())
+	assert.NotNil(t, err)
+}
+
+func TestRegisterErrorTimeout(t *testing.T) {
+	id, err := Register(":invalidURL:", registerExtensionTimeout)
+	assert.Empty(t, id.String())
+	assert.NotNil(t, err)
+}
+
+func TestRegisterErrorBuildRequest(t *testing.T) {
+	//fake the register route
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(registerExtensionTimeout + 10*time.Millisecond)
+		w.WriteHeader(200)
+	}))
+	defer ts.Close()
+
+	id, err := Register(ts.URL, registerExtensionTimeout)
+
+	assert.Empty(t, id.String())
+	assert.NotNil(t, err)
 }

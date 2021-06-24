@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/metrics"
+	"github.com/DataDog/datadog-agent/pkg/serverless/registration"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -29,15 +30,15 @@ type Payload struct {
 // WaitForNextEvent makes a blocking HTTP call to receive the next event from AWS.
 // Note that for now, we only subscribe to INVOKE and SHUTDOWN events.
 // Write into stopCh to stop the main thread of the running program.
-func WaitForNextEvent(stopCh chan struct{}, daemon *Daemon, metricsChan chan []metrics.MetricSample, id ID, coldstart bool, prefix string) error {
+func WaitForNextEvent(stopCh chan struct{}, daemon *Daemon, metricsChan chan []metrics.MetricSample, id registration.ID, coldstart bool, prefix string) error {
 	var err error
 	var request *http.Request
 	var response *http.Response
 
-	if request, err = http.NewRequest(http.MethodGet, buildURL(prefix, routeEventNext), nil); err != nil {
+	if request, err = http.NewRequest(http.MethodGet, registration.BuildURL(prefix, routeEventNext), nil); err != nil {
 		return fmt.Errorf("WaitForNextInvocation: can't create the GET request: %v", err)
 	}
-	request.Header.Set(headerExtID, id.String())
+	request.Header.Set(registration.HeaderExtID, id.String())
 
 	// make a blocking HTTP call to wait for the next event from AWS
 	log.Debug("Waiting for next invocation...")
