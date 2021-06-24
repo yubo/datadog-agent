@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -17,18 +16,18 @@ const (
 // Register registers the serverless daemon and subscribe to INVOKE and SHUTDOWN messages.
 // Returns either (the serverless ID assigned by the serverless daemon + the api key as read from
 // the environment) or an error.
-func Register(url string) (ID, error) {
+func Register(prefix string, url string) (ID, error) {
 	var err error
 
 	payload := createRegistrationPayload()
 
-	request := buildRegisterRequest(headerExtName, extensionName, url, payload)
-	if request == nil {
+	request, err := buildRegisterRequest(headerExtName, extensionName, buildURL(prefix, url), payload)
+	if err != nil {
 		return "", fmt.Errorf("Register: can't create the POST register request: %v", err)
 	}
 
-	response := sendRequest(request)
-	if response == nil {
+	response, err := sendRequest(request)
+	if err != nil {
 		return "", fmt.Errorf("Register: error while POST register route: %v", err)
 	}
 
@@ -44,8 +43,7 @@ func Register(url string) (ID, error) {
 	return ID(id), nil
 }
 
-func buildURL(route string) string {
-	prefix := os.Getenv("AWS_LAMBDA_RUNTIME_API")
+func buildURL(prefix string, route string) string {
 	if len(prefix) == 0 {
 		return fmt.Sprintf("http://localhost:9001%s", route)
 	}
@@ -66,20 +64,20 @@ func isAValidResponse(response *http.Response) bool {
 	return response.StatusCode == 200
 }
 
-func buildRegisterRequest(headerExtensionName string, extensionName string, url string, payload *bytes.Buffer) *http.Request {
+func buildRegisterRequest(headerExtensionName string, extensionName string, url string, payload *bytes.Buffer) (*http.Request, error) {
 	request, err := http.NewRequest(http.MethodPost, url, payload)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	request.Header.Set(headerExtName, extensionName)
-	return request
+	return request, nil
 }
 
-func sendRequest(request *http.Request) *http.Response {
+func sendRequest(request *http.Request) (*http.Response, error) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	response, err := client.Do(request)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return response
+	return response, nil
 }

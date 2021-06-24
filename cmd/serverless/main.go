@@ -70,21 +70,23 @@ where they can be graphed on dashboards. The Datadog Serverless Agent implements
 	logLevelEnvVar             = "DD_LOG_LEVEL"
 	flushStrategyEnvVar        = "DD_SERVERLESS_FLUSH_STRATEGY"
 
+	routeRegister string = "/2020-01-01/extension/register"
+
 	// FatalNoAPIKey is the error reported to the AWS Extension environment when
 	// no API key has been set. Unused until we can report error
 	// without stopping the extension.
-	FatalNoAPIKey ErrorEnum = "Fatal.NoAPIKey"
+	FatalNoAPIKey serverless.ErrorEnum = "Fatal.NoAPIKey"
 	// FatalDogstatsdInit is the error reported to the AWS Extension environment when
 	// DogStatsD fails to initialize properly. Unused until we can report error
 	// without stopping the extension.
-	FatalDogstatsdInit ErrorEnum = "Fatal.DogstatsdInit"
+	FatalDogstatsdInit serverless.ErrorEnum = "Fatal.DogstatsdInit"
 	// FatalBadEndpoint is the error reported to the AWS Extension environment when
 	// bad endpoints have been configured. Unused until we can report error
 	// without stopping the extension.
-	FatalBadEndpoint ErrorEnum = "Fatal.BadEndpoint"
+	FatalBadEndpoint serverless.ErrorEnum = "Fatal.BadEndpoint"
 	// FatalConnectFailed is the error reported to the AWS Extension environment when
 	// a connection failed.
-	FatalConnectFailed ErrorEnum = "Fatal.ConnectFailed"
+	FatalConnectFailed serverless.ErrorEnum = "Fatal.ConnectFailed"
 
 	// AWS Lambda is writing the Lambda function files in /var/task, we want the
 	// configuration file to be at the root of this directory.
@@ -137,6 +139,8 @@ func runAgent(stopCh chan struct{}) (daemon *serverless.Daemon, err error) {
 
 	startTime := time.Now()
 
+	prefix := os.Getenv("AWS_LAMBDA_RUNTIME_API")
+
 	traceAgentCtx, stopTraceAgent := context.WithCancel(context.Background())
 
 	// setup logger
@@ -168,7 +172,7 @@ func runAgent(stopCh chan struct{}) (daemon *serverless.Daemon, err error) {
 	// ----------------
 
 	// register
-	serverlessID, err := serverless.Register()
+	serverlessID, err := serverless.Register(prefix, routeRegister)
 	if err != nil {
 		// at this point, we were not even able to register, thus, we don't have
 		// any ID assigned, thus, we can't report an error to the init error route
@@ -318,7 +322,7 @@ func runAgent(stopCh chan struct{}) (daemon *serverless.Daemon, err error) {
 	go func() {
 		coldstart := true
 		for {
-			if err := serverless.WaitForNextInvocation(stopCh, daemon, metricsChan, serverlessID, coldstart); err != nil {
+			if err := serverless.WaitForNextEvent(stopCh, daemon, metricsChan, serverlessID, coldstart, prefix); err != nil {
 				log.Error(err)
 			}
 			coldstart = false

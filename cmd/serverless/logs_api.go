@@ -32,13 +32,13 @@ func getLogTypesToSubscribe(envLogsType string) []string {
 	return logsType
 }
 
-func enableLogCollectionHttpRoute(daemon *serverless.Daemon) {
+func enableLogCollectionHttpRoute(daemon *serverless.Daemon, serverlessID serverless.ID, prefix string, logsType []string) {
 	log.Debug("Enabling logs collection HTTP route")
 	if httpAddr, logsChan, err := daemon.EnableLogsCollection(); err != nil {
 		log.Error("While starting the HTTP Logs Server:", err)
 	} else {
 		// subscribe to the logs on the platform
-		if err := serverless.SubscribeLogs(serverlessID, httpAddr, logsType); err != nil {
+		if err := serverless.SubscribeLogs(serverlessID, prefix, httpAddr, logsType); err != nil {
 			log.Error("Can't subscribe to logs:", err)
 		} else {
 			// we subscribed to the logs collection on the platform, let's instantiate

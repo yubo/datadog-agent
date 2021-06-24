@@ -29,12 +29,12 @@ type Payload struct {
 // WaitForNextEvent makes a blocking HTTP call to receive the next event from AWS.
 // Note that for now, we only subscribe to INVOKE and SHUTDOWN events.
 // Write into stopCh to stop the main thread of the running program.
-func WaitForNextEvent(stopCh chan struct{}, daemon *Daemon, metricsChan chan []metrics.MetricSample, id ID, coldstart bool) error {
+func WaitForNextEvent(stopCh chan struct{}, daemon *Daemon, metricsChan chan []metrics.MetricSample, id ID, coldstart bool, prefix string) error {
 	var err error
 	var request *http.Request
 	var response *http.Response
 
-	if request, err = http.NewRequest(http.MethodGet, buildURL(routeEventNext), nil); err != nil {
+	if request, err = http.NewRequest(http.MethodGet, buildURL(prefix, routeEventNext), nil); err != nil {
 		return fmt.Errorf("WaitForNextInvocation: can't create the GET request: %v", err)
 	}
 	request.Header.Set(headerExtID, id.String())

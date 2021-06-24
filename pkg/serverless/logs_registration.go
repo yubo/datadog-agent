@@ -26,7 +26,7 @@ const (
 // call from the Lambda function / client.
 // logsType contains the type of logs for which we are subscribing, possible
 // value: platform, extension and function.
-func SubscribeLogs(id ID, httpAddr string, logsType []string) error {
+func SubscribeLogs(id ID, prefix string, httpAddr string, logsType []string) error {
 	log.Debug("Subscribing to Logs for types:", logsType)
 
 	if !isValidHttpAddr(httpAddr) {
@@ -38,7 +38,7 @@ func SubscribeLogs(id ID, httpAddr string, logsType []string) error {
 		return fmt.Errorf("SubscribeLogs: can't marshal subscribe JSON %v", err)
 	}
 
-	request, err := buildLogRegistrationRequest(headerExtID, headerContentType, id, jsonBytes)
+	request, err := buildLogRegistrationRequest(prefix, headerExtID, headerContentType, id, jsonBytes)
 	if err != nil {
 		return fmt.Errorf("SubscribeLogs: can't create the PUT request: %v", err)
 	}
@@ -70,8 +70,8 @@ func buildLogRegistrationPayload(httpAddr string, logsType []string) ([]byte, er
 	})
 }
 
-func buildLogRegistrationRequest(headerExtID string, headerContentType string, id ID, payload []byte) (*http.Request, error) {
-	request, err := http.NewRequest(http.MethodPut, buildURL(routeSubscribeLogs), bytes.NewBuffer(payload))
+func buildLogRegistrationRequest(prefix string, headerExtID string, headerContentType string, id ID, payload []byte) (*http.Request, error) {
+	request, err := http.NewRequest(http.MethodPut, buildURL(prefix, routeSubscribeLogs), bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}
