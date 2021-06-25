@@ -7,6 +7,7 @@ package aggregator
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator/ckey"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
@@ -145,6 +146,7 @@ type countBasedContextResolver struct {
 	expireCountByKey    map[ckey.ContextKey]int64
 	expireCount         int64
 	expireCountInterval int64
+	mut                 sync.Mutex
 }
 
 func newCountBasedContextResolver(expireCountInterval int) *countBasedContextResolver {
@@ -158,8 +160,11 @@ func newCountBasedContextResolver(expireCountInterval int) *countBasedContextRes
 
 // trackContext returns the contextKey associated with the context of the metricSample and tracks that context
 func (cr *countBasedContextResolver) trackContext(metricSampleContext metrics.MetricSampleContext) ckey.ContextKey {
+	cr.mut.Lock()
+	defer cr.mut.Unlock()
 	contextKey := cr.resolver.trackContext(metricSampleContext)
 	cr.expireCountByKey[contextKey] = cr.expireCount
+
 	return contextKey
 }
 

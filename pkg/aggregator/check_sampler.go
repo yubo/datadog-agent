@@ -27,7 +27,7 @@ type CheckSampler struct {
 
 // newCheckSampler returns a newly initialized CheckSampler
 func newCheckSampler(expirationCount int) *CheckSampler {
-	return &CheckSampler{
+	cs := &CheckSampler{
 		series:          make([]*metrics.Serie, 0),
 		sketches:        make(metrics.SketchSeriesList, 0),
 		contextResolver: newCountBasedContextResolver(expirationCount),
@@ -35,6 +35,26 @@ func newCheckSampler(expirationCount int) *CheckSampler {
 		sketchMap:       make(sketchMap),
 		lastBucketValue: make(map[ckey.ContextKey]int64),
 	}
+
+	return cs
+}
+
+func (cs *CheckSampler) stats(id string) {
+	countCr := cs.contextResolver
+	countCr.mut.Lock()
+	cr := countCr.resolver
+
+	log.Infof("contextResolver.trackContext. length: %d", len(cr.contextsByKey))
+	for k, v := range cr.contextsByKey {
+		log.Debugf("resolve %q %d: %+v", id, k, v)
+	}
+
+	log.Infof("countBasedContextResolver.trackContext. len: %d", len(countCr.expireCountByKey))
+	for k, v := range countCr.expireCountByKey {
+		log.Debugf("count %q %d: %d", id, k, v)
+	}
+
+	countCr.mut.Unlock()
 }
 
 func (cs *CheckSampler) addSample(metricSample *metrics.MetricSample) {
