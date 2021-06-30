@@ -192,6 +192,7 @@ func (c *Concentrator) flushNow(now int64) pb.StatsPayload {
 			Hostname: k.hostname,
 			Version:  k.version,
 			Stats:    s,
+			SummaryUsesSeconds: true,
 		})
 	}
 	return pb.StatsPayload{Stats: sb, AgentHostname: c.agentHostname, AgentEnv: c.agentEnv, AgentVersion: info.Version}
