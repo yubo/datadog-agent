@@ -17,13 +17,9 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/dogstatsd/replay"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
-
 	"fmt"
 
 	"os"
-	
-
-
 )
 
 type UDSStreamListener struct {
@@ -44,7 +40,7 @@ type UDSStreamListener struct {
 // 		}
 
 func createUDSconn() (net.Listener, error) {
-	socketPath := config.Datadog.GetString("dogstatsd_socket")
+	socketPath := config.Datadog.GetString("dogstatsd_socket_uds")
 
 	address, addrErr := net.ResolveUnixAddr("unix", socketPath)
 	if addrErr != nil {
@@ -76,19 +72,17 @@ func createUDSconn() (net.Listener, error) {
 }
 
 // NewUDSStreamListener returns an named pipe Statsd listener
-func NewUDSStreamListener(pipeName string, packetOut chan packets.Packets,
+func NewUDSStreamListener(packetOut chan packets.Packets,
 	sharedPacketPoolManager *packets.PoolManager, capture *replay.TrafficCapture) (*UDSStreamListener, error) {
 
 	bufferSize := config.Datadog.GetInt("dogstatsd_buffer_size")
 	return newUDSStreamListener(
-		pipeName,
 		bufferSize,
 		packets.NewPacketManagerFromConfig(packetOut, sharedPacketPoolManager),
 		capture)
 }
 
 func newUDSStreamListener(
-	pipeName string,
 	bufferSize int,
 	packetManager *packets.PacketManager,
 	capture *replay.TrafficCapture) (*UDSStreamListener, error) {
@@ -101,7 +95,7 @@ func newUDSStreamListener(
 	}
 
 	listener := &UDSStreamListener{
-		conn:           con,
+		conn:          con,
 		packetManager: packetManager,
 		connections: &namedPipeConnections{
 			newConn:         make(chan net.Conn),
@@ -179,7 +173,7 @@ func (l *UDSStreamListener) Listen() {
 }
 
 func (l *UDSStreamListener) listenConnection(conn net.Conn, buffer []byte) {
-	log.Debugf("UDSStreamListener: start listening a new named pipe client on %s", conn.LocalAddr())
+	log.Infof("UDSStreamListener: start listening a new named pipe client on %s", conn.LocalAddr())
 	startWriteIndex := 0
 	var t1, t2 time.Time
 	for {

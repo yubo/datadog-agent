@@ -237,6 +237,19 @@ func NewServer(aggregator *aggregator.BufferedAggregator, extraTags []string) (*
 			udsListenerRunning = true
 		}
 	}
+
+	socketPath_uds := config.Datadog.GetString("dogstatsd_socket_uds")
+	if len(socketPath_uds) > 0 {
+		log.Info("Start UDSSTREAM")
+		unixListener, err := listeners.NewUDSStreamListener(packetsChannel, sharedPacketPoolManager, capture)
+		if err != nil {
+			log.Errorf(err.Error())
+		} else {
+			tmpListeners = append(tmpListeners, unixListener)
+			udsListenerRunning = true
+		}
+	}
+
 	if config.Datadog.GetInt("dogstatsd_port") > 0 {
 		udpListener, err := listeners.NewUDPListener(packetsChannel, sharedPacketPoolManager, capture)
 		if err != nil {
