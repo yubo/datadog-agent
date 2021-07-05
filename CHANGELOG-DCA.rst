@@ -2,6 +2,25 @@
 Release Notes
 =============
 
+.. _Release Notes_dca-1.13.1_dca-1.13.X:
+
+dca-1.13.1
+==========
+
+.. _Release Notes_dca-1.13.1_dca-1.13.X_Prelude:
+
+Prelude
+-------
+
+Released on: 2021-07-05
+Pinned to datadog-agent v7.29.0: `CHANGELOG <https://github.com/DataDog/datadog-agent/blob/master/CHANGELOG.rst#7290>`_.
+
+Bug Fixes
+---------
+
+- Fix the embedded security policy version to match the one from the agent.
+
+
 .. _Release Notes_dca-1.13.0_dca-1.13.X:
 
 dca-1.13.0
