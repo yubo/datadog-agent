@@ -36,7 +36,7 @@
     - cd $DD_AGENT_TESTING_DIR
     - bash -l tasks/kitchen_setup.sh
   script:
-    - bash -l tasks/run-test-kitchen.sh windows-install-test $AGENT_MAJOR_VERSION
+    - "true"
 
 .kitchen_test_windows_npm_driver:
   variables:
@@ -49,7 +49,7 @@
     - cd $DD_AGENT_TESTING_DIR
     - bash -l tasks/kitchen_setup.sh
   script:
-    - bash -l tasks/run-test-kitchen.sh windows-npmdriver $AGENT_MAJOR_VERSION
+    - "true"
 
 .kitchen_test_windows_npm_installer:
   variables:
@@ -61,7 +61,7 @@
     - cd $DD_AGENT_TESTING_DIR
     - bash -l tasks/kitchen_setup.sh
   script:
-    - bash -l tasks/run-test-kitchen.sh windows-npm-test $AGENT_MAJOR_VERSION
+    - "true"
 
 # Kitchen: Test types (test suite * agent flavor + azure location)
 # -------------------------------
