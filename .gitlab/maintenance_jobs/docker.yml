@@ -18,16 +18,12 @@ revert_latest_6:
   stage: maintenance_jobs
   variables:
     NEW_LATEST_RELEASE_6: ""  # tag name of the non-jmx version, for example "6.21.0"
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  parallel:
-    matrix:
-      - IMG_SOURCES: datadog/agent-amd64:${NEW_LATEST_RELEASE_6},datadog/agent-arm64:${NEW_LATEST_RELEASE_6}
-        IMG_DESTINATIONS: agent:6,agent:latest-py2
-      - IMG_SOURCES: datadog/agent-amd64:${NEW_LATEST_RELEASE_6}-jmx,datadog/agent-arm64:${NEW_LATEST_RELEASE_6}-jmx
-        IMG_DESTINATIONS: agent:6-jmx,agent:latest-py2-jmx
+  script:
+    - if [[ -z "$NEW_LATEST_RELEASE_6" ]]; then echo "Need release version to revert to"; exit 1; fi
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag latest-py2 --image datadog/agent-amd64:${NEW_LATEST_RELEASE_6},linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag latest-py2-jmx --image datadog/agent-amd64:${NEW_LATEST_RELEASE_6}-jmx,linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag 6 --image datadog/agent-amd64:${NEW_LATEST_RELEASE_6},linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag 6-jmx --image datadog/agent-amd64:${NEW_LATEST_RELEASE_6}-jmx,linux/amd64
 
 revert_latest_7:
   extends: .docker_job_definition
@@ -36,22 +32,66 @@ revert_latest_7:
   stage: maintenance_jobs
   variables:
     NEW_LATEST_RELEASE_7: ""  # tag name of the non-jmx version, for example "7.21.0"
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  parallel:
-    matrix:
-      - IMG_SOURCES: datadog/agent-amd64:${NEW_LATEST_RELEASE_7},datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-win1809,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-win1909,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-win2004,datadog/agent-arm64:${NEW_LATEST_RELEASE_7}
-        IMG_DESTINATIONS: agent:7,agent:latest
-      - IMG_SOURCES: datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx-win1809,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx-win1909,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx-win2004,datadog/agent-arm64:${NEW_LATEST_RELEASE_7}-jmx
-        IMG_DESTINATIONS: agent:7-jmx,agent:latest-jmx
-      - IMG_SOURCES: datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-win1809-servercore,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-win1909-servercore,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-win2004-servercore
-        IMG_DESTINATIONS: agent:7-servercore,agent:latest-servercore
-      - IMG_SOURCES: datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx-win1809-servercore,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx-win1909-servercore,datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx-win2004-servercore
-        IMG_DESTINATIONS: agent:7-servercore-jmx,agent:latest-servercore-jmx
-      - IMG_SOURCES: datadog/dogstatsd:${NEW_LATEST_RELEASE_7}
-        IMG_DESTINATIONS: dogstatsd:7,dogstatsd:latest
+  script:
+    - if [[ -z "$NEW_LATEST_RELEASE_7" ]]; then echo "Need release version to revert to"; exit 1; fi
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag latest
+      --image datadog/agent-amd64:${NEW_LATEST_RELEASE_7},linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag latest-servercore
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag latest-jmx
+      --image datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx,linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag latest-servercore-jmx
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag 7
+      --image datadog/agent-amd64:${NEW_LATEST_RELEASE_7},linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag 7-servercore
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag 7-jmx
+      --image datadog/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx,linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent --tag 7-servercore-jmx
+    - inv -e docker.publish --signed-pull --signed-push datadog/dogstatsd:${NEW_LATEST_RELEASE_7} datadog/dogstatsd:latest
+    - inv -e docker.publish --signed-pull --signed-push datadog/dogstatsd:${NEW_LATEST_RELEASE_7} datadog/dogstatsd:7
+
+revert_latest_6_google_container_registry:
+  extends: .google_container_registry_tag_job_definition
+  rules:
+    - <<: *if_master_branch
+      when: manual
+      allow_failure: true
+  stage: maintenance_jobs
+  variables:
+    <<: *google_container_registry_variables
+    NEW_LATEST_RELEASE_6: ""  # tag name of the non-jmx version, for example "6.21.0"
+  script:
+    - if [[ -z "$NEW_LATEST_RELEASE_6" ]]; then echo "Need release version to revert to"; exit 1; fi
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag latest-py2 --image gcr.io/datadoghq/agent-amd64:${NEW_LATEST_RELEASE_6},linux/amd64
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag latest-py2-jmx --image gcr.io/datadoghq/agent-amd64:${NEW_LATEST_RELEASE_6}-jmx,linux/amd64
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag 6 --image gcr.io/datadoghq/agent-amd64:${NEW_LATEST_RELEASE_6},linux/amd64
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag 6-jmx --image gcr.io/datadoghq/agent-amd64:${NEW_LATEST_RELEASE_6}-jmx,linux/amd64
+
+revert_latest_7_google_container_registry:
+  extends: .google_container_registry_tag_job_definition
+  rules:
+    - <<: *if_master_branch
+      when: manual
+      allow_failure: true
+  stage: maintenance_jobs
+  variables:
+    <<: *google_container_registry_variables
+    NEW_LATEST_RELEASE_7: ""  # tag name of the non-jmx version, for example "7.21.0"
+  script:
+    - if [[ -z "$NEW_LATEST_RELEASE_7" ]]; then echo "Need release version to revert to"; exit 1; fi
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag latest
+      --image gcr.io/datadoghq/agent-amd64:${NEW_LATEST_RELEASE_7},linux/amd64
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag latest-servercore
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag latest-jmx
+      --image gcr.io/datadoghq/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx,linux/amd64
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag latest-servercore-jmx
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag 7
+      --image gcr.io/datadoghq/agent-amd64:${NEW_LATEST_RELEASE_7},linux/amd64
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag 7-servercore
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag 7-jmx
+      --image gcr.io/datadoghq/agent-amd64:${NEW_LATEST_RELEASE_7}-jmx,linux/amd64
+    - inv -e docker.publish-manifest --name gcr.io/datadoghq/agent --tag 7-servercore-jmx
+    - inv -e docker.publish gcr.io/datadoghq/dogstatsd:${NEW_LATEST_RELEASE_7} gcr.io/datadoghq/dogstatsd:latest
+    - inv -e docker.publish gcr.io/datadoghq/dogstatsd:${NEW_LATEST_RELEASE_7} gcr.io/datadoghq/dogstatsd:7
 
 #
 # Use this step to delete a tag of a given image

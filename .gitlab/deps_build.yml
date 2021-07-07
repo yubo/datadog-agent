@@ -37,13 +37,6 @@ build_libbcc_x64:
   variables:
     ARCH: amd64
 
-build_libbcc_arm64:
-  extends: .build_libbcc_common
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_arm64:$DATADOG_AGENT_SYSPROBE_BUILDIMAGES
-  tags: ["runner:docker-arm", "platform:arm64"]
-  variables:
-    ARCH: arm64
-
 .build_clang_common:
   rules:
     !reference [.manual]
@@ -90,10 +83,3 @@ build_clang_x64:
   tags: ["runner:main", "size:2xlarge"]
   variables:
     ARCH: amd64
-
-build_clang_arm64:
-  extends: .build_clang_common
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_arm64:$DATADOG_AGENT_SYSPROBE_BUILDIMAGES
-  tags: ["runner:docker-arm", "platform:arm64"]
-  variables:
-    ARCH: arm64

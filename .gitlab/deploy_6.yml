@@ -4,5 +4,5 @@
 
 include:
   - /.gitlab/deploy_6/docker.yml
-  - /.gitlab/deploy_6/nix.yml
-  - /.gitlab/deploy_6/windows.yml
+    #  - /.gitlab/deploy_6/nix.yml
+    #  - /.gitlab/deploy_6/windows.yml

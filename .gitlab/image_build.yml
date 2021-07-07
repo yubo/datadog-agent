@@ -4,4 +4,4 @@
 
 include:
   - /.gitlab/image_build/docker_linux.yml
-  - /.gitlab/image_build/docker_windows.yml
+    #  - /.gitlab/image_build/docker_windows.yml
