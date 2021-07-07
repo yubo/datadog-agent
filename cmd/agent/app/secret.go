@@ -14,12 +14,14 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/DataDog/datadog-agent/cmd/agent/common"
+	secrets_cmd "github.com/DataDog/datadog-agent/cmd/secrets"
 	"github.com/DataDog/datadog-agent/pkg/api/util"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/secrets"
 )
 
 func init() {
+	AgentCmd.AddCommand(secrets_cmd.SecretHelperCmd)
 	AgentCmd.AddCommand(secretInfoCommand)
 }
 
