@@ -82,23 +82,17 @@ dev_branch_multiarch_docker_hub-a6:
       allow_failure: true
   needs:
     - docker_build_agent6
-    - docker_build_agent6_arm64
     - docker_build_agent6_jmx
-    - docker_build_agent6_jmx_arm64
     - docker_build_agent6_py2py3_jmx
   script:
     # Platform-specific agent images
-    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_AGENT}:${SRC_TAG}-6-ARCH      --dst-template datadog/agent-dev-ARCH:${CI_COMMIT_REF_SLUG}
-    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_AGENT}:${SRC_TAG}-6-ARCH      --dst-template datadog/agent-dev-ARCH:${CI_COMMIT_REF_SLUG}-py2
-    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_AGENT}:${SRC_TAG}-6-jmx-ARCH  --dst-template datadog/agent-dev-ARCH:${CI_COMMIT_REF_SLUG}-jmx
-    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_AGENT}:${SRC_TAG}-6-jmx-ARCH  --dst-template datadog/agent-dev-ARCH:${CI_COMMIT_REF_SLUG}-py2-jmx
     # Other images
     - inv -e docker.publish --signed-push ${SRC_AGENT}:${SRC_TAG}-6-py2py3-jmx-amd64 datadog/agent-dev:${CI_COMMIT_REF_SLUG}-py2py3-jmx
     # Manifests
-    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG} --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG},linux/amd64 --image datadog/agent-dev-arm64:${CI_COMMIT_REF_SLUG},linux/arm64
-    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py2 --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-py2,linux/amd64 --image datadog/agent-dev-arm64:${CI_COMMIT_REF_SLUG}-py2,linux/arm64
-    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-jmx --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-jmx,linux/amd64 --image datadog/agent-dev-arm64:${CI_COMMIT_REF_SLUG}-jmx,linux/arm64
-    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py2-jmx --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-py2-jmx,linux/amd64 --image datadog/agent-dev-arm64:${CI_COMMIT_REF_SLUG}-py2-jmx,linux/arm64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG} --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG},linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py2 --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-py2,linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-jmx --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-jmx,linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py2-jmx --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-py2-jmx,linux/amd64
 
 dev_branch_multiarch_docker_hub-a7:
   extends: .docker_tag_job_definition
@@ -108,16 +102,14 @@ dev_branch_multiarch_docker_hub-a7:
       allow_failure: true
   needs:
     - docker_build_agent7
-    - docker_build_agent7_arm64
     - docker_build_agent7_jmx
-    - docker_build_agent7_jmx_arm64
   script:
     # Platform-specific agent images
-    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_AGENT}:${SRC_TAG}-7-ARCH      --dst-template datadog/agent-dev-ARCH:${CI_COMMIT_REF_SLUG}-py3
-    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_AGENT}:${SRC_TAG}-7-jmx-ARCH  --dst-template datadog/agent-dev-ARCH:${CI_COMMIT_REF_SLUG}-py3-jmx
+    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --src-template ${SRC_AGENT}:${SRC_TAG}-7-ARCH      --dst-template datadog/agent-dev-ARCH:${CI_COMMIT_REF_SLUG}-py3
+    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --src-template ${SRC_AGENT}:${SRC_TAG}-7-jmx-ARCH  --dst-template datadog/agent-dev-ARCH:${CI_COMMIT_REF_SLUG}-py3-jmx
     # Manifests
-    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py3 --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-py3,linux/amd64 --image datadog/agent-dev-arm64:${CI_COMMIT_REF_SLUG}-py3,linux/arm64
-    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py3-jmx --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-py3-jmx,linux/amd64 --image datadog/agent-dev-arm64:${CI_COMMIT_REF_SLUG}-py3-jmx,linux/arm64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py3 --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-py3,linux/amd64
+    - inv -e docker.publish-manifest --signed-push --name datadog/agent-dev --tag ${CI_COMMIT_REF_SLUG}-py3-jmx --image datadog/agent-dev-amd64:${CI_COMMIT_REF_SLUG}-py3-jmx,linux/amd64
 
 dev_branch_multiarch_docker_hub-dogstatsd:
   extends: .docker_tag_job_definition
@@ -183,11 +175,10 @@ dca_dev_branch_multiarch_docker_hub:
     - <<: *if_not_master_branch
       when: manual
       allow_failure: true
-  needs: ["docker_build_cluster_agent_amd64", "docker_build_cluster_agent_arm64"]
+  needs: ["docker_build_cluster_agent_amd64"]
   script:
-    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --platform linux/arm64 --src-template ${SRC_DCA}:${SRC_TAG}-ARCH --dst-template datadog/cluster-agent-dev-ARCH:${CI_COMMIT_REF_SLUG}
-    - inv -e docker.publish-manifest --signed-push --name datadog/cluster-agent-dev --tag ${CI_COMMIT_REF_SLUG} --image datadog/cluster-agent-dev-amd64:${CI_COMMIT_REF_SLUG},linux/amd64 --image datadog/cluster-agent-dev-arm64:${CI_COMMIT_REF_SLUG},linux/arm64
-
+    - inv -e docker.publish-bulk --signed-push --platform linux/amd64 --src-template ${SRC_DCA}:${SRC_TAG}-ARCH --dst-template datadog/cluster-agent-dev-ARCH:${CI_COMMIT_REF_SLUG}
+    - inv -e docker.publish-manifest --signed-push --name datadog/cluster-agent-dev --tag ${CI_COMMIT_REF_SLUG} --image datadog/cluster-agent-dev-amd64:${CI_COMMIT_REF_SLUG},linux/amd64
 dca_dev_master_docker_hub:
   extends: .docker_tag_job_definition
   rules:

@@ -22,10 +22,7 @@ deploy_staging_deb-7:
   tags: ["runner:main", "size:large"]
   dependencies:
     - agent_deb-x64-a7
-    - agent_deb-arm64-a7
     - iot_agent_deb-x64
-    - iot_agent_deb-arm64
-    - iot_agent_deb-armhf
     - dogstatsd_deb-x64
   before_script:
     - ls $OMNIBUS_PACKAGE_DIR
@@ -47,8 +44,6 @@ deploy_staging_deb-7:
     # Release the artifacts to the "7" component
     - echo "$APT_SIGNING_KEY_PASSPHRASE" | deb-s3 upload -c $DEB_RPM_BUCKET_BRANCH -m 7 -b $DEB_S3_BUCKET -a amd64 --sign=$DEB_GPG_KEY_ID --gpg_options="--passphrase-fd 0 --batch --digest-algo SHA512" --preserve_versions --visibility public $OMNIBUS_PACKAGE_DIR/*_7.*amd64.deb
     - echo "$APT_SIGNING_KEY_PASSPHRASE" | deb-s3 upload -c $DEB_RPM_BUCKET_BRANCH -m 7 -b $DEB_S3_BUCKET -a x86_64 --sign=$DEB_GPG_KEY_ID --gpg_options="--passphrase-fd 0 --batch --digest-algo SHA512" --preserve_versions --visibility public $OMNIBUS_PACKAGE_DIR/*_7.*amd64.deb
-    - echo "$APT_SIGNING_KEY_PASSPHRASE" | deb-s3 upload -c $DEB_RPM_BUCKET_BRANCH -m 7 -b $DEB_S3_BUCKET -a arm64 --sign=$DEB_GPG_KEY_ID --gpg_options="--passphrase-fd 0 --batch --digest-algo SHA512" --preserve_versions --visibility public $OMNIBUS_PACKAGE_DIR/*_7.*arm64.deb
-    - echo "$APT_SIGNING_KEY_PASSPHRASE" | deb-s3 upload -c $DEB_RPM_BUCKET_BRANCH -m 7 -b $DEB_S3_BUCKET -a armhf --sign=$DEB_GPG_KEY_ID --gpg_options="--passphrase-fd 0 --batch --digest-algo SHA512" --preserve_versions --visibility public $OMNIBUS_PACKAGE_DIR/*_7.*armhf.deb
 
 deploy_staging_rpm-7:
   rules:
@@ -61,10 +56,7 @@ deploy_staging_rpm-7:
   tags: ["runner:main", "size:large"]
   dependencies:
     - agent_rpm-x64-a7
-    - agent_rpm-arm64-a7
     - iot_agent_rpm-x64
-    - iot_agent_rpm-arm64
-    - iot_agent_rpm-armhf
     - dogstatsd_rpm-x64
   before_script:
     - ls $OMNIBUS_PACKAGE_DIR
@@ -73,7 +65,6 @@ deploy_staging_rpm-7:
     - set +x
     - echo "$RPM_SIGNING_PASSPHRASE" | rpm-s3 --verbose --visibility public-read -c "https://s3.amazonaws.com" -b $RPM_S3_BUCKET -p "$DEB_RPM_BUCKET_BRANCH/7/x86_64/" -a "x86_64" --sign --metadata-signing-key $RPM_GPG_KEY_ID $OMNIBUS_PACKAGE_DIR/*-7.*x86_64.rpm
     - echo "$RPM_SIGNING_PASSPHRASE" | rpm-s3 --verbose --visibility public-read -c "https://s3.amazonaws.com" -b $RPM_S3_BUCKET -p "$DEB_RPM_BUCKET_BRANCH/7/aarch64/" -a "aarch64" --sign --metadata-signing-key $RPM_GPG_KEY_ID $OMNIBUS_PACKAGE_DIR/*-7.*aarch64.rpm
-    - echo "$RPM_SIGNING_PASSPHRASE" | rpm-s3 --verbose --visibility public-read -c "https://s3.amazonaws.com" -b $RPM_S3_BUCKET -p "$DEB_RPM_BUCKET_BRANCH/7/armv7hl/" -a "armv7hl" --sign --metadata-signing-key $RPM_GPG_KEY_ID $OMNIBUS_PACKAGE_DIR/*-7.*armv7hl.rpm
 
 deploy_staging_suse_rpm-7:
   rules:

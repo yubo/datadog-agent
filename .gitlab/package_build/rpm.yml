@@ -53,7 +53,7 @@ agent_rpm-x64-a6:
   stage: package_build
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_x64:$DATADOG_AGENT_BUILDIMAGES
   tags: ["runner:main", "size:2xlarge"]
-  needs: ["tests_rpm-x64-py2", "tests_rpm-x64-py3", "build_system-probe-x64", "linux_x64_go_deps"]
+  needs: ["build_system-probe-x64", "linux_x64_go_deps"]
   variables:
     AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: /credentials
     AGENT_MAJOR_VERSION: 6
@@ -71,7 +71,7 @@ agent_rpm-x64-a7:
   stage: package_build
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_x64:$DATADOG_AGENT_BUILDIMAGES
   tags: ["runner:main", "size:2xlarge"]
-  needs: ["tests_rpm-x64-py3", "build_system-probe-x64", "linux_x64_go_deps"]
+  needs: ["build_system-probe-x64", "linux_x64_go_deps"]
   variables:
     AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: /credentials
     AGENT_MAJOR_VERSION: 7
@@ -81,39 +81,6 @@ agent_rpm-x64-a7:
     - source /root/.bashrc && conda activate ddpy3
     - export RELEASE_VERSION=$RELEASE_VERSION_7
 
-# build Agent package for rpm-arm64
-agent_rpm-arm64-a6:
-  extends: .agent_build_common_rpm
-  rules:
-    - <<: *if_version_6
-  stage: package_build
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_arm64:$DATADOG_AGENT_ARMBUILDIMAGES
-  tags: ["runner:docker-arm", "platform:arm64"]
-  needs: ["go_mod_tidy_check", "build_system-probe-arm64", "linux_arm64_go_deps"]
-  variables:
-    AGENT_MAJOR_VERSION: 6
-    PYTHON_RUNTIMES: '2,3'
-    PACKAGE_ARCH: arm64
-  before_script:
-    - source /root/.bashrc && conda activate ddpy3
-    - export RELEASE_VERSION=$RELEASE_VERSION_6
-
-# build Agent package for rpm-arm64
-agent_rpm-arm64-a7:
-  extends: .agent_build_common_rpm
-  rules:
-    - <<: *if_version_7
-  stage: package_build
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_arm64:$DATADOG_AGENT_ARMBUILDIMAGES
-  tags: ["runner:docker-arm", "platform:arm64"]
-  needs: ["go_mod_tidy_check", "build_system-probe-arm64", "linux_arm64_go_deps"]
-  variables:
-    AGENT_MAJOR_VERSION: 7
-    PYTHON_RUNTIMES: '3'
-    PACKAGE_ARCH: arm64
-  before_script:
-    - source /root/.bashrc && conda activate ddpy3
-    - export RELEASE_VERSION=$RELEASE_VERSION_7
 
 .iot_agent_build_common_rpm:
   rules:
@@ -147,24 +114,6 @@ iot_agent_rpm-x64:
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_x64:$DATADOG_AGENT_BUILDIMAGES
   tags: ["runner:main", "size:2xlarge"]
   needs: ["linux_x64_go_deps"]
-
-iot_agent_rpm-arm64:
-  extends: .iot_agent_build_common_rpm
-  stage: package_build
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_arm64:$DATADOG_AGENT_ARMBUILDIMAGES
-  tags: ["runner:docker-arm", "platform:arm64"]
-  needs: ["linux_arm64_go_deps"]
-
-iot_agent_rpm-armhf:
-  extends: .iot_agent_build_common_rpm
-  stage: package_build
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/rpm_armhf:$DATADOG_AGENT_ARMBUILDIMAGES
-  # Run with platform:arm64 since no platform:armhf exists and arm64 should be backwards compatible
-  tags: ["runner:docker-arm", "platform:arm64"]
-  needs: ["linux_armhf_go_deps"]
-  before_script:
-    # Ensures uname -m reports armv7l
-    - export LD_PRELOAD="/usr/local/lib/libfakearmv7l.so"
 
 dogstatsd_rpm-x64:
   rules:
