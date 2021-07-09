@@ -2,6 +2,7 @@ package checks
 
 import (
 	"context"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -129,13 +130,21 @@ func fmtContainers(ctrList []*containers.Container, lastRates map[string]util.Co
 			lastCtr = util.NullContainerRates
 		}
 
+		// TEMP: randomly set ctr.CPU = nil 30% of the time
+		rand.Seed(time.Now().UnixNano())
+		randomInt := rand.Intn(100)
+		if randomInt <= 30 {
+			ctr.CPU = nil
+			lastCtr.CPU = nil
+		}
+
 		// If ctr.CPU is nil, then return -1 for the CPU metric values.
 		// This is handled on the backend to skip reporting, rather than report an
 		// errant value due to the expectation that CPU is reported cumulatively
 		var cpuUserPct float32
 		var cpuSystemPct float32
 		var cpuTotalPct float32
-		if ctr.CPU == nil {
+		if ctr.CPU == nil || lastCtr.CPU == nil {
 			cpuUserPct = -1
 			cpuSystemPct = -1
 			cpuTotalPct = -1
