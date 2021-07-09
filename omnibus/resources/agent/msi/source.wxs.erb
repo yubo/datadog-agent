@@ -243,6 +243,26 @@
             <?endif ?>
         </Component>
 
+        <?if $(var.IncludePython2) = true ?>
+        <Component Id="MSVCRUNTIME" Guid="30ce4f57-47ce-47c0-8564-e510d69787a9">
+
+            <Condition> <![CDATA[VersionNT <= 601]]> </Condition>
+            <RemoveFile Id="msvcm90.dll"
+                Name="msvcm90.dll"
+                Directory="$(var.BinFiles)" />
+            <RemoveFile Id="msvcp90.dll"
+                Name="msvcp90.dll"
+                Directory="$(var.BinFiles)" />
+            <RemoveFile Id="msvcr90.dll"
+                Name="msvcr90.dll"
+                Directory="$(var.BinFiles)" />
+            <RemoveFile Id="Microsoft.VC90.CRT.manifest"
+                Name="Microsoft.VC90.CRT.manifest"
+                Directory="$(var.BinFiles)" />
+
+        </Component>
+        <?endif ?>
+
         <Directory Id="AGENT" Name="agent">
           <?if $(var.Platform) = x64 ?>
             <!-- Windows service declaration for APM agent -->
@@ -453,6 +473,9 @@
         <?endif ?>
         <ComponentGroupRef Id="ExtraEXAMPLECONFSLOCATION" />
         <ComponentRef Id="CleanupMainApplicationFolder" />
+      <?if $(var.IncludePython2) = true ?>
+        <ComponentRef Id="MSVCRUNTIME" />
+      <?endif ?>
       <?if $(var.IncludeSysprobe) = true ?>
           <ComponentRef Id="DATADOGSYSPROBESERVICE" />
           <ComponentRef Id="system_probe.yaml.example" />
