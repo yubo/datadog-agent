@@ -59,6 +59,7 @@ var (
 		"jobs",
 		"cronjobs",
 		"daemonsets",
+		"statefulsets",
 	}
 )
 
@@ -84,31 +85,35 @@ func (c *OrchestratorInstance) parse(data []byte) error {
 // OrchestratorCheck wraps the config and the informers needed to run the check
 type OrchestratorCheck struct {
 	core.CheckBase
-	orchestratorConfig      *orchcfg.OrchestratorConfig
-	instance                *OrchestratorInstance
-	stopCh                  chan struct{}
-	clusterID               string
-	groupID                 int32
-	isCLCRunner             bool
-	apiClient               *apiserver.APIClient
-	unassignedPodLister     corelisters.PodLister
-	unassignedPodListerSync cache.InformerSynced
-	deployLister            appslisters.DeploymentLister
-	deployListerSync        cache.InformerSynced
-	rsLister                appslisters.ReplicaSetLister
-	rsListerSync            cache.InformerSynced
-	serviceLister           corelisters.ServiceLister
-	serviceListerSync       cache.InformerSynced
-	nodesLister             corelisters.NodeLister
-	nodesListerSync         cache.InformerSynced
-	jobsLister              batchlisters.JobLister
-	jobsListerSync          cache.InformerSynced
-	cronJobsLister          batchlistersBeta1.CronJobLister
-	cronJobsListerSync      cache.InformerSynced
-	daemonSetsLister        appslisters.DaemonSetLister
-	daemonSetsListerSync    cache.InformerSynced
-	statefulSetsLister      appslisters.StatefulSetLister
-	statefulSetsListerSync  cache.InformerSynced
+	orchestratorConfig              *orchcfg.OrchestratorConfig
+	instance                        *OrchestratorInstance
+	stopCh                          chan struct{}
+	clusterID                       string
+	groupID                         int32
+	isCLCRunner                     bool
+	apiClient                       *apiserver.APIClient
+	unassignedPodLister             corelisters.PodLister
+	unassignedPodListerSync         cache.InformerSynced
+	deployLister                    appslisters.DeploymentLister
+	deployListerSync                cache.InformerSynced
+	rsLister                        appslisters.ReplicaSetLister
+	rsListerSync                    cache.InformerSynced
+	serviceLister                   corelisters.ServiceLister
+	serviceListerSync               cache.InformerSynced
+	nodesLister                     corelisters.NodeLister
+	nodesListerSync                 cache.InformerSynced
+	jobsLister                      batchlisters.JobLister
+	jobsListerSync                  cache.InformerSynced
+	cronJobsLister                  batchlistersBeta1.CronJobLister
+	cronJobsListerSync              cache.InformerSynced
+	daemonSetsLister                appslisters.DaemonSetLister
+	daemonSetsListerSync            cache.InformerSynced
+	statefulSetsLister              appslisters.StatefulSetLister
+	statefulSetsListerSync          cache.InformerSynced
+	persistentVolumeLister          corelisters.PersistentVolumeLister
+	persistentVolumeListerSync      cache.InformerSynced
+	persistentVolumeClaimLister     corelisters.PersistentVolumeClaimLister
+	persistentVolumeClaimListerSync cache.InformerSynced
 }
 
 func newOrchestratorCheck(base core.CheckBase, instance *OrchestratorInstance) *OrchestratorCheck {
@@ -240,6 +245,17 @@ func (o *OrchestratorCheck) Configure(config, initConfig integration.Data, sourc
 			o.statefulSetsLister = statefulSetsInformer.Lister()
 			o.statefulSetsListerSync = statefulSetsInformer.Informer().HasSynced
 			informersToSync[apiserver.StatefulSetsInformer] = statefulSetsInformer.Informer()
+		case "persistentvolume":
+			persistentVolumeInformer := apiCl.InformerFactory.Core().V1().PersistentVolumes()
+			o.persistentVolumeLister = persistentVolumeInformer.Lister()
+			o.persistentVolumeListerSync = persistentVolumeInformer.Informer().HasSynced
+			informersToSync[apiserver.PersistentVolumeInformer] = persistentVolumeInformer.Informer()
+		case "persistentvolumeclaim":
+			persistentVolumeClaimInformer := apiCl.InformerFactory.Core().V1().PersistentVolumeClaims()
+			o.persistentVolumeClaimLister = persistentVolumeClaimInformer.Lister()
+			o.persistentVolumeClaimListerSync = persistentVolumeClaimInformer.Informer().HasSynced
+			informersToSync[apiserver.PersistentVolumeClaimInformer] = persistentVolumeClaimInformer.Informer()
+
 		default:
 			_ = o.Warnf("Unsupported collector: %s", v)
 		}
@@ -292,6 +308,8 @@ func (o *OrchestratorCheck) Run() error {
 	o.processCronJobs(sender)
 	o.processDaemonSets(sender)
 	o.processStatefulSets(sender)
+	o.processPersistentVolume(sender)
+	o.processPersistentVolumeClaim(sender)
 
 	return nil
 }
@@ -562,6 +580,38 @@ func (o *OrchestratorCheck) processPods(sender aggregator.Sender) {
 	orchestrator.KubernetesResourceCache.Set(orchestrator.BuildStatsKey(orchestrator.K8sPod), stats, orchestrator.NoExpiration)
 
 	sender.OrchestratorMetadata(messages, o.clusterID, forwarder.PayloadTypePod)
+}
+
+func (o *OrchestratorCheck) processPersistentVolume(sender aggregator.Sender) {
+	if o.persistentVolumeLister == nil {
+		return
+	}
+	persistentVolumes, err := o.persistentVolumeLister.List(labels.Everything())
+	if err != nil {
+		_ = o.Warnf("Unable to list jobs: %s", err)
+		return
+	}
+	groupID := atomic.AddInt32(&o.groupID, 1)
+
+	messages, err := processPersistentVolumeList(persistentVolumes, groupID, o.orchestratorConfig, o.clusterID)
+	if err != nil {
+		_ = o.Warnf("Unable to process job list: %s", err)
+	}
+
+	stats := orchestrator.CheckStats{
+		CacheHits: len(persistentVolumes) - len(messages),
+		CacheMiss: len(messages),
+		NodeType:  orchestrator.K8sJob,
+	}
+
+	orchestrator.KubernetesResourceCache.Set(orchestrator.BuildStatsKey(orchestrator.K8sJob), stats, orchestrator.NoExpiration)
+
+	sender.OrchestratorMetadata(messages, o.clusterID, forwarder.PayloadTypeJob)
+}
+
+
+func (o *OrchestratorCheck) processPersistentVolumeClaim(sender aggregator.Sender) {
+
 }
 
 // Cancel cancels the orchestrator check
