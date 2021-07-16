@@ -586,33 +586,57 @@ func (o *OrchestratorCheck) processPersistentVolume(sender aggregator.Sender) {
 	if o.persistentVolumeLister == nil {
 		return
 	}
-	persistentVolumes, err := o.persistentVolumeLister.List(labels.Everything())
+	pvList, err := o.persistentVolumeLister.List(labels.Everything())
 	if err != nil {
-		_ = o.Warnf("Unable to list jobs: %s", err)
+		_ = o.Warnf("Unable to list pv: %s", err)
 		return
 	}
 	groupID := atomic.AddInt32(&o.groupID, 1)
 
-	messages, err := processPersistentVolumeList(persistentVolumes, groupID, o.orchestratorConfig, o.clusterID)
+	messages, err := processPersistentVolumeList(pvList, groupID, o.orchestratorConfig, o.clusterID)
 	if err != nil {
-		_ = o.Warnf("Unable to process job list: %s", err)
+		_ = o.Warnf("Unable to process pv list: %s", err)
 	}
 
 	stats := orchestrator.CheckStats{
-		CacheHits: len(persistentVolumes) - len(messages),
+		CacheHits: len(pvList) - len(messages),
 		CacheMiss: len(messages),
-		NodeType:  orchestrator.K8sJob,
+		NodeType:  orchestrator.K8sPersistentVolume,
 	}
 
-	orchestrator.KubernetesResourceCache.Set(orchestrator.BuildStatsKey(orchestrator.K8sJob), stats, orchestrator.NoExpiration)
+	orchestrator.KubernetesResourceCache.Set(orchestrator.BuildStatsKey(orchestrator.K8sPersistentVolume), stats, orchestrator.NoExpiration)
 
 	sender.OrchestratorMetadata(messages, o.clusterID, forwarder.PayloadTypeJob)
 }
 
 
 func (o *OrchestratorCheck) processPersistentVolumeClaim(sender aggregator.Sender) {
+	if o.persistentVolumeClaimLister == nil {
+		return
+	}
+	pvcList, err := o.persistentVolumeClaimLister.List(labels.Everything())
+	if err != nil {
+		_ = o.Warnf("Unable to list pvc: %s", err)
+		return
+	}
+	groupID := atomic.AddInt32(&o.groupID, 1)
 
+	messages, err := processPersistentVolumeClaimList(pvcList, groupID, o.orchestratorConfig, o.clusterID)
+	if err != nil {
+		_ = o.Warnf("Unable to process job list: %s", err)
+	}
+
+	stats := orchestrator.CheckStats{
+		CacheHits: len(pvcList) - len(messages),
+		CacheMiss: len(messages),
+		NodeType:  orchestrator.K8sPersistentVolumeClaim,
+	}
+
+	orchestrator.KubernetesResourceCache.Set(orchestrator.BuildStatsKey(orchestrator.K8sPersistentVolumeClaim), stats, orchestrator.NoExpiration)
+
+	sender.OrchestratorMetadata(messages, o.clusterID, forwarder.PayloadTypeJob)
 }
+
 
 // Cancel cancels the orchestrator check
 func (o *OrchestratorCheck) Cancel() {
