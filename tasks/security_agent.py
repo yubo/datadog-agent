@@ -202,7 +202,6 @@ def build_functional_tests(
     major_version='7',
     build_tags='functionaltests',
     build_flags='',
-    bundle_ebpf=True,
     static=False,
 ):
     ldflags, gcflags, env = get_build_flags(ctx, major_version=major_version)
@@ -215,8 +214,6 @@ def build_functional_tests(
         env["GOARCH"] = "386"
 
     build_tags = "linux_bpf," + build_tags
-    if bundle_ebpf:
-        build_tags = "ebpf_bindata," + build_tags
 
     if static:
         ldflags += '-extldflags "-static"'
@@ -249,16 +246,10 @@ def build_functional_tests(
 
 @task
 def build_stress_tests(
-    ctx, output='pkg/security/tests/stresssuite', go_version=None, arch="x64", major_version='7', bundle_ebpf=True,
+    ctx, output='pkg/security/tests/stresssuite', go_version=None, arch="x64", major_version='7',
 ):
     build_functional_tests(
-        ctx,
-        output=output,
-        go_version=go_version,
-        arch=arch,
-        major_version=major_version,
-        build_tags='stresstests',
-        bundle_ebpf=bundle_ebpf,
+        ctx, output=output, go_version=go_version, arch=arch, major_version=major_version, build_tags='stresstests',
     )
 
 
@@ -270,11 +261,10 @@ def stress_tests(
     arch="x64",
     major_version='7',
     output='pkg/security/tests/stresssuite',
-    bundle_ebpf=True,
     testflags='',
 ):
     build_stress_tests(
-        ctx, go_version=go_version, arch=arch, major_version=major_version, output=output, bundle_ebpf=bundle_ebpf,
+        ctx, go_version=go_version, arch=arch, major_version=major_version, output=output,
     )
 
     run_functional_tests(
@@ -290,11 +280,10 @@ def functional_tests(
     arch="x64",
     major_version='7',
     output='pkg/security/tests/testsuite',
-    bundle_ebpf=True,
     testflags='',
 ):
     build_functional_tests(
-        ctx, go_version=go_version, arch=arch, major_version=major_version, output=output, bundle_ebpf=bundle_ebpf,
+        ctx, go_version=go_version, arch=arch, major_version=major_version, output=output,
     )
 
     run_functional_tests(
@@ -341,12 +330,7 @@ def docker_functional_tests(
     ctx, verbose=False, go_version=None, arch="x64", major_version='7', testflags='',
 ):
     build_functional_tests(
-        ctx,
-        go_version=go_version,
-        arch=arch,
-        major_version=major_version,
-        output="pkg/security/tests/testsuite",
-        bundle_ebpf=True,
+        ctx, go_version=go_version, arch=arch, major_version=major_version, output="pkg/security/tests/testsuite",
     )
 
     dockerfile = """
