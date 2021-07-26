@@ -593,7 +593,7 @@ func (o *OrchestratorCheck) processPersistentVolume(sender aggregator.Sender) {
 	}
 	groupID := atomic.AddInt32(&o.groupID, 1)
 
-	messages, err := processPersistentVolumeList(pvList, groupID, o.orchestratorConfig, o.clusterID)
+	messages, err := ProcessPersistentVolumeList(pvList, groupID, o.orchestratorConfig, o.clusterID)
 	if err != nil {
 		_ = o.Warnf("Unable to process pv list: %s", err)
 	}
@@ -606,9 +606,9 @@ func (o *OrchestratorCheck) processPersistentVolume(sender aggregator.Sender) {
 
 	orchestrator.KubernetesResourceCache.Set(orchestrator.BuildStatsKey(orchestrator.K8sPersistentVolume), stats, orchestrator.NoExpiration)
 
+	// TODO: will be maybe updated by another PR
 	sender.OrchestratorMetadata(messages, o.clusterID, forwarder.PayloadTypeJob)
 }
-
 
 func (o *OrchestratorCheck) processPersistentVolumeClaim(sender aggregator.Sender) {
 	if o.persistentVolumeClaimLister == nil {
@@ -621,7 +621,7 @@ func (o *OrchestratorCheck) processPersistentVolumeClaim(sender aggregator.Sende
 	}
 	groupID := atomic.AddInt32(&o.groupID, 1)
 
-	messages, err := processPersistentVolumeClaimList(pvcList, groupID, o.orchestratorConfig, o.clusterID)
+	messages, err := ProcessPersistentVolumeClaimList(pvcList, groupID, o.orchestratorConfig, o.clusterID)
 	if err != nil {
 		_ = o.Warnf("Unable to process job list: %s", err)
 	}
@@ -631,12 +631,11 @@ func (o *OrchestratorCheck) processPersistentVolumeClaim(sender aggregator.Sende
 		CacheMiss: len(messages),
 		NodeType:  orchestrator.K8sPersistentVolumeClaim,
 	}
-
 	orchestrator.KubernetesResourceCache.Set(orchestrator.BuildStatsKey(orchestrator.K8sPersistentVolumeClaim), stats, orchestrator.NoExpiration)
 
+	// TODO: will be maybe updated by another PR
 	sender.OrchestratorMetadata(messages, o.clusterID, forwarder.PayloadTypeJob)
 }
-
 
 // Cancel cancels the orchestrator check
 func (o *OrchestratorCheck) Cancel() {
