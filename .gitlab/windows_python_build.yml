@@ -6,7 +6,7 @@
   rules:
     !reference [.manual]
   stage: deps_build
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["runner:windows-docker", "windowsversion:1809_test"]
   script:
     - $ErrorActionPreference = "Stop"
     - $pyzip_name = 'python-windows-{0}-x86.zip' -f $WINDOWS_PYTHON_VERSION
