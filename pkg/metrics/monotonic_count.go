@@ -51,9 +51,9 @@ func (mc *MonotonicCount) addSample(sample *MetricSample, timestamp float64) {
 	}
 }
 
-func (mc *MonotonicCount) flush(timestamp float64) ([]*Serie, error) {
+func (mc *MonotonicCount) flush(timestamp float64) (Serie, error) {
 	if !mc.sampledSinceLastFlush || !(mc.hasPreviousSample || mc.flushFirstValue) {
-		return []*Serie{}, NoSerieError{}
+		return Serie{}, NoSerieError{}
 	}
 
 	value := mc.value
@@ -63,11 +63,10 @@ func (mc *MonotonicCount) flush(timestamp float64) ([]*Serie, error) {
 	mc.sampledSinceLastFlush = false
 	mc.flushFirstValue = false
 
-	return []*Serie{
-		{
-			// we use the timestamp passed to the flush
-			Points: []Point{{Ts: timestamp, Value: value}},
-			MType:  APICountType,
-		},
+	return Serie{
+
+		// we use the timestamp passed to the flush
+		Points: []Point{{Ts: timestamp, Value: value}},
+		MType:  APICountType,
 	}, nil
 }

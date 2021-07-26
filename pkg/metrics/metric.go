@@ -58,7 +58,7 @@ func (a *APIMetricType) UnmarshalText(buf []byte) error {
 // Metric is the interface of all metric types
 type Metric interface {
 	addSample(sample *MetricSample, timestamp float64)
-	flush(timestamp float64) ([]*Serie, error)
+	flush(timestamp float64) (Serie, error)
 }
 
 // NoSerieError is the error returned by a metric when not enough samples have been

@@ -16,19 +16,18 @@ func (g *Gauge) addSample(sample *MetricSample, timestamp float64) {
 	g.sampled = true
 }
 
-func (g *Gauge) flush(timestamp float64) ([]*Serie, error) {
+func (g *Gauge) flush(timestamp float64) (Serie, error) {
 	value, sampled := g.gauge, g.sampled
 	g.gauge, g.sampled = 0, false
 
 	if !sampled {
-		return []*Serie{}, NoSerieError{}
+		return Serie{}, NoSerieError{}
 	}
 
-	return []*Serie{
-		{
-			// we use the timestamp passed to the flush
-			Points: []Point{{Ts: timestamp, Value: value}},
-			MType:  APIGaugeType,
-		},
+	return Serie{
+
+		// we use the timestamp passed to the flush
+		Points: []Point{{Ts: timestamp, Value: value}},
+		MType:  APIGaugeType,
 	}, nil
 }

@@ -37,9 +37,11 @@ func (m ContextMetrics) AddSample(contextKey ckey.ContextKey, sample *MetricSamp
 		case MonotonicCountType:
 			m[contextKey] = &MonotonicCount{}
 		case HistogramType:
-			m[contextKey] = NewHistogram(interval) // default histogram configuration (no call to `configure`) for now
+			break
+		//	m[contextKey] = NewHistogram(interval) // default histogram configuration (no call to `configure`) for now
 		case HistorateType:
-			m[contextKey] = NewHistorate(interval) // internal histogram has the configuration for now
+			break
+		//	m[contextKey] = NewHistorate(interval) // internal histogram has the configuration for now
 		case SetType:
 			m[contextKey] = NewSet()
 		case CounterType:
@@ -61,13 +63,13 @@ func (m ContextMetrics) Flush(timestamp float64) ([]*Serie, map[ckey.ContextKey]
 	errors := make(map[ckey.ContextKey]error)
 
 	for contextKey, metric := range m {
-		metricSeries, err := metric.flush(timestamp)
+		serie, err := metric.flush(timestamp)
 
 		if err == nil {
-			for _, serie := range metricSeries {
-				serie.ContextKey = contextKey
-				series = append(series, serie)
-			}
+			//for _, serie := range metricSeries {
+			serie.ContextKey = contextKey
+			series = append(series, &serie)
+			//}
 		} else {
 			switch err.(type) {
 			case NoSerieError:

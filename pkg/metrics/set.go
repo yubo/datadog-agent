@@ -20,17 +20,16 @@ func (s *Set) addSample(sample *MetricSample, timestamp float64) {
 	s.values[sample.RawValue] = true
 }
 
-func (s *Set) flush(timestamp float64) ([]*Serie, error) {
+func (s *Set) flush(timestamp float64) (Serie, error) {
 	if len(s.values) == 0 {
-		return []*Serie{}, NoSerieError{}
+		return Serie{}, NoSerieError{}
 	}
 
-	res := []*Serie{
-		{
-			// we use the timestamp passed to the flush
-			Points: []Point{{Ts: timestamp, Value: float64(len(s.values))}},
-			MType:  APIGaugeType,
-		},
+	res := Serie{
+
+		// we use the timestamp passed to the flush
+		Points: []Point{{Ts: timestamp, Value: float64(len(s.values))}},
+		MType:  APIGaugeType,
 	}
 
 	s.values = make(map[string]bool)
