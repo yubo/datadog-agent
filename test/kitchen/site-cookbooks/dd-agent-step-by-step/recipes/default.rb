@@ -9,20 +9,25 @@
 
 case node['platform_family']
 when 'debian'
-  execute 'install dirmngr' do
+  execute 'install dependencies' do
     command <<-EOF
       sudo apt-get update
-      cache_output=`apt-cache search dirmngr`
-      if [ ! -z "$cache_output" ]; then
-        sudo apt-get install -y dirmngr
-      fi
+      sudo apt-get install -y apt-transport-https curl gnupg
     EOF
   end
 
   execute 'install debian' do
     command <<-EOF
-      sudo sh -c "echo \'deb #{node['dd-agent-step-by-step']['aptrepo']} #{node['dd-agent-step-by-step']['aptrepo_dist']} #{node['dd-agent-step-by-step']['agent_major_version']}\' > /etc/apt/sources.list.d/datadog.list"
-      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A2923DFF56EDA6E76E55E492D3A80E30382E94DE
+      sudo sh -c "echo \'deb [signed-by=/usr/share/keyrings/datadog-archive-keyring.gpg] #{node['dd-agent-step-by-step']['aptrepo']} #{node['dd-agent-step-by-step']['aptrepo_dist']} #{node['dd-agent-step-by-step']['agent_major_version']}\' > /etc/apt/sources.list.d/datadog.list"
+      sudo touch /usr/share/keyrings/datadog-archive-keyring.gpg
+      sudo chmod a+r /usr/share/keyrings/datadog-archive-keyring.gpg
+
+      curl https://keys.datadoghq.com/DATADOG_APT_KEY_CURRENT.public | sudo gpg --no-default-keyring --keyring /usr/share/keyrings/datadog-archive-keyring.gpg --import --batch
+      curl https://keys.datadoghq.com/DATADOG_APT_KEY_382E94DE.public | sudo gpg --no-default-keyring --keyring /usr/share/keyrings/datadog-archive-keyring.gpg --import --batch
+      curl https://keys.datadoghq.com/DATADOG_APT_KEY_F14F620E.public | sudo gpg --no-default-keyring --keyring /usr/share/keyrings/datadog-archive-keyring.gpg --import --batch
+
+      sudo cp -a /usr/share/keyrings/datadog-archive-keyring.gpg /etc/apt/trusted.gpg.d/
+
       sudo apt-get update
       sudo apt-get install #{node['dd-agent-step-by-step']['package_name']} -y -q
     EOF
@@ -38,9 +43,10 @@ when 'rhel'
       baseurl = #{node['dd-agent-step-by-step']['yumrepo']}
       enabled=1
       gpgcheck=1
-      repo_gpgcheck=0
-      gpgkey=#{protocol}://yum.datadoghq.com/DATADOG_RPM_KEY.public
-             #{protocol}://yum.datadoghq.com/DATADOG_RPM_KEY_E09422B3.public
+      repo_gpgcheck=1
+      gpgkey=#{protocol}://keys.datadoghq.com/DATADOG_RPM_KEY_CURRENT.public
+             #{protocol}://keys.datadoghq.com/DATADOG_RPM_KEY_FD4BF915.public
+             #{protocol}://keys.datadoghq.com/DATADOG_RPM_KEY_E09422B3.public
     EOF
   end
 
@@ -55,25 +61,25 @@ when 'suse'
   file '/etc/zypp/repos.d/datadog.repo' do
     content <<-EOF.gsub(/^ {6}/, '')
       [datadog]
-      name = Datadog, Inc.
-      baseurl = #{node['dd-agent-step-by-step']['yumrepo_suse']}
+      name=Datadog, Inc.
       enabled=1
+      baseurl = #{node['dd-agent-step-by-step']['yumrepo_suse']}
+      type=rpm-md
       gpgcheck=1
-      repo_gpgcheck=0
-      gpgkey=https://yum.datadoghq.com/DATADOG_RPM_KEY.public
-             https://yum.datadoghq.com/DATADOG_RPM_KEY_E09422B3.public
+      repo_gpgcheck=1
+      gpgkey=https://keys.datadoghq.com/DATADOG_RPM_KEY_CURRENT.public
+             https://keys.datadoghq.com/DATADOG_RPM_KEY_FD4BF915.public
+             https://keys.datadoghq.com/DATADOG_RPM_KEY_E09422B3.public
     EOF
   end
 
   execute 'install suse' do
     command <<-EOF
-      sudo curl -o /tmp/DATADOG_RPM_KEY.public https://yum.datadoghq.com/DATADOG_RPM_KEY.public
-      sudo rpm --import /tmp/DATADOG_RPM_KEY.public
-      sudo curl -o /tmp/DATADOG_RPM_KEY_E09422B3.public https://yum.datadoghq.com/DATADOG_RPM_KEY_E09422B3.public
-      sudo rpm --import /tmp/DATADOG_RPM_KEY_E09422B3.public
-      sudo rpm --import https://yum.datadoghq.com/DATADOG_RPM_KEY.public
-      sudo rpm --import https://yum.datadoghq.com/DATADOG_RPM_KEY_E09422B3.public
       sudo zypper --non-interactive --no-gpg-checks refresh datadog
+      sudo rpm --import https://keys.datadoghq.com/DATADOG_RPM_KEY_CURRENT.public
+      sudo rpm --import https://keys.datadoghq.com/DATADOG_RPM_KEY_FD4BF915.public
+      sudo rpm --import https://keys.datadoghq.com/DATADOG_RPM_KEY_E09422B3.public
+      sudo rpm --import https://keys.datadoghq.com/DATADOG_RPM_KEY.public
       sudo zypper --non-interactive install #{node['dd-agent-step-by-step']['package_name']}
     EOF
   end
