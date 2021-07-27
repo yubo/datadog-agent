@@ -4,6 +4,8 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/sketches-go/ddsketch"
+	"github.com/DataDog/sketches-go/ddsketch/mapping"
+	"github.com/DataDog/sketches-go/ddsketch/store"
 )
 
 // Method is the type used to represent HTTP request methods
@@ -31,6 +33,12 @@ const (
 	MethodOptions
 	// MethodPatch represents the PATCH request method
 	MethodPatch
+)
+
+const (
+	sketchGamma  = 1.015625
+	sketchOffset = 1.8761281912861705
+	maxNumBins   = 2048
 )
 
 // Method returns a string representing the HTTP method of the request
@@ -180,9 +188,11 @@ func (r *RequestStats) AddRequest(statusClass int, latency float64) {
 }
 
 func (r *RequestStats) initSketch(i int) (err error) {
-	r[i].Latencies, err = ddsketch.NewDefaultDDSketch(RelativeAccuracy)
+	indexMapping, err := mapping.NewLogarithmicMappingWithGamma(sketchGamma, sketchOffset)
 	if err != nil {
 		log.Debugf("error recording http transaction latency: could not create new ddsketch: %v", err)
+		return err
 	}
+	r[i].Latencies = ddsketch.NewDDSketch(indexMapping, store.NewCollapsingLowestDenseStore(maxNumBins), store.NewCollapsingLowestDenseStore(maxNumBins))
 	return
 }
