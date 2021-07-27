@@ -6,7 +6,12 @@
 package stats
 
 import (
+	"fmt"
+	"github.com/DataDog/sketches-go/ddsketch/mapping"
+	"github.com/gogo/protobuf/proto"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/trace/pb"
 	"github.com/DataDog/datadog-agent/pkg/trace/traceutil"
@@ -53,16 +58,43 @@ func TestGrainWithExtraTags(t *testing.T) {
 	}, aggr)
 }
 
-func BenchmarkHandleSpanRandom(b *testing.B) {
-	sb := NewRawBucket(0, 1e9)
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		root := traceutil.GetRoot(benchTrace)
-		traceutil.ComputeTopLevel(benchTrace)
-		wt := NewWeightedTrace(benchTrace, root)
-		for _, span := range wt {
-			sb.HandleSpan(span, "dev", "hostname", "cid")
+func TestPayloadSizeNewRelativeAccuracy(t *testing.T) {
+	for _, n := range []int{1, 10, 100, 1e3, 1e4, 1e5, 1e6} {
+		sb := NewRawBucket(0, 1e9)
+		for i := 0; i < n; i++ {
+			root := traceutil.GetRoot(benchTrace)
+			traceutil.ComputeTopLevel(benchTrace)
+			wt := NewWeightedTrace(benchTrace, root)
+			for _, span := range wt {
+				span.Duration = int64(rand.Float64() * float64(time.Second))
+				sb.HandleSpan(span, "dev", "hostname", "cid")
+			}
+		}
+		for _, p := range sb.Export() {
+			bytes, err := proto.Marshal(&p)
+			assert.Nil(t, err)
+			fmt.Println("n", n, "size", len(bytes))
+		}
+	}
+}
+
+func TestPayloadSizeOldRelativeAccuracy(t *testing.T) {
+	indexMapping, _ = mapping.NewLogarithmicMapping(0.01)
+	for _, n := range []int{1, 10, 100, 1e3, 1e4, 1e5, 1e6} {
+		sb := NewRawBucket(0, 1e9)
+		for i := 0; i < n; i++ {
+			root := traceutil.GetRoot(benchTrace)
+			traceutil.ComputeTopLevel(benchTrace)
+			wt := NewWeightedTrace(benchTrace, root)
+			for _, span := range wt {
+				span.Duration = int64(rand.Float64() * float64(time.Second))
+				sb.HandleSpan(span, "dev", "hostname", "cid")
+			}
+		}
+		for _, p := range sb.Export(){
+			bytes, err := proto.Marshal(&p)
+			assert.Nil(t, err)
+			fmt.Println("n", n, "size", len(bytes))
 		}
 	}
 }
