@@ -35,6 +35,27 @@ deploy-a7:
           - "-servercore"
 
 
+deploy-a7-rc:
+  extends: .docker_job_definition
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/deb_x64:$DATADOG_AGENT_BUILDIMAGES
+  tags: ["runner:main", "size:2xlarge"]
+  stage: deploy7
+  rules:
+    !reference [.on_deploy_a7_manual]
+  dependencies: []
+  script:
+    - python3 -m pip install -r requirements.txt
+    - export VERSION="$(inv -e agent.version --major-version 7 --url-safe)"
+    - export IMG_LINUX_SOURCES="${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7${JMX}-amd64,${SRC_AGENT}:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-7${JMX}-arm64"
+    - export IMG_DESTINATIONS="${AGENT_REPOSITORY}:7-rc${JMX}"
+    - inv pipeline.trigger-child-pipeline --project-name "DataDog/public-images" --git-ref "main" --variables "IMG_REGISTRIES,IMG_SOURCES,IMG_DESTINATIONS"
+  parallel:
+    matrix:
+      - JMX:
+          - ""
+          - "-jmx"
+
+
 deploy-dogstatsd:
   extends: .docker_job_definition
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/deb_x64:$DATADOG_AGENT_BUILDIMAGES
