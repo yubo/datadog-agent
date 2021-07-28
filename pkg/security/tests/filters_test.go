@@ -250,6 +250,74 @@ func TestOpenParentDiscarderFilter(t *testing.T) {
 	}
 }
 
+func TestDiscarderFilterMask(t *testing.T) {
+	ruleDefs := []*rules.RuleDefinition{
+		{
+			ID:         "test_mask_open_rule",
+			Expression: `open.file.path == "{{.Root}}/test-mask"`,
+		},
+	}
+
+	test, err := newTestModule(t, nil, ruleDefs, testOpts{wantProbeEvents: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer test.Close()
+
+	// ensure that all the previous discarder are removed
+	test.probe.FlushDiscarders()
+
+	t.Run("mask", ifSyscallSupported("SYS_UTIME", func(t *testing.T, syscallNB uintptr) {
+		testFile, testFilePtr, err := test.CreateWithOptions("test-mask", 98, 99, 0o447)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(testFile)
+
+		utimbuf := &syscall.Utimbuf{
+			Actime:  123,
+			Modtime: 456,
+		}
+
+		if err = test.GetSignal(t, func() error {
+			if _, _, errno := syscall.Syscall(syscallNB, uintptr(testFilePtr), uintptr(unsafe.Pointer(utimbuf)), 0); errno != 0 {
+				t.Fatal(errno)
+			}
+			return nil
+		}, func(event *probe.Event, rule *rules.Rule) {
+		}); err != nil {
+			t.Error(err)
+		}
+
+		// wait a bit and ensure utimes event has been discarded
+		time.Sleep(2 * time.Second)
+
+		if err := test.GetSignal(t, func() error {
+			if _, _, errno := syscall.Syscall(syscallNB, uintptr(testFilePtr), uintptr(unsafe.Pointer(utimbuf)), 0); errno != 0 {
+				t.Fatal(errno)
+			}
+			return nil
+		}, func(event *probe.Event, rule *rules.Rule) {}); err == nil {
+			t.Error("shoudn't get a utimes event")
+		}
+
+		// not check that we still have the open allowed
+		if err := test.GetSignal(t, func() error {
+			f, err := os.OpenFile(testFile, os.O_CREATE, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f.Close()
+
+			return nil
+		}, func(event *probe.Event, rule *rules.Rule) {
+			assertTriggeredRule(t, rule, "test_mask_open_rule")
+		}); err != nil {
+			t.Error(err)
+		}
+	}))
+}
+
 func TestOpenFlagsApproverFilter(t *testing.T) {
 	rule := &rules.RuleDefinition{
 		ID:         "test_rule",
