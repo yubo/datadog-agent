@@ -239,4 +239,4 @@ replace k8s.io/kube-state-metrics/v2 => github.com/ahmed-mez/kube-state-metrics/
 
 replace github.com/aptly-dev/aptly => github.com/lebauce/aptly v0.7.2-0.20201005164315-09522984a976
 
-replace github.com/DataDog/agent-payload => github.com/DataDog/agent-payload v4.78.1-0.20210726155515-cd658d32782b+incompatible
+replace github.com/DataDog/agent-payload => github.com/DataDog/agent-payload v4.78.1-0.20210727142929-21c8ddcf51ec+incompatible

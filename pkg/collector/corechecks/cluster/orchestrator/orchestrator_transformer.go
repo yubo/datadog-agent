@@ -344,14 +344,57 @@ func extractPersistentVolumeClaim(pvc *corev1.PersistentVolumeClaim) *model.Pers
 		Metadata: orchestrator.ExtractMetadata(&pvc.ObjectMeta),
 		Spec: &model.PersistentVolumeClaimSpec{
 			VolumeName: pvc.Spec.VolumeName,
+			Resources:  &model.ResourceRequirements{},
 		},
 		Status: &model.PersistentVolumeClaimStatus{
-			Phase: string(pvc.Status.Phase),
+			Phase:    string(pvc.Status.Phase),
+			Capacity: map[string]int64{},
 		},
 	}
 
-	// TODO: conditions and capacities + alternative cache calculation not using heartbeat
+	extractSpec(pvc, message)
+	extractStatus(pvc, message)
 
+	return message
+}
+
+func extractStatus(pvc *corev1.PersistentVolumeClaim, message *model.PersistentVolumeClaim) {
+	// TODO: alternative cache calculation not using heartbeat
+	pvcCons := pvc.Status.Conditions
+	if len(pvcCons) > 0 {
+		cons := make([]*model.PersistentVolumeClaimCondition, len(pvcCons))
+		for i, condition := range pvcCons {
+			cons[i] = &model.PersistentVolumeClaimCondition{
+				Type:    string(condition.Type),
+				Status:  string(condition.Status),
+				Reason:  condition.Reason,
+				Message: condition.Message,
+			}
+			if !condition.LastProbeTime.IsZero() {
+				cons[i].LastProbeTime = condition.LastProbeTime.Unix()
+			}
+			if !condition.LastTransitionTime.IsZero() {
+				cons[i].LastTransitionTime = condition.LastProbeTime.Unix()
+			}
+		}
+		message.Status.Conditions = cons
+	}
+
+	if pvc.Status.AccessModes != nil {
+		strModes := make([]string, len(pvc.Status.AccessModes))
+		for i, am := range pvc.Status.AccessModes {
+			strModes[i] = string(am)
+		}
+		message.Status.AccessModes = strModes
+	}
+
+	st := pvc.Status.Capacity.Storage()
+	if st != nil && !st.IsZero() {
+		message.Status.Capacity[corev1.ResourceStorage.String()] = st.Value()
+	}
+}
+
+func extractSpec(pvc *corev1.PersistentVolumeClaim, message *model.PersistentVolumeClaim) {
 	ds := pvc.Spec.DataSource
 	if ds != nil {
 		t := &model.TypedLocalObjectReference{Kind: ds.Kind, Name: ds.Name}
@@ -377,19 +420,14 @@ func extractPersistentVolumeClaim(pvc *corev1.PersistentVolumeClaim) *model.Pers
 		message.Spec.AccessModes = strModes
 	}
 
-	if pvc.Status.AccessModes != nil {
-		strModes := make([]string, len(pvc.Status.AccessModes))
-		for i, am := range pvc.Status.AccessModes {
-			strModes[i] = string(am)
-		}
-		message.Status.AccessModes = strModes
+	st := pvc.Spec.Resources.Requests.Storage()
+	if st != nil && !st.IsZero() {
+		message.Spec.Resources.Requests = map[string]int64{string(corev1.ResourceStorage): st.Value()}
 	}
 
 	if pvc.Spec.Selector != nil {
 		message.Spec.Selector = extractLabelSelector(pvc.Spec.Selector)
 	}
-
-	return message
 }
 
 func extractLabelSelector(ls *metav1.LabelSelector) []*model.LabelSelectorRequirement {
