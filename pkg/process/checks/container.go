@@ -2,6 +2,7 @@ package checks
 
 import (
 	"context"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -127,6 +128,13 @@ func fmtContainers(ctrList []*containers.Container, lastRates map[string]util.Co
 		if !ok {
 			// Set to an empty container so rate calculations work and use defaults.
 			lastCtr = util.NullContainerRates
+		}
+
+		// TEMP: randomly set ctr.CPU = nil 30% of the time
+		rand.Seed(time.Now().UnixNano())
+		randomInt := rand.Intn(100)
+		if randomInt <= 30 {
+			ctr.CPU = nil
 		}
 
 		// Just in case the container is found, but refs are nil.
