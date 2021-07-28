@@ -6,6 +6,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -22,11 +24,14 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/DataDog/datadog-agent/pkg/security/probe"
 	"github.com/DataDog/datadog-agent/pkg/security/secl/generators/accessors/common"
 	"github.com/DataDog/datadog-agent/pkg/security/secl/generators/accessors/doc"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/structtag"
 	"golang.org/x/tools/go/loader"
+
+	"github.com/alecthomas/jsonschema"
 )
 
 const (
@@ -398,6 +403,33 @@ func parseFile(filename string, pkgName string) (*common.Module, error) {
 	return module, nil
 }
 
+func genDocMain(module *common.Module, output string) error {
+	seclJSONPath := path.Join(output, "secl.json")
+	backendJSONPath := path.Join(output, "backend.schema.json")
+
+	err := doc.GenerateDocJSON(module, seclJSONPath)
+	if err != nil {
+		return err
+	}
+
+	reflector := jsonschema.Reflector{
+		ExpandedStruct: true,
+		DoNotReference: false,
+	}
+	schema := reflector.Reflect(&probe.EventSerializer{})
+	schemaJson, err := schema.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	var out bytes.Buffer
+	if err := json.Indent(&out, schemaJson, "", "  "); err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(backendJSONPath, out.Bytes(), 0664)
+}
+
 var FuncMap = map[string]interface{}{
 	"TrimPrefix": strings.TrimPrefix,
 }
@@ -733,8 +765,7 @@ func (e *Event) SetFieldValue(field eval.Field, value interface{}) error {
 	}
 
 	if genDoc {
-		err := doc.GenerateDocJSON(module, output)
-		if err != nil {
+		if err := genDocMain(module, output); err != nil {
 			panic(err)
 		}
 		return
