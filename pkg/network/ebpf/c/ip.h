@@ -13,6 +13,38 @@
 #include <uapi/linux/tcp.h>
 #include <uapi/linux/udp.h>
 
+#include "defs.h"
+
+static __always_inline bool are_fl4_offsets_known() {
+    __u64 val = 0;
+    LOAD_CONSTANT("fl4_offsets", val);
+    return val == ENABLED;
+}
+
+static __always_inline __u64 offset_saddr_fl4() {
+    __u64 val = 0;
+    LOAD_CONSTANT("offset_saddr_fl4", val);
+    return val;
+}
+
+static __always_inline __u64 offset_daddr_fl4() {
+     __u64 val = 0;
+     LOAD_CONSTANT("offset_daddr_fl4", val);
+     return val;
+}
+
+static __always_inline __u64 offset_sport_fl4() {
+    __u64 val = 0;
+    LOAD_CONSTANT("offset_sport_fl4", val);
+    return val;
+}
+
+static __always_inline __u64 offset_dport_fl4() {
+     __u64 val = 0;
+     LOAD_CONSTANT("offset_dport_fl4", val);
+     return val;
+}
+
 static __always_inline void read_ipv6_skb(struct __sk_buff *skb, __u64 off, __u64 *addr_l, __u64 *addr_h) {
     *addr_h |= (__u64)load_word(skb, off) << 32;
     *addr_h |= (__u64)load_word(skb, off + 4);
@@ -97,6 +129,56 @@ static __always_inline void print_ip(u64 ip_h, u64 ip_l, u16 port, u32 metadata)
     } else {
         log_debug("v4 %x:%u\n", bpf_ntohl((u32)ip_l), port);
     }
+}
+
+// Note: This is used only in the UDP send path.
+SEC("kprobe/ip_make_skb")
+int kprobe__ip_make_skb(struct pt_regs* ctx) {
+    struct sock* sk = (struct sock*)PT_REGS_PARM1(ctx);
+    size_t size = (size_t)PT_REGS_PARM5(ctx);
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+
+    size = size - sizeof(struct udphdr);
+
+    conn_tuple_t t = {};
+    if (!read_conn_tuple(&t, sk, pid_tgid, CONN_TYPE_UDP)) {
+        if (!are_fl4_offsets_known()) {
+            log_debug("ERR: src/dst addr not set src:%d,dst:%d. fl4 offsets are not known\n", t.saddr_l, t.daddr_l);
+            increment_telemetry_count(udp_send_missed);
+            return 0;
+        }
+
+        struct flowi4* fl4 = (struct flowi4*)PT_REGS_PARM2(ctx);
+        bpf_probe_read(&t.saddr_l, sizeof(__u32), ((char*)fl4) + offset_saddr_fl4());
+        bpf_probe_read(&t.daddr_l, sizeof(__u32), ((char*)fl4) + offset_daddr_fl4());
+
+        if (!t.saddr_l || !t.daddr_l) {
+            log_debug("ERR(fl4): src/dst addr not set src:%d,dst:%d\n", t.saddr_l, t.daddr_l);
+            increment_telemetry_count(udp_send_missed);
+            return 0;
+        }
+
+        bpf_probe_read(&t.sport, sizeof(t.sport), ((char*)fl4) + offset_sport_fl4());
+        bpf_probe_read(&t.dport, sizeof(t.dport), ((char*)fl4) + offset_dport_fl4());
+
+        if (t.sport == 0 || t.dport == 0) {
+            log_debug("ERR(fl4): src/dst port not set: src:%d, dst:%d\n", t.sport, t.dport);
+            increment_telemetry_count(udp_send_missed);
+            return 0;
+        }
+
+        t.sport = ntohs(t.sport);
+        t.dport = ntohs(t.dport);
+    }
+
+    log_debug("kprobe/ip_send_skb: pid_tgid: %d, size: %d\n", pid_tgid, size);
+
+    // segment count is not currently enabled on prebuilt.
+    // to enable, change PACKET_COUNT_NONE => PACKET_COUNT_INCREMENT
+    handle_message(&t, size, 0, CONN_DIRECTION_UNKNOWN, 1, 0, PACKET_COUNT_NONE);
+    increment_telemetry_count(udp_send_processed);
+
+    return 0;
 }
 
 #endif
