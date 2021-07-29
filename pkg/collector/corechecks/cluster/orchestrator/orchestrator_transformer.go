@@ -312,9 +312,7 @@ func extractPersistentVolume(pv *corev1.PersistentVolume) *model.PersistentVolum
 	message := &model.PersistentVolume{
 		Metadata: orchestrator.ExtractMetadata(&pv.ObjectMeta),
 		Spec: &model.PersistentVolumeSpec{
-			Capacity: map[string]int64{},
-			// TODO: test how that looks
-			PersistentVolumeSource:        pv.Spec.PersistentVolumeSource.String(),
+			Capacity:                      map[string]int64{},
 			PersistentVolumeReclaimPolicy: string(pv.Spec.PersistentVolumeReclaimPolicy),
 			StorageClassName:              pv.Spec.StorageClassName,
 			MountOptions:                  pv.Spec.MountOptions,
@@ -330,11 +328,100 @@ func extractPersistentVolume(pv *corev1.PersistentVolume) *model.PersistentVolum
 		message.Spec.VolumeMode = string(*pv.Spec.VolumeMode)
 	}
 
+	modes := pv.Spec.AccessModes
+	if len(modes) > 0 {
+		ams := make([]string, len(modes))
+		for i, mode := range modes {
+			ams[i] = string(mode)
+		}
+		message.Spec.AccessModes = ams
+	}
+
+	claimRef := pv.Spec.ClaimRef
+	if claimRef != nil {
+		message.Spec.ClaimRef = &model.ObjectReference{
+			Kind:            claimRef.Kind,
+			Namespace:       claimRef.Namespace,
+			Name:            claimRef.Name,
+			Uid:             string(claimRef.UID),
+			ApiVersion:      claimRef.APIVersion,
+			ResourceVersion: claimRef.ResourceVersion,
+			FieldPath:       claimRef.FieldPath,
+		}
+	}
+
+	nodeAffinity := pv.Spec.NodeAffinity
+	if nodeAffinity != nil {
+		selectorTerms := make([]*model.NodeSelectorTerm, len(nodeAffinity.Required.NodeSelectorTerms))
+		terms := nodeAffinity.Required.NodeSelectorTerms
+		for i, term := range terms {
+			selectorTerms[i] = &model.NodeSelectorTerm{
+				MatchExpressions: extractPVSelector(term.MatchExpressions),
+				MatchFields:      extractPVSelector(term.MatchFields),
+			}
+		}
+		message.Spec.NodeSelectorTerms = selectorTerms
+	}
+
+	message.Spec.PersistentVolumeSource = extractVolumeSource(pv.Spec.PersistentVolumeSource)
+
 	st := pv.Spec.Capacity.Storage()
 	if !st.IsZero() {
 		message.Spec.Capacity[corev1.ResourceStorage.String()] = st.Value()
 	}
 	return message
+}
+
+func extractVolumeSource(volume corev1.PersistentVolumeSource) string {
+	switch {
+	case volume.HostPath != nil:
+		return "HostPath"
+	case volume.GCEPersistentDisk != nil:
+		return "GCEPersistentDisk"
+	case volume.AWSElasticBlockStore != nil:
+		return "AWSElasticBlockStore"
+	case volume.Quobyte != nil:
+		return "Quobyte"
+	case volume.Cinder != nil:
+		return "Cinder"
+	case volume.PhotonPersistentDisk != nil:
+		return "PhotonPersistentDisk"
+	case volume.PortworxVolume != nil:
+		return "PortworxVolume"
+	case volume.ScaleIO != nil:
+		return "ScaleIO"
+	case volume.CephFS != nil:
+		return "CephFS"
+	case volume.StorageOS != nil:
+		return "StorageOS"
+	case volume.FC != nil:
+		return "FC"
+	case volume.AzureFile != nil:
+		return "AzureFile"
+	case volume.FlexVolume != nil:
+		return "FlexVolume"
+	case volume.Flocker != nil:
+		return "Flocker"
+	case volume.CSI != nil:
+		return "CSI"
+	}
+	return "<unknown>"
+}
+
+func extractPVSelector(ls []corev1.NodeSelectorRequirement) []*model.LabelSelectorRequirement {
+	if len(ls) == 0 {
+		return nil
+	}
+
+	labelSelectors := make([]*model.LabelSelectorRequirement, len(ls))
+	for i, v := range ls {
+		labelSelectors[i] = &model.LabelSelectorRequirement{
+			Key:      v.Key,
+			Operator: string(v.Operator),
+			Values:   v.Values,
+		}
+	}
+	return labelSelectors
 }
 
 // extractPersistentVolumeClaim returns the protobuf Persistent Volume Claim message corresponding to

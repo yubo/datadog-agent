@@ -1353,9 +1353,17 @@ func TestExtractPV(t *testing.T) {
 					UID:             types.UID("0ff96226-578d-4679-b3c8-72e8a485c0ef"),
 				},
 				Spec: corev1.PersistentVolumeSpec{
-					Capacity:               corev1.ResourceList{corev1.ResourceStorage: parsedResource},
-					PersistentVolumeSource: corev1.PersistentVolumeSource{},
-					AccessModes:            []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany, corev1.ReadWriteOnce},
+					MountOptions: []string{"ro", "soft"},
+					Capacity:     corev1.ResourceList{corev1.ResourceStorage: parsedResource},
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						GCEPersistentDisk: &corev1.GCEPersistentDiskVolumeSource{
+							PDName:    "GCE",
+							FSType:    "GCE",
+							Partition: 10,
+							ReadOnly:  false,
+						},
+					},
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany, corev1.ReadWriteOnce},
 					ClaimRef: &corev1.ObjectReference{
 						Namespace: "test",
 						Name:      "test-pv",
@@ -1374,9 +1382,7 @@ func TestExtractPV(t *testing.T) {
 											Values:   []string{"test-value1", "test-value3"},
 										},
 									},
-								},
-								{
-									MatchExpressions: []corev1.NodeSelectorRequirement{
+									MatchFields: []corev1.NodeSelectorRequirement{
 										{
 											Key:      "test-key2",
 											Operator: corev1.NodeSelectorOpIn,
@@ -1384,12 +1390,22 @@ func TestExtractPV(t *testing.T) {
 										},
 									},
 								},
+								{
+									MatchExpressions: []corev1.NodeSelectorRequirement{
+										{
+											Key:      "test-key3",
+											Operator: corev1.NodeSelectorOpIn,
+											Values:   []string{"test-value1", "test-value3"},
+										},
+									}},
 							},
 						},
 					},
 				},
 				Status: corev1.PersistentVolumeStatus{
-					Phase: corev1.VolumePending,
+					Phase:   corev1.VolumePending,
+					Message: "test",
+					Reason:  "test",
 				},
 			},
 			expected: model.PersistentVolume{
@@ -1398,17 +1414,55 @@ func TestExtractPV(t *testing.T) {
 					CreationTimestamp: creationTime.Unix(),
 					Labels:            []string{"app:my-app"},
 					Finalizers:        []string{"foo.com/x", metav1.FinalizerOrphanDependents, "bar.com/y"},
-					Name:              "pvc",
+					Name:              "pv",
 					Namespace:         "project",
 					ResourceVersion:   "220593670",
 					Uid:               "0ff96226-578d-4679-b3c8-72e8a485c0ef",
 				},
 				Spec: &model.PersistentVolumeSpec{
-					AccessModes: []string{string(corev1.ReadWriteMany), string(corev1.ReadWriteOnce)},
-
+					Capacity:               map[string]int64{string(corev1.ResourceStorage): parsedResource.Value()},
+					PersistentVolumeSource: "GCEPersistentDisk",
+					AccessModes:            []string{string(corev1.ReadWriteMany), string(corev1.ReadWriteOnce)},
+					ClaimRef: &model.ObjectReference{
+						Namespace: "test",
+						Name:      "test-pv",
+					},
+					PersistentVolumeReclaimPolicy: string(corev1.PersistentVolumeReclaimRetain),
+					StorageClassName:              "gold",
+					MountOptions:                  []string{"ro", "soft"},
+					VolumeMode:                    string(filesystem),
+					NodeSelectorTerms: []*model.NodeSelectorTerm{
+						{
+							MatchExpressions: []*model.LabelSelectorRequirement{
+								{
+									Key:      "test-key3",
+									Operator: string(corev1.NodeSelectorOpIn),
+									Values:   []string{"test-value1", "test-value3"},
+								},
+							},
+							MatchFields: []*model.LabelSelectorRequirement{
+								{
+									Key:      "test-key2",
+									Operator: string(corev1.NodeSelectorOpIn),
+									Values:   []string{"test-value0", "test-value2"},
+								},
+							},
+						},
+						{
+							MatchExpressions: []*model.LabelSelectorRequirement{
+								{
+									Key:      "test-key3",
+									Operator: string(corev1.NodeSelectorOpIn),
+									Values:   []string{"test-value1", "test-value3"},
+								},
+							},
+						},
+					},
 				},
 				Status: &model.PersistentVolumeStatus{
-					Phase:       string(corev1.ClaimLost),
+					Phase:   string(corev1.VolumePending),
+					Message: "test",
+					Reason:  "test",
 				},
 			},
 		},
