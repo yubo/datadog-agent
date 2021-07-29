@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Add a new parameter (auto_shutdown_method) to allow the Agent to shutdown automatically based on some condition. Currently, the only supported method "noprocess", triggers an Agent shutdown if no other processes are visible to the Agent (taking into account HOST_PROC). Only available on POSIX systems.

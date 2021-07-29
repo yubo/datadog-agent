@@ -340,6 +340,20 @@ api_key:
 #
 # use_proxy_for_cloud_metadata: false
 
+## @param auto_shutdown_method - string - optional - default: ""
+## Activate and select an automatic shutdown method: the Agent stops when some conditions are met.
+## Feature is only supported on POSIX systems.
+## Available method:
+## "noprocess": Detect when no other processes (non-agent) are running to trigger shutdown. `HOST_PROC` is taken into account when gathering processes.
+#
+# auto_shutdown_method: ""
+
+## @param auto_shutdown_validation_period - int - optional - default: 60
+## Time (in seconds) during which the auto shutdown will validate that the selected shutdown mechanism returns true.
+## The value is verified every 30s (so, by defaultm 3 consecutive checks need to return true to trigger a shutdown)
+#
+# auto_shutdown_validation_period: 60
+
 {{ end }}
 {{- if .Agent }}
 {{- if .Python }}

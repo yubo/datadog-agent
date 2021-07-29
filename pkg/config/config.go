@@ -219,6 +219,8 @@ func InitConfig(config Config) {
 	config.BindEnvAndSetDefault("python_version", DefaultPython)
 	config.BindEnvAndSetDefault("allow_arbitrary_tags", false)
 	config.BindEnvAndSetDefault("use_proxy_for_cloud_metadata", false)
+	config.BindEnvAndSetDefault("auto_shutdown_method", "")
+	config.BindEnvAndSetDefault("auto_shutdown_validation_period", 60)
 
 	// The number of commits before expiring a context. The value is 2 to handle
 	// the case where a check miss to send a metric.
