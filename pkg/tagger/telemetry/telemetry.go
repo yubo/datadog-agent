@@ -2,14 +2,13 @@ package telemetry
 
 import "github.com/DataDog/datadog-agent/pkg/telemetry"
 
-// PruneType represents the `prune_type` tag for the pruned_entities metric
-type PruneType string
-
 const (
-	// DeletedEntity refers to deleting entities due to a deletion event
-	DeletedEntity PruneType = "deletion_event"
-	// EmptyEntry refers to deleting entities with empty entries
-	EmptyEntry PruneType = "empty_entries"
+	// QueryEmptyEntityID refers to a query made with an empty entity id
+	QueryEmptyEntityID = "empty_entity_id"
+	// QueryEmptyTags refers to a query that returned no tags
+	QueryEmptyTags = "empty_tags"
+	// QuerySuccess refers to a successful query
+	QuerySuccess = "success"
 )
 
 var (
@@ -30,7 +29,7 @@ var (
 
 	// Queries tracks the number of queries made against the tagger.
 	Queries = telemetry.NewCounterWithOpts("tagger", "queries",
-		[]string{"cardinality"}, "Queries made against the tagger.",
+		[]string{"cardinality", "status"}, "Queries made against the tagger.",
 		telemetry.Options{NoDoubleUnderscoreSep: true})
 
 	// ClientStreamErrors tracks how many errors were received when streaming

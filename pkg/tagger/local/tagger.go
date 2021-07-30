@@ -8,6 +8,7 @@ package local
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -241,17 +242,18 @@ func (t *Tagger) Stop() error {
 
 // getTags returns a read only list of tags for a given entity.
 func (t *Tagger) getTags(entity string, cardinality collectors.TagCardinality) ([]string, error) {
-	telemetry.Queries.Inc(collectors.TagCardinalityToString(cardinality))
-
 	if entity == "" {
+		telemetry.Queries.Inc(collectors.TagCardinalityToString(cardinality), telemetry.QueryEmptyEntityID)
 		return nil, fmt.Errorf("empty entity ID")
 	}
+
 	cachedTags, sources := t.store.lookup(entity, cardinality)
 
 	if len(sources) == len(t.fetchers) {
-		// All sources sent data to cache
+		telemetry.Queries.Inc(collectors.TagCardinalityToString(cardinality), telemetry.QuerySuccess)
 		return cachedTags, nil
 	}
+
 	// Else, partial cache miss, query missing data
 	// TODO: get logging on that to make sure we should optimize
 	tagArrays := [][]string{cachedTags}
@@ -269,13 +271,17 @@ IterCollectors:
 
 		var cacheMiss bool
 		var expiryDate time.Time
+
 		low, orch, high, err := collector.Fetch(context.TODO(), entity)
+
 		switch {
 		case errors.IsNotFound(err):
 			log.Debugf("entity %s not found in %s, skipping: %v", entity, name, err)
 
 			cacheMiss = true
 			expiryDate = time.Now().Add(notFoundTTL)
+
+			log.Infof("entity not found, dumping stack trace. %s", string(debug.Stack()))
 		case err != nil:
 			log.Warnf("error collecting from %s: %s", name, err)
 
@@ -305,7 +311,15 @@ IterCollectors:
 	}
 	t.RUnlock()
 
-	return utils.ConcatenateTags(tagArrays), nil
+	tags := utils.ConcatenateTags(tagArrays)
+
+	if len(tags) > 0 {
+		telemetry.Queries.Inc(collectors.TagCardinalityToString(cardinality), telemetry.QuerySuccess)
+	} else {
+		telemetry.Queries.Inc(collectors.TagCardinalityToString(cardinality), telemetry.QueryEmptyTags)
+	}
+
+	return tags, nil
 }
 
 // TagBuilder appends tags for a given entity from the tagger to the TagsBuilder

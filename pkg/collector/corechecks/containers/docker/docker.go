@@ -51,7 +51,7 @@ func updateContainerRunningCount(images map[string]*containerPerImage, c *contai
 	var containerTags []string
 	var err error
 
-	if c.Excluded {
+	if c.Excluded || c.State != containers.ContainerRunningState {
 		// TODO we can do SplitImageName because we are in the docker corecheck and the image name is not a sha[...]
 		// We should resolve the image tags in the tagger as a real entity.
 		long, short, tag, err := containers.SplitImageName(c.Image)
