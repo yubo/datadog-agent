@@ -10,7 +10,9 @@ package aggregator
 import (
 	// stdlib
 	"errors"
+	"expvar"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -189,6 +191,66 @@ func TestDefaultData(t *testing.T) {
 	agg.Flush(start, false)
 	s.AssertNotCalled(t, "SendEvents")
 	s.AssertNotCalled(t, "SendSketch")
+
+	assert.Equal(t, uint64(0), atomic.LoadUint64(&hugeSeriesCount))
+	assert.Equal(t, uint64(0), atomic.LoadUint64(&almostHugeSeriesCount))
+}
+
+func TestTooManyTags(t *testing.T) {
+	test := func(tagCount int) func(t *testing.T) {
+		var (
+			expAlmostHuge uint64
+			expHuge       uint64
+		)
+
+		if tagCount > almostHugeSeriesTagThreshold {
+			expAlmostHuge++
+			if tagCount > hugeSeriesTagThreshold {
+				expHuge++
+			}
+		}
+
+		return func(t *testing.T) {
+			resetAggregator()
+			s := &serializer.MockSerializer{}
+			agg := InitAggregator(s, nil, "hostname")
+			start := time.Now()
+
+			var tags []string
+			for i := 0; i < tagCount; i++ {
+				tags = append(tags, fmt.Sprintf("tag%d", i))
+			}
+
+			ser := &metrics.Serie{
+				Name:           "test.series",
+				Points:         []metrics.Point{{Value: 1, Ts: float64(start.Unix())}},
+				Tags:           tags,
+				Host:           agg.hostname,
+				MType:          metrics.APIGaugeType,
+				SourceTypeName: "System",
+			}
+			AddRecurrentSeries(ser)
+
+			s.On("SendServiceChecks", mock.Anything).Return(nil).Times(1)
+			s.On("SendSeries", mock.Anything).Return(nil).Times(1)
+
+			agg.Flush(start, true)
+			s.AssertNotCalled(t, "SendEvents")
+			s.AssertNotCalled(t, "SendSketch")
+
+			assert.Equal(t, expHuge, atomic.LoadUint64(&hugeSeriesCount))
+			assert.Equal(t, expAlmostHuge, atomic.LoadUint64(&almostHugeSeriesCount))
+
+			expMap := map[string]uint64{
+				fmt.Sprintf("Above%d", almostHugeSeriesTagThreshold): expAlmostHuge,
+				fmt.Sprintf("Above%d", hugeSeriesTagThreshold):       expHuge,
+			}
+			assert.Equal(t, expMap, aggregatorExpvars.Get("MetricTags").(expvar.Func).Value())
+		}
+	}
+	t.Run("not-huge", test(10))
+	t.Run("almost-huge", test(95))
+	t.Run("huge", test(110))
 }
 
 func TestRecurentSeries(t *testing.T) {

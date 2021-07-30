@@ -10,6 +10,7 @@ import (
 	"expvar"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/epforwarder"
@@ -18,7 +19,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
-	telemetry_utils "github.com/DataDog/datadog-agent/pkg/telemetry/utils"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/flavor"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -37,15 +37,21 @@ const bucketSize = 10                         // fixed for now
 // MetricSamplePoolBatchSize is the batch size of the metric sample pool.
 const MetricSamplePoolBatchSize = 32
 
-// HugeSeriesTagCount is the number of tags above which the intake will (currently)
+// hugeSeriesTagThreshold is the number of tags above which the intake will (currently)
 // drop the series.  This may change on the intake side, and is used here only for
 // telemetry.  If changing this value, also change the description in tlmHugeSeries.
-const HugeSeriesTagCount = 100
+const hugeSeriesTagThreshold = 100
 
-// AlmostHugeSeriesTagCount is a little less than HugeSeriesTagCount, servinga as a
+// almostHugeSeriesTagThreshold is a little less than HugeSeriesTagCount, servinga as a
 // threshold for series that are "almost" huge.  If changing this value, also change
 // the description in tlmAlmostHugeSeries.
-const AlmostHugeSeriesTagCount = 90
+const almostHugeSeriesTagThreshold = 90
+
+// hugeSeriesCount is the total count of huge metric series.  Access must be atomic.
+var hugeSeriesCount uint64
+
+// almostHugeSeriesCount is the total count of almost-huge metric series.  Access must be atomic.
+var almostHugeSeriesCount uint64
 
 // Stats stores a statistic from several past flushes allowing computations like median or percentiles
 type Stats struct {
@@ -89,6 +95,15 @@ func addFlushCount(name string, value int64) {
 func expStatsMap(statsMap map[string]*Stats) func() interface{} {
 	return func() interface{} {
 		return statsMap
+	}
+}
+
+func expMetricTags() interface{} {
+	almostHuge := atomic.LoadUint64(&almostHugeSeriesCount)
+	huge := atomic.LoadUint64(&hugeSeriesCount)
+	return map[string]uint64{
+		fmt.Sprintf("Above%d", almostHugeSeriesTagThreshold): almostHuge,
+		fmt.Sprintf("Above%d", hugeSeriesTagThreshold):       huge,
 	}
 }
 
@@ -177,6 +192,8 @@ func init() {
 	aggregatorExpvars.Set("DogstatsdContexts", &aggregatorDogstatsdContexts)
 	aggregatorExpvars.Set("EventPlatformEvents", &aggregatorEventPlatformEvents)
 	aggregatorExpvars.Set("EventPlatformEventsErrors", &aggregatorEventPlatformEventsErrors)
+
+	aggregatorExpvars.Set("MetricTags", expvar.Func(expMetricTags))
 }
 
 // InitAggregator returns the Singleton instance
@@ -465,20 +482,22 @@ func (agg *BufferedAggregator) GetSeriesAndSketches(before time.Time) (metrics.S
 }
 
 // countHugeSeries counts huge and almost-huge series in the given value
-func sendHugeSeriesTelemetry(series *metrics.Series) {
-	huge := 0
-	almostHuge := 0
+func updateHugeSeriesTelemetry(series *metrics.Series) {
+	var huge uint64
+	var almostHuge uint64
 
 	for _, s := range *series {
 		tags := len(s.Tags)
-		if tags > AlmostHugeSeriesTagCount {
+		if tags > almostHugeSeriesTagThreshold {
 			almostHuge++
-			if tags > HugeSeriesTagCount {
+			if tags > hugeSeriesTagThreshold {
 				huge++
 			}
 		}
 	}
 
+	atomic.AddUint64(&hugeSeriesCount, huge)
+	atomic.AddUint64(&almostHugeSeriesCount, almostHuge)
 	tlmHugeSeries.Add(float64(huge))
 	tlmAlmostHugeSeries.Add(float64(almostHuge))
 }
@@ -510,9 +529,7 @@ func (agg *BufferedAggregator) pushSeries(start time.Time, series metrics.Series
 	aggregatorSeriesFlushed.Add(int64(len(series)))
 	tlmFlush.Add(float64(len(series)), "series", state)
 
-	if telemetry_utils.IsEnabled() {
-		sendHugeSeriesTelemetry(&series)
-	}
+	updateHugeSeriesTelemetry(&series)
 }
 
 func (agg *BufferedAggregator) sendSeries(start time.Time, series metrics.Series, waitForSerializer bool) {

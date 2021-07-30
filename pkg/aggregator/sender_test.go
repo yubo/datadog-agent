@@ -11,6 +11,7 @@ import (
 	// stdlib
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -35,6 +36,8 @@ func resetAggregator() {
 	senderPool = &checkSenderPool{
 		senders: make(map[check.ID]Sender),
 	}
+	atomic.StoreUint64(&hugeSeriesCount, uint64(0))
+	atomic.StoreUint64(&almostHugeSeriesCount, uint64(0))
 }
 
 type senderWithChans struct {
