@@ -18,6 +18,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
+	telemetry_utils "github.com/DataDog/datadog-agent/pkg/telemetry/utils"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/flavor"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
@@ -35,6 +36,16 @@ const DefaultFlushInterval = 15 * time.Second // flush interval
 const bucketSize = 10                         // fixed for now
 // MetricSamplePoolBatchSize is the batch size of the metric sample pool.
 const MetricSamplePoolBatchSize = 32
+
+// HugeSeriesTagCount is the number of tags above which the intake will (currently)
+// drop the series.  This may change on the intake side, and is used here only for
+// telemetry.  If changing this value, also change the description in tlmHugeSeries.
+const HugeSeriesTagCount = 100
+
+// AlmostHugeSeriesTagCount is a little less than HugeSeriesTagCount, servinga as a
+// threshold for series that are "almost" huge.  If changing this value, also change
+// the description in tlmAlmostHugeSeries.
+const AlmostHugeSeriesTagCount = 90
 
 // Stats stores a statistic from several past flushes allowing computations like median or percentiles
 type Stats struct {
@@ -122,6 +133,10 @@ var (
 		nil, "Count of hostname update")
 	tlmDogstatsdContexts = telemetry.NewGauge("aggregator", "dogstatsd_contexts",
 		nil, "Count the number of dogstatsd contexts in the aggregator")
+	tlmHugeSeries = telemetry.NewCounter("aggregator", "huge_series",
+		nil, "Count of timeseries with over 100 tags, expected to be discared at intake")
+	tlmAlmostHugeSeries = telemetry.NewCounter("aggregator", "almost_huge_series",
+		nil, "Count of timeseries with over 90 tags, expected to be discared at intake of metrics/service checks/events flushed")
 
 	// Hold series to be added to aggregated series on each flush
 	recurrentSeries     metrics.Series
@@ -449,6 +464,25 @@ func (agg *BufferedAggregator) GetSeriesAndSketches(before time.Time) (metrics.S
 	return series, sketches
 }
 
+// countHugeSeries counts huge and almost-huge series in the given value
+func sendHugeSeriesTelemetry(series *metrics.Series) {
+	huge := 0
+	almostHuge := 0
+
+	for _, s := range *series {
+		tags := len(s.Tags)
+		if tags > AlmostHugeSeriesTagCount {
+			almostHuge++
+			if tags > HugeSeriesTagCount {
+				huge++
+			}
+		}
+	}
+
+	tlmHugeSeries.Add(float64(huge))
+	tlmAlmostHugeSeries.Add(float64(almostHuge))
+}
+
 func (agg *BufferedAggregator) pushSketches(start time.Time, sketches metrics.SketchSeriesList) {
 	log.Debugf("Flushing %d sketches to the forwarder", len(sketches))
 	err := agg.serializer.SendSketch(sketches)
@@ -475,6 +509,10 @@ func (agg *BufferedAggregator) pushSeries(start time.Time, series metrics.Series
 	addFlushTime("ChecksMetricSampleFlushTime", int64(time.Since(start)))
 	aggregatorSeriesFlushed.Add(int64(len(series)))
 	tlmFlush.Add(float64(len(series)), "series", state)
+
+	if telemetry_utils.IsEnabled() {
+		sendHugeSeriesTelemetry(&series)
+	}
 }
 
 func (agg *BufferedAggregator) sendSeries(start time.Time, series metrics.Series, waitForSerializer bool) {
