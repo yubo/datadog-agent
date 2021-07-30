@@ -171,6 +171,7 @@ require (
 	go.opencensus.io v0.22.6 // indirect
 	go.opentelemetry.io/otel v0.20.0
 	go.uber.org/automaxprocs v1.4.0
+	go4.org/intern v0.0.0-20210108033219-3eb7198706b2
 	golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670 // indirect
 	golang.org/x/mobile v0.0.0-20201217150744-e6ae53a27f4f
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5

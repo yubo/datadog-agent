@@ -17,6 +17,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	stringintern "go4.org/intern"
 )
 
 var originalConfig = config.Datadog
@@ -136,8 +137,8 @@ func TestSerialization(t *testing.T) {
 				Direction: network.LOCAL,
 
 				DNSCountByRcode: map[uint32]uint32{0: 1},
-				DNSStatsByDomainByQueryType: map[string]map[dns.QueryType]dns.Stats{
-					"foo.com": {
+				DNSStatsByDomainByQueryType: map[*stringintern.Value]map[dns.QueryType]dns.Stats{
+					stringintern.Get("foo.com"): {
 						dns.TypeA: {
 							Timeouts:          0,
 							SuccessLatencySum: 0,

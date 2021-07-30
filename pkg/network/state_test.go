@@ -13,6 +13,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/network/dns"
 	"github.com/DataDog/datadog-agent/pkg/network/http"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
+	stringintern "go4.org/intern"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1149,14 +1150,14 @@ func TestDNSStatsWithMultipleClients(t *testing.T) {
 
 	dKey := dns.Key{ClientIP: c.Source, ClientPort: c.SPort, ServerIP: c.Dest, Protocol: getIPProtocol(c.Type)}
 
-	getStats := func() map[dns.Key]map[string]map[dns.QueryType]dns.Stats {
-		var d = "foo.com"
-		statsByDomain := make(map[dns.Key]map[string]map[dns.QueryType]dns.Stats)
+	getStats := func() dns.MapByKeyNameType {
+		var d = stringintern.GetByString("foo.com")
+		statsByDomain := make(dns.MapByKeyNameType)
 		stats := make(map[dns.QueryType]dns.Stats)
 		countByRcode := make(map[uint32]uint32)
 		countByRcode[uint32(DNSResponseCodeNoError)] = 1
 		stats[dns.TypeA] = dns.Stats{CountByRcode: countByRcode}
-		statsByDomain[dKey] = make(map[string]map[dns.QueryType]dns.Stats)
+		statsByDomain[dKey] = make(map[*stringintern.Value]map[dns.QueryType]dns.Stats)
 		statsByDomain[dKey][d] = stats
 		return statsByDomain
 	}
@@ -1201,14 +1202,14 @@ func TestDNSStatsWithMultipleClientsWithDomainCollectionEnabled(t *testing.T) {
 	}
 
 	dKey := dns.Key{ClientIP: c.Source, ClientPort: c.SPort, ServerIP: c.Dest, Protocol: getIPProtocol(c.Type)}
-	var d = "foo.com"
-	getStats := func() map[dns.Key]map[string]map[dns.QueryType]dns.Stats {
-		statsByDomain := make(map[dns.Key]map[string]map[dns.QueryType]dns.Stats)
+	var d = stringintern.GetByString("foo.com")
+	getStats := func() dns.MapByKeyNameType {
+		statsByDomain := make(dns.MapByKeyNameType)
 		stats := make(map[dns.QueryType]dns.Stats)
 		countByRcode := make(map[uint32]uint32)
 		countByRcode[uint32(DNSResponseCodeNoError)] = 1
 		stats[dns.TypeA] = dns.Stats{CountByRcode: countByRcode}
-		statsByDomain[dKey] = make(map[string]map[dns.QueryType]dns.Stats)
+		statsByDomain[dKey] = make(map[*stringintern.Value]map[dns.QueryType]dns.Stats)
 		statsByDomain[dKey][d] = stats
 		return statsByDomain
 	}
@@ -1258,14 +1259,14 @@ func TestDNSStatsPIDCollisions(t *testing.T) {
 		DPort:  53,
 	}
 
-	var d = "foo.com"
+	var d = stringintern.GetByString("foo.com")
 	dKey := dns.Key{ClientIP: c.Source, ClientPort: c.SPort, ServerIP: c.Dest, Protocol: syscall.IPPROTO_TCP}
-	statsByDomain := make(map[dns.Key]map[string]map[dns.QueryType]dns.Stats)
+	statsByDomain := make(dns.MapByKeyNameType)
 	stats := make(map[dns.QueryType]dns.Stats)
 	countByRcode := make(map[uint32]uint32)
 	countByRcode[uint32(DNSResponseCodeNoError)] = 1
 	stats[dns.TypeA] = dns.Stats{CountByRcode: countByRcode}
-	statsByDomain[dKey] = make(map[string]map[dns.QueryType]dns.Stats)
+	statsByDomain[dKey] = make(map[*stringintern.Value]map[dns.QueryType]dns.Stats)
 	statsByDomain[dKey][d] = stats
 
 	client := "client"
