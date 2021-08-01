@@ -22,9 +22,9 @@ const (
 	SysWrite
 	SysOpen
 	SysClose
-	SysStat
-	SysFstat
-	SysLstat
+	SysNewstat
+	SysNewfstat
+	SysNewlstat
 	SysPoll
 	SysLseek
 	SysMmap
@@ -58,7 +58,7 @@ const (
 	SysAlarm
 	SysSetitimer
 	SysGetpid
-	SysSendfile
+	SysSendFile64
 	SysSocket
 	SysConnect
 	SysAccept
@@ -72,8 +72,8 @@ const (
 	SysGetsockname
 	SysGetpeername
 	SysSocketpair
-	SysSetsockopt
-	SysGetsockopt
+	SysSetSockopt
+	SysGetSockopt
 	SysClone
 	SysFork
 	SysVfork
@@ -81,7 +81,7 @@ const (
 	SysExit
 	SysWait4
 	SysKill
-	SysUname
+	SysNewUname
 	SysSemget
 	SysSemop
 	SysSemctl
@@ -174,7 +174,7 @@ const (
 	SysVhangup
 	SysModifyLdt
 	SysPivotRoot
-	SysSysctl
+	SysNiSyscall
 	SysPrctl
 	SysArchPrctl
 	SysAdjtimex
@@ -184,7 +184,7 @@ const (
 	SysAcct
 	SysSettimeofday
 	SysMount
-	SysUmount2
+	SysUmount
 	SysSwapon
 	SysSwapoff
 	SysReboot
@@ -192,18 +192,18 @@ const (
 	SysSetdomainname
 	SysIopl
 	SysIoperm
-	SysCreateModule
+	CreateModule
 	SysInitModule
 	SysDeleteModule
-	SysGetKernelSyms
-	SysQueryModule
+	GetKernelSyms
+	QueryModule
 	SysQuotactl
-	SysNfsservctl
-	SysGetpmsg
-	SysPutpmsg
-	SysAfsSyscall
-	SysTuxcall
-	SysSecurity
+	Nfsservctl
+	Getpmsg
+	Putpmsg
+	AfsSyscall
+	Tuxcall
+	Security
 	SysGettid
 	SysReadahead
 	SysSetxattr
@@ -223,17 +223,17 @@ const (
 	SysFutex
 	SysSchedSetaffinity
 	SysSchedGetaffinity
-	SysSetThreadArea
+	SetThreadArea
 	SysIoSetup
 	SysIoDestroy
 	SysIoGetevents
 	SysIoSubmit
 	SysIoCancel
-	SysGetThreadArea
+	GetThreadArea
 	SysLookupDcookie
 	SysEpollCreate
-	SysEpollCtlOld
-	SysEpollWaitOld
+	EpollCtlOld
+	EpollWaitOld
 	SysRemapFilePages
 	SysGetdents64
 	SysSetTidAddress
@@ -242,7 +242,7 @@ const (
 	SysFadvise64
 	SysTimerCreate
 	SysTimerSettime
-	SysTimersysReadGettime
+	SysTimerGettime
 	SysTimerGetoverrun
 	SysTimerDelete
 	SysClockSettime
@@ -254,7 +254,7 @@ const (
 	SysEpollCtl
 	SysTgkill
 	SysUtimes
-	SysVserver
+	Vserver
 	SysMbind
 	SysSetMempolicy
 	SysGetMempolicy
@@ -321,6 +321,63 @@ const (
 	SysFanotifyInit
 	SysFanotifyMark
 	SysPrlimit64
+	SysNameToHandleAt
+	SysOpenByHandleAt
+	SysClockAdjtime
+	SysSyncfs
+	SysSendmmsg
+	SysSetns
+	SysGetcpu
+	SysProcessVmReadv
+	SysProcessVmWritev
+	SysKcmp
+	SysFinitModule
+	SysSchedSetattr
+	SysSchedGetattr
+	SysRenameat2
+	SysSeccomp
+	SysGetrandom
+	SysMemfdCreate
+	SysKexecFileLoad
+	SysBpf
+	SysExecveat
+	SysUserfaultfd
+	SysMembarrier
+	SysMlock2
+	SysCopyFileRange
+	SysPreadv2
+	SysPwritev2
+	SysPkeyMprotect
+	SysPkeyAlloc
+	SysPkeyFree
+	SysStatx
+	SysIoPgetevents
+	SysRseq
+)
+
+// jump 424, see: https://elixir.bootlin.com/linux/v5.13.7/source/arch/x86/entry/syscalls/syscall_64.tbl#L346
+const (
+	SysPidfdSendSignal Syscall = iota + 424
+	SysIoUringSetup
+	SysIoUringEnter
+	SysIoUringRegister
+	SysOpenTree
+	SysMoveMount
+	SysFsopen
+	SysFsconfig
+	SysFsmount
+	SysFspick
+	SysPidfdOpen
+	SysClone3
+	SysCloseRange
+	SysOpenat2
+	SysPidfdGetfd
+	SysFaccessat2
+	SysProcessMadvise
+	SysEpollPwait2
+	SysMountSetattr
+	SysLandlockCreateRuleset
+	SysLandlockAddRule
 )
 
 // MarshalText maps the syscall identifier to UTF-8-encoded text and returns the result
