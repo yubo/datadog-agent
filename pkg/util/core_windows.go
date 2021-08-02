@@ -8,7 +8,7 @@ package util
 import (
 	"fmt"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // SetupCoreDump enables core dumps and sets the core dump size limit based on configuration

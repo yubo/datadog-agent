@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	apicfg "github.com/DataDog/datadog-agent/pkg/process/util/api/config"
 	"github.com/stretchr/testify/suite"
 )

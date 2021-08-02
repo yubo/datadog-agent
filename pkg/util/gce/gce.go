@@ -11,12 +11,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/common"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // declare these as vars not const to ease testing
@@ -41,7 +40,7 @@ func GetHostname(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
 	hostname, err := getResponseWithMaxLength(ctx, metadataURL+"/instance/hostname",
-		config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+		config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		return "", fmt.Errorf("unable to retrieve hostname from GCE: %s", err)
 	}
@@ -74,7 +73,7 @@ func GetHostAliases(ctx context.Context) ([]string, error) {
 
 func getInstanceAlias(ctx context.Context, hostname string) (string, error) {
 	instanceName, err := getResponseWithMaxLength(ctx, metadataURL+"/instance/name",
-		config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+		config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		// If the endpoint is not reachable, fallback on the old way to get the alias.
 		// For instance, it happens in GKE, where the metadata server is only a subset
@@ -87,7 +86,7 @@ func getInstanceAlias(ctx context.Context, hostname string) (string, error) {
 	}
 
 	projectID, err := getResponseWithMaxLength(ctx, metadataURL+"/project/project-id",
-		config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+		config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		return "", fmt.Errorf("unable to retrieve project ID from GCE: %s", err)
 	}
@@ -100,7 +99,7 @@ func GetClusterName(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
 	clusterName, err := getResponseWithMaxLength(ctx, metadataURL+"/instance/attributes/cluster-name",
-		config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+		config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		return "", fmt.Errorf("unable to retrieve clustername from GCE: %s", err)
 	}
@@ -113,7 +112,7 @@ func GetPublicIPv4(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
 	publicIPv4, err := getResponseWithMaxLength(ctx, metadataURL+"/instance/network-interfaces/0/access-configs/0/external-ip",
-		config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+		config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		return "", fmt.Errorf("unable to retrieve public IPv4 from GCE: %s", err)
 	}
@@ -182,7 +181,7 @@ func getResponseWithMaxLength(ctx context.Context, endpoint string, maxLength in
 func getResponse(ctx context.Context, url string) (string, error) {
 	client := http.Client{
 		Transport: httputils.CreateHTTPTransport(),
-		Timeout:   time.Duration(config.Datadog.GetInt("gce_metadata_timeout")) * time.Millisecond,
+		Timeout:   config.C.GCEMetadataTimeout,
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)

@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var allowedEnvvarNames = []string{

@@ -9,7 +9,7 @@ import (
 	"context"
 	"time"
 
-	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"

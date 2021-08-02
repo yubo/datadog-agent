@@ -8,8 +8,8 @@ package common
 import (
 	"strings"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/version"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -34,7 +34,7 @@ func GetPayload(hostname string) *Payload {
 
 func getAPIKey() string {
 	if apiKey == "" {
-		apiKey = strings.Split(config.Datadog.GetString("api_key"), ",")[0]
+		apiKey = strings.Split(config.C.ApiKey, ",")[0]
 	}
 
 	return config.SanitizeAPIKey(apiKey)

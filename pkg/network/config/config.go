@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	ddconfig "github.com/DataDog/datadog-agent/pkg/config"
+	ddconfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/ebpf"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
 	"github.com/DataDog/datadog-agent/pkg/util/log"

@@ -19,14 +19,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
-	coreconfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/proto/pbgo"
 	"github.com/DataDog/datadog-agent/pkg/trace/config/features"
 	"github.com/DataDog/datadog-agent/pkg/util/fargate"
 	"github.com/DataDog/datadog-agent/pkg/util/grpc"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
+	coreconfig "github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/apm"
 )
 
 // ErrMissingAPIKey is returned when the config could not be validated due to missing API key.
@@ -35,7 +36,8 @@ var ErrMissingAPIKey = errors.New("you must specify an API Key, either via a con
 // Endpoint specifies an endpoint that the trace agent will write data (traces, stats & services) to.
 type Endpoint struct {
 	APIKey string `json:"-"` // never marshal this
-	Host   string
+	//Host   string
+	Hosts []string
 
 	// NoProxy will be set to true when the proxy setting for the trace API endpoint
 	// needs to be ignored (e.g. it is part of the "no_proxy" list in the yaml settings).
@@ -81,8 +83,8 @@ type AgentConfig struct {
 
 	// Writers
 	SynchronousFlushing     bool // Mode where traces are only submitted when FlushAsync is called, used for Serverless Extension
-	StatsWriter             *WriterConfig
-	TraceWriter             *WriterConfig
+	StatsWriter             *apm.WriterConfig
+	TraceWriter             *apm.WriterConfig
 	ConnectionResetInterval time.Duration // frequency at which outgoing connections are reset. 0 means no reset is performed
 
 	// internal telemetry

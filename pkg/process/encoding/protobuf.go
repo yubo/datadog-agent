@@ -3,7 +3,7 @@ package encoding
 import (
 	"github.com/gogo/protobuf/proto"
 
-	model "github.com/DataDog/agent-payload/process"
+	model "github.com/n9e/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 )
 

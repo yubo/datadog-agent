@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	model "github.com/DataDog/agent-payload/process"
+	model "github.com/n9e/agent-payload/process"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"

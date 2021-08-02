@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	lineParser "github.com/DataDog/datadog-agent/pkg/logs/parser"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"

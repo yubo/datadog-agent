@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/common"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 type ec2Token struct {
@@ -51,7 +51,7 @@ func GetInstanceID(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
 
-	instanceID, err := getMetadataItemWithMaxLength(ctx, "/instance-id", config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+	instanceID, err := getMetadataItemWithMaxLength(ctx, "/instance-id", config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		if instanceID, found := cache.Cache.Get(instanceIDCacheKey); found {
 			log.Debugf("Unable to get ec2 instanceID from aws metadata, returning cached instanceID '%s': %s", instanceID, err)
@@ -100,7 +100,7 @@ func GetHostname(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
 
-	hostname, err := getMetadataItemWithMaxLength(ctx, "/hostname", config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+	hostname, err := getMetadataItemWithMaxLength(ctx, "/hostname", config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		if hostname, found := cache.Cache.Get(hostnameCacheKey); found {
 			log.Debugf("Unable to get ec2 hostname from aws metadata, returning cached hostname '%s': %s", hostname, err)
@@ -209,7 +209,7 @@ func getMetadataItemWithMaxLength(ctx context.Context, endpoint string, maxLengt
 }
 
 func getMetadataItem(ctx context.Context, endpoint string) (string, error) {
-	res, err := doHTTPRequest(ctx, metadataURL+endpoint, http.MethodGet, map[string]string{}, config.Datadog.GetBool("ec2_prefer_imdsv2"))
+	res, err := doHTTPRequest(ctx, metadataURL+endpoint, http.MethodGet, map[string]string{}, config.C.EC2PreferImdsv2)
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch EC2 API, %s", err)
 	}
@@ -256,7 +256,7 @@ func extractClusterName(tags []string) (string, error) {
 func doHTTPRequest(ctx context.Context, url string, method string, headers map[string]string, useToken bool) (*http.Response, error) {
 	client := http.Client{
 		Transport: httputils.CreateHTTPTransport(),
-		Timeout:   time.Duration(config.Datadog.GetInt("ec2_metadata_timeout")) * time.Millisecond,
+		Timeout:   config.C.EC2MetadataTimeout,
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
@@ -305,7 +305,7 @@ func getToken(ctx context.Context) (string, error) {
 
 	client := http.Client{
 		Transport: httputils.CreateHTTPTransport(),
-		Timeout:   time.Duration(config.Datadog.GetInt("ec2_metadata_timeout")) * time.Millisecond,
+		Timeout:   config.C.EC2MetadataTimeout,
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, tokenURL, nil)
@@ -313,7 +313,7 @@ func getToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	tokenLifetime := time.Duration(config.Datadog.GetInt("ec2_metadata_token_lifetime")) * time.Second
+	tokenLifetime := config.C.EC2MetadataTokenLifetime
 	req.Header.Add("X-aws-ec2-metadata-token-ttl-seconds", fmt.Sprintf("%d", int(tokenLifetime.Seconds())))
 	// Set the local expiration date before requesting the metadata endpoint so the local expiration date will always
 	// expire before the expiration date computed on the AWS side. The expiration date is set minus the renewal window
@@ -345,7 +345,7 @@ func getToken(ctx context.Context) (string, error) {
 
 // IsDefaultHostname returns whether the given hostname is a default one for EC2
 func IsDefaultHostname(hostname string) bool {
-	return isDefaultHostname(hostname, config.Datadog.GetBool("ec2_use_windows_prefix_detection"))
+	return isDefaultHostname(hostname, config.C.EC2UseWindowsPrefixDetection)
 }
 
 // IsDefaultHostnameForIntake returns whether the given hostname is a default one for EC2 for the intake

@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 func readCtxSwitches(procStatPath string) (ctxSwitches int64, err error) {

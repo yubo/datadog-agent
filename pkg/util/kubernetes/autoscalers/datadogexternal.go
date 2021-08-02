@@ -18,7 +18,7 @@ import (
 	"gopkg.in/zorkian/go-datadog-api.v2"
 	utilserror "k8s.io/apimachinery/pkg/util/errors"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 	le "github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver/leaderelection/metrics"

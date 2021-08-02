@@ -19,13 +19,13 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
-	"github.com/DataDog/datadog-agent/pkg/api/security"
 	"github.com/DataDog/datadog-agent/pkg/api/util"
 	apiv1 "github.com/DataDog/datadog-agent/pkg/clusteragent/api/v1"
 	"github.com/DataDog/datadog-agent/pkg/clusteragent/clusterchecks/types"
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/retry"
 	"github.com/DataDog/datadog-agent/pkg/version"
+	auth "github.com/n9e/n9e-agentd/pkg/authentication"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 /*
@@ -105,14 +105,14 @@ func (c *DCAClient) init() error {
 		return err
 	}
 
-	authToken, err := security.GetClusterAgentAuthToken()
+	authToken, err := auth.GetClusterAgentAuthToken()
 	if err != nil {
 		return err
 	}
 
 	c.clusterAgentAPIRequestHeaders = http.Header{}
 	c.clusterAgentAPIRequestHeaders.Set(authorizationHeaderKey, fmt.Sprintf("Bearer %s", authToken))
-	podIP := config.Datadog.GetString("clc_runner_host")
+	podIP := config.C.CLCRunnerHost
 	c.clusterAgentAPIRequestHeaders.Set(RealIPHeader, podIP)
 
 	// TODO remove insecure
@@ -151,7 +151,7 @@ func getClusterAgentEndpoint() (string, error) {
 	const configDcaURL = "cluster_agent.url"
 	const configDcaSvcName = "cluster_agent.kubernetes_service_name"
 
-	dcaURL := config.Datadog.GetString(configDcaURL)
+	dcaURL := config.C.ClusterAgent.Url
 	if dcaURL != "" {
 		if strings.HasPrefix(dcaURL, "http://") {
 			return "", fmt.Errorf("cannot get cluster agent endpoint, not a https scheme: %s", dcaURL)
@@ -173,7 +173,7 @@ func getClusterAgentEndpoint() (string, error) {
 
 	// Construct the URL with the Kubernetes service environment variables
 	// *_SERVICE_HOST and *_SERVICE_PORT
-	dcaSvc := config.Datadog.GetString(configDcaSvcName)
+	dcaSvc := config.C.ClusterAgent.KubernetesServiceName
 	log.Debugf("Identified service for the Datadog Cluster Agent: %s", dcaSvc)
 	if dcaSvc == "" {
 		return "", fmt.Errorf("cannot get a cluster agent endpoint, both %s and %s are empty", configDcaURL, configDcaSvcName)

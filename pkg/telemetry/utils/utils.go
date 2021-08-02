@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // IsCheckEnabled returns if we want telemetry for the given check.
@@ -13,13 +13,11 @@ func IsCheckEnabled(checkName string) bool {
 	}
 
 	// by default, we don't enable telemetry for every checks stats
-	if config.Datadog.IsSet("telemetry.checks") {
-		for _, check := range config.Datadog.GetStringSlice("telemetry.checks") {
-			if check == "*" {
-				return true
-			} else if check == checkName {
-				return true
-			}
+	for _, check := range config.C.Telemetry.Checks {
+		if check == "*" {
+			return true
+		} else if check == checkName {
+			return true
 		}
 	}
 	return false
@@ -27,5 +25,5 @@ func IsCheckEnabled(checkName string) bool {
 
 // IsEnabled returns whether or not telemetry is enabled
 func IsEnabled() bool {
-	return config.Datadog.IsSet("telemetry.enabled") && config.Datadog.GetBool("telemetry.enabled")
+	return config.C.Telemetry.Enabled
 }

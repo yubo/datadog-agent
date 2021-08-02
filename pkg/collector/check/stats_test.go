@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	agentConfig "github.com/DataDog/datadog-agent/pkg/config"
+	agentConfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 )
 

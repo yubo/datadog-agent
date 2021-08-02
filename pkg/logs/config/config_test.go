@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/stretchr/testify/suite"
 )
 

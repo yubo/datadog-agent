@@ -3,7 +3,7 @@ package ebpf
 import (
 	"strings"
 
-	aconfig "github.com/DataDog/datadog-agent/pkg/config"
+	aconfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 )
 

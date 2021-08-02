@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	agentpayload "github.com/DataDog/agent-payload/gogen"
+	agentpayload "github.com/n9e/agent-payload/gogen"
 	"github.com/gogo/protobuf/proto"
 	jsoniter "github.com/json-iterator/go"
 

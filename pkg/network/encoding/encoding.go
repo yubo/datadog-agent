@@ -3,8 +3,8 @@ package encoding
 import (
 	"strings"
 
-	model "github.com/DataDog/agent-payload/process"
-	"github.com/DataDog/datadog-agent/pkg/config"
+	model "github.com/n9e/agent-payload/process"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/network"
 	"github.com/DataDog/datadog-agent/pkg/network/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"

@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // declare these as vars not const to ease testing
@@ -39,7 +39,7 @@ func GetHostAlias(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
 	res, err := getResponseWithMaxLength(ctx, metadataURL+"/latest/meta-data/instance-id",
-		config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+		config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		return "", fmt.Errorf("Alibaba HostAliases: unable to query metadata endpoint: %s", err)
 	}

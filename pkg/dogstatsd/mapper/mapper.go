@@ -9,9 +9,10 @@ package mapper
 
 import (
 	"fmt"
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"regexp"
 	"strings"
+
+	"github.com/n9e/n9e-agentd/pkg/config/statsd"
 )
 
 var (
@@ -51,7 +52,7 @@ type MapResult struct {
 }
 
 // NewMetricMapper creates, validates, prepares a new MetricMapper
-func NewMetricMapper(configProfiles []config.MappingProfile, cacheSize int) (*MetricMapper, error) {
+func NewMetricMapper(configProfiles []statsd.MappingProfile, cacheSize int) (*MetricMapper, error) {
 	var profiles []MappingProfile
 	for profileIndex, configProfile := range configProfiles {
 		if configProfile.Name == "" {

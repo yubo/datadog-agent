@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	model "github.com/DataDog/agent-payload/process"
+	model "github.com/n9e/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 )
 

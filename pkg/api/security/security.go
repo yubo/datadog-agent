@@ -10,19 +10,12 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/hex"
 	"encoding/pem"
-	"io/ioutil"
 	"math/big"
-	"os"
-	"path/filepath"
 
 	"fmt"
 	"net"
 	"time"
-
-	"github.com/DataDog/datadog-agent/pkg/config"
-	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 const (
@@ -107,72 +100,72 @@ func GenerateRootCert(hosts []string, bits int) (
 }
 
 // GetAuthTokenFilepath returns the path to the auth_token file.
-func GetAuthTokenFilepath() string {
-	if config.Datadog.GetString("auth_token_file_path") != "" {
-		return config.Datadog.GetString("auth_token_file_path")
-	}
-	return filepath.Join(filepath.Dir(config.Datadog.ConfigFileUsed()), authTokenName)
-}
+//func GetAuthTokenFilepath() string {
+//	if config.Datadog.GetString("auth_token_file_path") != "" {
+//		return config.Datadog.GetString("auth_token_file_path")
+//	}
+//	return filepath.Join(filepath.Dir(config.Datadog.ConfigFileUsed()), authTokenName)
+//}
 
 // FetchAuthToken gets the authentication token from the auth token file & creates one if it doesn't exist
 // Requires that the config has been set up before calling
-func FetchAuthToken() (string, error) {
-	return fetchAuthToken(false)
-}
+//func FetchAuthToken() (string, error) {
+//	return fetchAuthToken(false)
+//}
 
 // CreateOrFetchToken gets the authentication token from the auth token file & creates one if it doesn't exist
 // Requires that the config has been set up before calling
-func CreateOrFetchToken() (string, error) {
-	return fetchAuthToken(true)
-}
-
-func fetchAuthToken(tokenCreationAllowed bool) (string, error) {
-	authTokenFile := GetAuthTokenFilepath()
-
-	// Create a new token if it doesn't exist and if permitted by calling func
-	if _, e := os.Stat(authTokenFile); os.IsNotExist(e) && tokenCreationAllowed {
-		key := make([]byte, authTokenMinimalLen)
-		_, e = rand.Read(key)
-		if e != nil {
-			return "", fmt.Errorf("can't create agent authentication token value: %s", e)
-		}
-
-		// Write the auth token to the auth token file (platform-specific)
-		e = saveAuthToken(hex.EncodeToString(key), authTokenFile)
-		if e != nil {
-			return "", fmt.Errorf("error writing authentication token file on fs: %s", e)
-		}
-		log.Infof("Saved a new authentication token to %s", authTokenFile)
-	}
-	// Read the token
-	authTokenRaw, e := ioutil.ReadFile(authTokenFile)
-	if e != nil {
-		return "", fmt.Errorf("unable to read authentication token file: " + e.Error())
-	}
-
-	// Do some basic validation
-	authToken := string(authTokenRaw)
-	if len(authToken) < authTokenMinimalLen {
-		return "", fmt.Errorf("invalid authentication token: must be at least %d characters in length", authTokenMinimalLen)
-	}
-
-	return authToken, nil
-}
-
-// DeleteAuthToken removes auth_token file (test clean up)
-func DeleteAuthToken() error {
-	authTokenFile := filepath.Join(filepath.Dir(config.Datadog.ConfigFileUsed()), authTokenName)
-	return os.Remove(authTokenFile)
-}
+//func CreateOrFetchToken() (string, error) {
+//	return fetchAuthToken(true)
+//}
+//
+//func fetchAuthToken(tokenCreationAllowed bool) (string, error) {
+//	authTokenFile := GetAuthTokenFilepath()
+//
+//	// Create a new token if it doesn't exist and if permitted by calling func
+//	if _, e := os.Stat(authTokenFile); os.IsNotExist(e) && tokenCreationAllowed {
+//		key := make([]byte, authTokenMinimalLen)
+//		_, e = rand.Read(key)
+//		if e != nil {
+//			return "", fmt.Errorf("can't create agent authentication token value: %s", e)
+//		}
+//
+//		// Write the auth token to the auth token file (platform-specific)
+//		e = saveAuthToken(hex.EncodeToString(key), authTokenFile)
+//		if e != nil {
+//			return "", fmt.Errorf("error writing authentication token file on fs: %s", e)
+//		}
+//		log.Infof("Saved a new authentication token to %s", authTokenFile)
+//	}
+//	// Read the token
+//	authTokenRaw, e := ioutil.ReadFile(authTokenFile)
+//	if e != nil {
+//		return "", fmt.Errorf("unable to read authentication token file: " + e.Error())
+//	}
+//
+//	// Do some basic validation
+//	authToken := string(authTokenRaw)
+//	if len(authToken) < authTokenMinimalLen {
+//		return "", fmt.Errorf("invalid authentication token: must be at least %d characters in length", authTokenMinimalLen)
+//	}
+//
+//	return authToken, nil
+//}
+//
+//// DeleteAuthToken removes auth_token file (test clean up)
+//func DeleteAuthToken() error {
+//	authTokenFile := filepath.Join(filepath.Dir(config.Datadog.ConfigFileUsed()), authTokenName)
+//	return os.Remove(authTokenFile)
+//}
 
 // GetClusterAgentAuthToken load the authentication token from:
 // 1st. the configuration value of "cluster_agent.auth_token" in datadog.yaml
 // 2nd. from the filesystem
 // If using the token from the filesystem, the token file must be next to the datadog.yaml
 // with the filename: cluster_agent.auth_token, it will fail if the file does not exist
-func GetClusterAgentAuthToken() (string, error) {
-	return getClusterAgentAuthToken(false)
-}
+//func GetClusterAgentAuthToken() (string, error) {
+//	return getClusterAgentAuthToken(false)
+//}
 
 // CreateOrGetClusterAgentAuthToken load the authentication token from:
 // 1st. the configuration value of "cluster_agent.auth_token" in datadog.yaml
@@ -180,54 +173,54 @@ func GetClusterAgentAuthToken() (string, error) {
 // If using the token from the filesystem, the token file must be next to the datadog.yaml
 // with the filename: cluster_agent.auth_token, if such file does not exist it will be
 // created and populated with a newly generated token.
-func CreateOrGetClusterAgentAuthToken() (string, error) {
-	return getClusterAgentAuthToken(true)
-}
+//func CreateOrGetClusterAgentAuthToken() (string, error) {
+//	return getClusterAgentAuthToken(true)
+//}
 
-func getClusterAgentAuthToken(tokenCreationAllowed bool) (string, error) {
-	authToken := config.Datadog.GetString("cluster_agent.auth_token")
-	if authToken != "" {
-		log.Infof("Using configured cluster_agent.auth_token")
-		return authToken, validateAuthToken(authToken)
-	}
+//func getClusterAgentAuthToken(tokenCreationAllowed bool) (string, error) {
+//	authToken := config.C.ClusterAgent.AuthToken.GetString("cluster_agent.auth_token")
+//	if authToken != "" {
+//		log.Infof("Using configured cluster_agent.auth_token")
+//		return authToken, validateAuthToken(authToken)
+//	}
+//
+//	// load the cluster agent auth token from filesystem
+//	tokenAbsPath := filepath.Join(config.FileUsedDir(), clusterAgentAuthTokenFilename)
+//	log.Debugf("Empty cluster_agent.auth_token, loading from %s", tokenAbsPath)
+//
+//	// Create a new token if it doesn't exist
+//	if _, e := os.Stat(tokenAbsPath); os.IsNotExist(e) && tokenCreationAllowed {
+//		key := make([]byte, authTokenMinimalLen)
+//		_, e = rand.Read(key)
+//		if e != nil {
+//			return "", fmt.Errorf("can't create cluster agent authentication token value: %s", e)
+//		}
+//
+//		// Write the auth token to the auth token file (platform-specific)
+//		e = saveAuthToken(hex.EncodeToString(key), tokenAbsPath)
+//		if e != nil {
+//			return "", fmt.Errorf("error writing authentication token file on fs: %s", e)
+//		}
+//		log.Infof("Saved a new authentication token for the Cluster Agent at %s", tokenAbsPath)
+//	}
+//
+//	_, err := os.Stat(tokenAbsPath)
+//	if err != nil {
+//		return "", fmt.Errorf("empty cluster_agent.auth_token and cannot find %q: %s", tokenAbsPath, err)
+//	}
+//	b, err := ioutil.ReadFile(tokenAbsPath)
+//	if err != nil {
+//		return "", fmt.Errorf("empty cluster_agent.auth_token and cannot read %s: %s", tokenAbsPath, err)
+//	}
+//	log.Debugf("cluster_agent.auth_token loaded from %s", tokenAbsPath)
+//
+//	authToken = string(b)
+//	return authToken, validateAuthToken(authToken)
+//}
 
-	// load the cluster agent auth token from filesystem
-	tokenAbsPath := filepath.Join(config.FileUsedDir(), clusterAgentAuthTokenFilename)
-	log.Debugf("Empty cluster_agent.auth_token, loading from %s", tokenAbsPath)
-
-	// Create a new token if it doesn't exist
-	if _, e := os.Stat(tokenAbsPath); os.IsNotExist(e) && tokenCreationAllowed {
-		key := make([]byte, authTokenMinimalLen)
-		_, e = rand.Read(key)
-		if e != nil {
-			return "", fmt.Errorf("can't create cluster agent authentication token value: %s", e)
-		}
-
-		// Write the auth token to the auth token file (platform-specific)
-		e = saveAuthToken(hex.EncodeToString(key), tokenAbsPath)
-		if e != nil {
-			return "", fmt.Errorf("error writing authentication token file on fs: %s", e)
-		}
-		log.Infof("Saved a new authentication token for the Cluster Agent at %s", tokenAbsPath)
-	}
-
-	_, err := os.Stat(tokenAbsPath)
-	if err != nil {
-		return "", fmt.Errorf("empty cluster_agent.auth_token and cannot find %q: %s", tokenAbsPath, err)
-	}
-	b, err := ioutil.ReadFile(tokenAbsPath)
-	if err != nil {
-		return "", fmt.Errorf("empty cluster_agent.auth_token and cannot read %s: %s", tokenAbsPath, err)
-	}
-	log.Debugf("cluster_agent.auth_token loaded from %s", tokenAbsPath)
-
-	authToken = string(b)
-	return authToken, validateAuthToken(authToken)
-}
-
-func validateAuthToken(authToken string) error {
-	if len(authToken) < authTokenMinimalLen {
-		return fmt.Errorf("cluster agent authentication token length must be greater than %d, curently: %d", authTokenMinimalLen, len(authToken))
-	}
-	return nil
-}
+//func validateAuthToken(authToken string) error {
+//	if len(authToken) < authTokenMinimalLen {
+//		return fmt.Errorf("cluster agent authentication token length must be greater than %d, curently: %d", authTokenMinimalLen, len(authToken))
+//	}
+//	return nil
+//}

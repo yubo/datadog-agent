@@ -11,6 +11,8 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/gosnmp/gosnmp"
+	"github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/snmp"
 )
 
 // SnmpPacket is the type of packets yielded by server listeners.
@@ -25,7 +27,7 @@ type PacketsChannel = chan *SnmpPacket
 // TrapServer manages an SNMPv2 trap listener.
 type TrapServer struct {
 	Addr     string
-	config   *Config
+	config   *snmp.TrapsConfig
 	listener *gosnmp.TrapListener
 	packets  PacketsChannel
 }
@@ -64,10 +66,7 @@ func GetPacketsChannel() PacketsChannel {
 
 // NewTrapServer configures and returns a running SNMP traps server.
 func NewTrapServer() (*TrapServer, error) {
-	config, err := ReadConfig()
-	if err != nil {
-		return nil, err
-	}
+	config := &config.C.SnmpTraps
 
 	packets := make(PacketsChannel, packetsChanSize)
 
@@ -85,7 +84,7 @@ func NewTrapServer() (*TrapServer, error) {
 	return server, nil
 }
 
-func startSNMPv2Listener(c *Config, packets PacketsChannel) (*gosnmp.TrapListener, error) {
+func startSNMPv2Listener(c *snmp.TrapsConfig, packets PacketsChannel) (*gosnmp.TrapListener, error) {
 	listener := gosnmp.NewTrapListener()
 	listener.Params = c.BuildV2Params()
 

@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // declare these as vars not const to ease testing
@@ -46,7 +46,7 @@ func GetInstanceID(ctx context.Context) (string, error) {
 	if !config.IsCloudProviderEnabled(CloudProviderName) {
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
-	res, err := getMetadataItemWithMaxLength(ctx, metadataURL+"/meta-data/instance-id", config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+	res, err := getMetadataItemWithMaxLength(ctx, metadataURL+"/meta-data/instance-id", config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		return "", fmt.Errorf("unable to get TencentCloud CVM instanceID: %s", err)
 	}

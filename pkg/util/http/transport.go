@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	"golang.org/x/net/http/httpproxy"
 )
 
@@ -53,10 +53,10 @@ func warnOnce(warnMap map[string]bool, key string, format string, params ...inte
 // CreateHTTPTransport creates an *http.Transport for use in the agent
 func CreateHTTPTransport() *http.Transport {
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: config.Datadog.GetBool("skip_ssl_validation"),
+		InsecureSkipVerify: config.C.SkipSSLValidation,
 	}
 
-	if config.Datadog.GetBool("force_tls_12") {
+	if config.C.ForceTLS12 {
 		tlsConfig.MinVersion = tls.VersionTLS12
 	}
 
@@ -97,7 +97,7 @@ func GetProxyTransportFunc(p *config.Proxy) func(*http.Request) (*url.URL, error
 		NoProxy:    strings.Join(p.NoProxy, ","),
 	}
 
-	if config.Datadog.GetBool("no_proxy_nonexact_match") {
+	if config.C.NoProxyNonexactMatch {
 		return func(r *http.Request) (*url.URL, error) {
 			return proxyConfig.ProxyFunc()(r.URL)
 		}

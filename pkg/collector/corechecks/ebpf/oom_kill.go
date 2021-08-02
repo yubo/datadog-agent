@@ -4,9 +4,9 @@
 // Copyright 2016-present Datadog, Inc.
 
 // FIXME: we require the `cgo` build tag because of this dep relationship:
-// github.com/DataDog/datadog-agent/pkg/process/net depends on `github.com/DataDog/agent-payload/process`,
+// github.com/DataDog/datadog-agent/pkg/process/net depends on `github.com/n9e/agent-payload/process`,
 // which has a hard dependency on `github.com/DataDog/zstd_0`, which requires CGO.
-// Should be removed once `github.com/DataDog/agent-payload/process` can be imported with CGO disabled.
+// Should be removed once `github.com/n9e/agent-payload/process` can be imported with CGO disabled.
 // +build cgo
 // +build linux
 
@@ -24,7 +24,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
-	dd_config "github.com/DataDog/datadog-agent/pkg/config"
+	dd_config "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	process_net "github.com/DataDog/datadog-agent/pkg/process/net"
 	"github.com/DataDog/datadog-agent/pkg/tagger"

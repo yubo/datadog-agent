@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	pkgconfig "github.com/DataDog/datadog-agent/pkg/config"
+	pkgconfig "github.com/n9e/n9e-agentd/pkg/config"
 
-	coreConfig "github.com/DataDog/datadog-agent/pkg/config"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/auditor"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/client/http"

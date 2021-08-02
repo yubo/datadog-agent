@@ -20,8 +20,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	agentpayload "github.com/DataDog/agent-payload/gogen"
-	"github.com/DataDog/datadog-agent/pkg/config"
+	agentpayload "github.com/n9e/agent-payload/gogen"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/serializer/stream"
 )
 

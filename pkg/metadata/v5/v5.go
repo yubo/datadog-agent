@@ -10,7 +10,7 @@ package v5
 import (
 	"context"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metadata/common"
 	"github.com/DataDog/datadog-agent/pkg/metadata/gohai"
 	"github.com/DataDog/datadog-agent/pkg/metadata/host"

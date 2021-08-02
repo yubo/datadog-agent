@@ -11,7 +11,7 @@ import (
 	"context"
 	"fmt"
 
-	payload "github.com/DataDog/agent-payload/gogen"
+	payload "github.com/n9e/agent-payload/gogen"
 	"github.com/DataDog/datadog-agent/pkg/metadata"
 
 	ecsutil "github.com/DataDog/datadog-agent/pkg/util/ecs"

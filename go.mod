@@ -2,6 +2,12 @@ module github.com/DataDog/datadog-agent
 
 go 1.15
 
+replace (
+	github.com/n9e/n9e-agentd => ../n9e-agentd
+	github.com/yubo/apiserver => ../apiserver
+	github.com/yubo/golib => ../golib
+)
+
 // NOTE: Prefer using simple `require` directives instead of using `replace` if possible.
 // See https://github.com/DataDog/datadog-agent/blob/main/docs/dev/gomodreplace.md
 // for more details.
@@ -46,7 +52,7 @@ require (
 	code.cloudfoundry.org/rep v0.0.0-20200325195957-1404b978e31e // indirect
 	code.cloudfoundry.org/rfc5424 v0.0.0-20180905210152-236a6d29298a // indirect
 	code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3 // indirect
-	github.com/DataDog/agent-payload v4.78.0+incompatible
+	github.com/DataDog/agent-payload v4.78.0+incompatible // indirect
 	github.com/DataDog/datadog-agent/pkg/util/log v0.30.0-rc.7
 	github.com/DataDog/datadog-agent/pkg/util/winutil v0.30.0-rc.7
 	github.com/DataDog/datadog-go v4.8.0+incompatible
@@ -82,8 +88,8 @@ require (
 	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68
 	github.com/containerd/containerd v1.5.0-beta.4
 	github.com/containerd/typeurl v1.0.2
-	github.com/coreos/go-semver v0.3.0
-	github.com/coreos/go-systemd v0.0.0-20190620071333-e64a0ec8b42a
+	github.com/coreos/go-semver v0.3.0 // indirect
+	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/ristretto v0.0.3
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200916142827-bd33bbf0497b+incompatible
@@ -111,9 +117,9 @@ require (
 	github.com/google/pprof v0.0.0-20210125172800-10e9aeb4a998
 	github.com/gorilla/mux v1.8.0
 	github.com/gosnmp/gosnmp v1.32.0
-	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/h2non/filetype v1.1.1
+	github.com/h2non/filetype v1.1.2-0.20210602110014-3305bbb7ac7b
 	github.com/hashicorp/consul/api v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/golang-lru v0.5.4
@@ -129,8 +135,8 @@ require (
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kubernetes-sigs/custom-metrics-apiserver v0.0.0-20210311094424-0ca2b1909cdc
 	github.com/lib/pq v1.10.0 // indirect
-	github.com/lxn/walk v0.0.0-20191128110447-55ccb3a9f5c1
-	github.com/lxn/win v0.0.0-20191128105842-2da648fda5b4
+	github.com/lxn/walk v0.0.0-20191128110447-55ccb3a9f5c1 // indirect
+	github.com/lxn/win v0.0.0-20191128105842-2da648fda5b4 // indirect
 	github.com/mailru/easyjson v0.7.7
 	github.com/mdlayher/netlink v1.4.1
 	github.com/mholt/archiver/v3 v3.5.0
@@ -138,8 +144,9 @@ require (
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/moby/sys/mountinfo v0.4.1
+	github.com/n9e/agent-payload v4.71.0+incompatible
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
-	github.com/olekukonko/tablewriter v0.0.5
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
 	github.com/opencontainers/runtime-spec v1.0.3-0.20200929063507-e6143ca7d51d
 	github.com/openshift/api v0.0.0-20190924102528-32369d4db2ad
@@ -152,7 +159,7 @@ require (
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4
 	github.com/shuLhan/go-bindata v3.6.1+incompatible
 	github.com/spf13/afero v1.6.0
-	github.com/spf13/cobra v1.1.3
+	github.com/spf13/cobra v1.1.3 // indirect
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
@@ -161,7 +168,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.4 // indirect
 	github.com/twmb/murmur3 v1.1.5
 	github.com/ulikunitz/xz v0.5.10 // indirect
-	github.com/urfave/negroni v1.0.0
+	github.com/urfave/negroni v1.0.0 // indirect
 	github.com/vishvananda/netlink v1.1.1-0.20210508154835-66ddd91f7ddd
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f
 	github.com/vito/go-sse v1.0.0 // indirect
@@ -190,8 +197,8 @@ require (
 	gopkg.in/zorkian/go-datadog-api.v2 v2.30.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.21.1
-	k8s.io/apimachinery v0.21.1
-	k8s.io/apiserver v0.20.5
+	k8s.io/apimachinery v0.21.3
+	k8s.io/apiserver v0.20.5 // indirect
 	k8s.io/autoscaler/vertical-pod-autoscaler v0.9.2
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/cri-api v0.20.1

@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"time"
 
-	coreconfig "github.com/DataDog/datadog-agent/pkg/config"
+	coreconfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/auditor"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/config"

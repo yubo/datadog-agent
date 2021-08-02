@@ -9,8 +9,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/ecs"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // IsFargateInstance returns whether the Agent is running in Fargate.
@@ -31,12 +31,12 @@ func GetOrchestrator(ctx context.Context) OrchestratorName {
 
 // IsEKSFargateInstance returns whether the Agent is running in EKS Fargate.
 func IsEKSFargateInstance() bool {
-	return config.Datadog.GetBool("eks_fargate")
+	return config.C.EKSFargate
 }
 
 // GetEKSFargateNodename returns the node name in EKS Fargate
 func GetEKSFargateNodename() (string, error) {
-	if nodename := config.Datadog.GetString("kubernetes_kubelet_nodename"); nodename != "" {
+	if nodename := config.C.KubernetesKubeletNodename; nodename != "" {
 		return nodename, nil
 	}
 	return "", errors.New("kubernetes_kubelet_nodename is not defined, make sure DD_KUBERNETES_KUBELET_NODENAME is set via the downward API")

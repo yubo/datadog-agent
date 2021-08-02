@@ -7,7 +7,7 @@ import (
 	"github.com/DataDog/gopsutil/host"
 	"github.com/DataDog/gopsutil/mem"
 
-	model "github.com/DataDog/agent-payload/process"
+	model "github.com/n9e/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/config"
 )
 

@@ -33,7 +33,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sys/unix"
 
-	sysconfig "github.com/DataDog/datadog-agent/cmd/system-probe/config"
+	sysconfig "github.com/n9e/n9e-agentd/pkg/system-probe/config"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/security/config"
 	"github.com/DataDog/datadog-agent/pkg/security/model"

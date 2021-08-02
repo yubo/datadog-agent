@@ -6,7 +6,7 @@
 package tagger
 
 import (
-	"github.com/DataDog/datadog-agent/cmd/agent/api/response"
+	"github.com/n9e/n9e-agentd/pkg/apiserver/response"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
 	"github.com/DataDog/datadog-agent/pkg/tagger/types"
 	"github.com/DataDog/datadog-agent/pkg/util"

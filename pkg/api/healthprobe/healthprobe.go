@@ -14,10 +14,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/gorilla/mux"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const defaultTimeout = time.Second
@@ -71,7 +71,7 @@ func healthHandler(getStatusNonBlocking func() (health.Status, error), w http.Re
 	if len(health.Unhealthy) > 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Infof("Healthcheck failed on: %v", health.Unhealthy)
-		if config.Datadog.GetBool("log_all_goroutines_when_unhealthy") {
+		if config.C.LogAllGoroutinesWhenUnhealthy {
 			log.Infof("Goroutines stack: \n%s\n", allStack())
 		}
 	}

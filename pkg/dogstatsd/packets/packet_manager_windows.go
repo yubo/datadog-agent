@@ -9,7 +9,7 @@ package packets
 import (
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // PacketManager gathers everything required to create and assemble packets.

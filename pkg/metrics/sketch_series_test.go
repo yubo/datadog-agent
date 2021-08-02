@@ -13,8 +13,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/DataDog/agent-payload/gogen"
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/agent-payload/gogen"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/serializer/marshaler"
 
 	"github.com/stretchr/testify/assert"

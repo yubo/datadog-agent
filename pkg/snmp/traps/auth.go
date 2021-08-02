@@ -10,9 +10,10 @@ import (
 	"fmt"
 
 	"github.com/gosnmp/gosnmp"
+	"github.com/n9e/n9e-agentd/pkg/config/snmp"
 )
 
-func validateCredentials(p *gosnmp.SnmpPacket, c *Config) error {
+func validateCredentials(p *gosnmp.SnmpPacket, c *snmp.TrapsConfig) error {
 	if p.Version != gosnmp.Version2c {
 		return fmt.Errorf("Unsupported version: %s", p.Version)
 	}

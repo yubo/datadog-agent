@@ -15,7 +15,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/forwarder/transaction"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 )
 

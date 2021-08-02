@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/api/security"
 	"github.com/DataDog/datadog-agent/pkg/api/util"
 	"github.com/DataDog/datadog-agent/pkg/clusteragent/clusterchecks/types"
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/version"
+	auth "github.com/n9e/n9e-agentd/pkg/authentication"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 /*
@@ -56,7 +56,7 @@ func GetCLCRunnerClient() (CLCRunnerClientInterface, error) {
 func (c *CLCRunnerClient) init() {
 	c.initErr = nil
 
-	authToken, err := security.GetClusterAgentAuthToken()
+	authToken, err := auth.GetClusterAgentAuthToken()
 	if err != nil {
 		c.initErr = err
 		return
@@ -72,7 +72,7 @@ func (c *CLCRunnerClient) init() {
 	c.clcRunnerAPIClient.Timeout = 2 * time.Second
 
 	// Set http port used by the CLC Runners
-	c.clcRunnerPort = config.Datadog.GetInt("cluster_checks.clc_runners_port")
+	c.clcRunnerPort = config.C.ClusterChecks.ClcRunnersPort
 }
 
 // GetVersion fetches the version of the CLC Runner

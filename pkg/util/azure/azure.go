@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/hostname/validate"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // declare these as vars not const to ease testing
@@ -44,7 +44,7 @@ func GetHostAlias(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
 	res, err := getResponseWithMaxLength(ctx, metadataURL+"/metadata/instance/compute/vmId?api-version=2017-04-02&format=text",
-		config.Datadog.GetInt("metadata_endpoints_max_hostname_size"))
+		config.C.MetadataEndpointsMaxHostnameSize)
 	if err != nil {
 		return "", fmt.Errorf("Azure HostAliases: unable to query metadata endpoint: %s", err)
 	}
@@ -127,11 +127,11 @@ func GetHostname(ctx context.Context, options map[string]interface{}) (string, e
 		return "", fmt.Errorf("cloud provider is disabled by configuration")
 	}
 
-	return getHostnameWithConfig(ctx, config.Datadog)
+	return getHostnameWithConfig(ctx, config.C)
 }
 
-func getHostnameWithConfig(ctx context.Context, config config.Config) (string, error) {
-	style := config.GetString(hostnameStyleSetting)
+func getHostnameWithConfig(ctx context.Context, config *config.Config) (string, error) {
+	style := config.AzureHostnameStyle
 
 	if style == "os" {
 		return "", fmt.Errorf("azure_hostname_style is set to 'os'")

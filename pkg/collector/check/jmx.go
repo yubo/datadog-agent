@@ -9,7 +9,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
-	agentconfig "github.com/DataDog/datadog-agent/pkg/config"
+	agentconfig "github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // IsJMXConfig checks if a certain YAML config contains at least one instance of a JMX config

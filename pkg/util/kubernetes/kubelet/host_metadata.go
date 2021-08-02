@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metadata/host/container"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 func init() {

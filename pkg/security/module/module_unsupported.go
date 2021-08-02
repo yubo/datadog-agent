@@ -8,7 +8,7 @@
 package module
 
 import (
-	"github.com/DataDog/datadog-agent/cmd/system-probe/api/module"
+	"github.com/n9e/n9e-agentd/pkg/system-probe/api/module"
 	"github.com/DataDog/datadog-agent/pkg/ebpf"
 	"github.com/DataDog/datadog-agent/pkg/security/config"
 )

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 
-	model "github.com/DataDog/agent-payload/process"
+	model "github.com/n9e/agent-payload/process"
 	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 )
 

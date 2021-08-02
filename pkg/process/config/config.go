@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	model "github.com/DataDog/agent-payload/process"
-	sysconfig "github.com/DataDog/datadog-agent/cmd/system-probe/config"
-	"github.com/DataDog/datadog-agent/pkg/config"
+	model "github.com/n9e/agent-payload/process"
+	sysconfig "github.com/n9e/n9e-agentd/pkg/system-probe/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	oconfig "github.com/DataDog/datadog-agent/pkg/orchestrator/config"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	apicfg "github.com/DataDog/datadog-agent/pkg/process/util/api/config"

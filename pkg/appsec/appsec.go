@@ -11,7 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	coreconfig "github.com/DataDog/datadog-agent/pkg/config"
+	coreconfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/trace/api/apiutil"
 	"github.com/DataDog/datadog-agent/pkg/trace/info"
 	"github.com/DataDog/datadog-agent/pkg/trace/logutil"

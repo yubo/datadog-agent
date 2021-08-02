@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	coreconfig "github.com/DataDog/datadog-agent/pkg/config"
+	coreconfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/security/api"
 )
 

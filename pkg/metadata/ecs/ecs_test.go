@@ -10,7 +10,7 @@ package ecs
 import (
 	"testing"
 
-	payload "github.com/DataDog/agent-payload/gogen"
+	payload "github.com/n9e/agent-payload/gogen"
 	"github.com/stretchr/testify/assert"
 
 	v1 "github.com/DataDog/datadog-agent/pkg/util/ecs/metadata/v1"

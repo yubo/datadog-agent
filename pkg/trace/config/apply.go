@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/trace/osutil"
 	"github.com/DataDog/datadog-agent/pkg/trace/traceutil"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // apiEndpointPrefix is the URL prefix prepended to the default site value from YamlAgentConfig.
@@ -42,152 +42,60 @@ type OTLP struct {
 	MaxRequestBytes int64 `mapstructure:"-"`
 }
 
-// ObfuscationConfig holds the configuration for obfuscating sensitive data
-// for various span types.
-type ObfuscationConfig struct {
-	// ES holds the obfuscation configuration for ElasticSearch bodies.
-	ES JSONObfuscationConfig `mapstructure:"elasticsearch"`
-
-	// Mongo holds the obfuscation configuration for MongoDB queries.
-	Mongo JSONObfuscationConfig `mapstructure:"mongodb"`
-
-	// SQLExecPlan holds the obfuscation configuration for SQL Exec Plans. This is strictly for safety related obfuscation,
-	// not normalization. Normalization of exec plans is configured in SQLExecPlanNormalize.
-	SQLExecPlan JSONObfuscationConfig `mapstructure:"sql_exec_plan"`
-
-	// SQLExecPlanNormalize holds the normalization configuration for SQL Exec Plans.
-	SQLExecPlanNormalize JSONObfuscationConfig `mapstructure:"sql_exec_plan_normalize"`
-
-	// HTTP holds the obfuscation settings for HTTP URLs.
-	HTTP HTTPObfuscationConfig `mapstructure:"http"`
-
-	// RemoveStackTraces specifies whether stack traces should be removed.
-	// More specifically "error.stack" tag values will be cleared.
-	RemoveStackTraces bool `mapstructure:"remove_stack_traces"`
-
-	// Redis holds the configuration for obfuscating the "redis.raw_command" tag
-	// for spans of type "redis".
-	Redis Enablable `mapstructure:"redis"`
-
-	// Memcached holds the configuration for obfuscating the "memcached.command" tag
-	// for spans of type "memcached".
-	Memcached Enablable `mapstructure:"memcached"`
-}
-
-// HTTPObfuscationConfig holds the configuration settings for HTTP obfuscation.
-type HTTPObfuscationConfig struct {
-	// RemoveQueryStrings determines query strings to be removed from HTTP URLs.
-	RemoveQueryString bool `mapstructure:"remove_query_string" json:"remove_query_string"`
-
-	// RemovePathDigits determines digits in path segments to be obfuscated.
-	RemovePathDigits bool `mapstructure:"remove_paths_with_digits" json:"remove_path_digits"`
-}
-
-// Enablable can represent any option that has an "enabled" boolean sub-field.
-type Enablable struct {
-	Enabled bool `mapstructure:"enabled"`
-}
-
-// JSONObfuscationConfig holds the obfuscation configuration for sensitive
-// data found in JSON objects.
-type JSONObfuscationConfig struct {
-	// Enabled will specify whether obfuscation should be enabled.
-	Enabled bool `mapstructure:"enabled"`
-
-	// KeepValues will specify a set of keys for which their values will
-	// not be obfuscated.
-	KeepValues []string `mapstructure:"keep_values"`
-
-	// ObfuscateSQLValues will specify a set of keys for which their values
-	// will be passed through SQL obfuscation
-	ObfuscateSQLValues []string `mapstructure:"obfuscate_sql_values"`
-}
-
-// ReplaceRule specifies a replace rule.
-type ReplaceRule struct {
-	// Name specifies the name of the tag that the replace rule addresses. However,
-	// some exceptions apply such as:
-	// • "resource.name" will target the resource
-	// • "*" will target all tags and the resource
-	Name string `mapstructure:"name"`
-
-	// Pattern specifies the regexp pattern to be used when replacing. It must compile.
-	Pattern string `mapstructure:"pattern"`
-
-	// Re holds the compiled Pattern and is only used internally.
-	Re *regexp.Regexp `mapstructure:"-"`
-
-	// Repl specifies the replacement string to be used when Pattern matches.
-	Repl string `mapstructure:"repl"`
-}
-
-// WriterConfig specifies configuration for an API writer.
-type WriterConfig struct {
-	// ConnectionLimit specifies the maximum number of concurrent outgoing
-	// connections allowed for the sender.
-	ConnectionLimit int `mapstructure:"connection_limit"`
-
-	// QueueSize specifies the maximum number or payloads allowed to be queued
-	// in the sender.
-	QueueSize int `mapstructure:"queue_size"`
-
-	// FlushPeriodSeconds specifies the frequency at which the writer's buffer
-	// will be flushed to the sender, in seconds. Fractions are permitted.
-	FlushPeriodSeconds float64 `mapstructure:"flush_period_seconds"`
-}
-
 func (c *AgentConfig) applyDatadogConfig() error {
 	if len(c.Endpoints) == 0 {
 		c.Endpoints = []*Endpoint{{}}
 	}
-	if config.Datadog.IsSet("api_key") {
-		c.Endpoints[0].APIKey = config.SanitizeAPIKey(config.Datadog.GetString("api_key"))
+	if config.C.ApiKey != "" {
+		c.Endpoints[0].APIKey = config.SanitizeAPIKey(config.C.ApiKey)
 	}
-	if config.Datadog.IsSet("hostname") {
-		c.Hostname = config.Datadog.GetString("hostname")
+	if config.C.Hostname != "" {
+		c.Hostname = config.C.Hostname
 	}
-	if config.Datadog.IsSet("log_level") {
-		c.LogLevel = config.Datadog.GetString("log_level")
+	if config.C.LogLevel != "" {
+		c.LogLevel = config.C.LogLevel
 	}
-	if config.Datadog.IsSet("dogstatsd_port") {
-		c.StatsdPort = config.Datadog.GetInt("dogstatsd_port")
+	if config.C.Statsd.Port > 0 {
+		c.StatsdPort = config.C.Statsd.Port
 	}
 
-	site := config.Datadog.GetString("site")
-	if site != "" {
-		c.Endpoints[0].Host = apiEndpointPrefix + site
+	endpoints := config.C.Endpoints
+	if len(endpoints) > 0 {
+		c.Endpoints[0].Hosts = endpoints
 	}
-	if host := config.Datadog.GetString("apm_config.apm_dd_url"); host != "" {
-		c.Endpoints[0].Host = host
-		if site != "" {
-			log.Infof("'site' and 'apm_dd_url' are both set, using endpoint: %q", host)
+	if host := config.C.Apm.ApmUrl; host != "" {
+		c.Endpoints[0].Hosts = []string{host}
+		if len(endpoints) > 0 {
+			log.Infof("'endpoints' and 'apm.apm_url' are both set, using endpoint: %q", host)
 		}
 	}
-	if config.Datadog.IsSet("apm_config.additional_endpoints") {
-		for url, keys := range config.Datadog.GetStringMapStringSlice("apm_config.additional_endpoints") {
+
+	if endpoints := config.C.Apm.AdditionalEndpoints; len(endpoints) > 0 {
+		for url, keys := range endpoints {
 			if len(keys) == 0 {
 				log.Errorf("'additional_endpoints' entries must have at least one API key present")
 				continue
 			}
 			for _, key := range keys {
 				key = config.SanitizeAPIKey(key)
-				c.Endpoints = append(c.Endpoints, &Endpoint{Host: url, APIKey: key})
+				c.Endpoints = append(c.Endpoints, &Endpoint{Hosts: []string{url}, APIKey: key})
 			}
 		}
 	}
 
-	if config.Datadog.IsSet("proxy.no_proxy") {
-		proxyList := config.Datadog.GetStringSlice("proxy.no_proxy")
+	if proxyList := config.C.Proxy.NoProxy; len(proxyList) > 0 {
 		noProxy := make(map[string]bool, len(proxyList))
 		for _, host := range proxyList {
 			// map of hosts that need to be skipped by proxy
 			noProxy[host] = true
 		}
 		for _, e := range c.Endpoints {
-			e.NoProxy = noProxy[e.Host]
+			for _, h := range e.Hosts {
+				e.NoProxy = noProxy[h]
+			}
 		}
 	}
-	if addr := config.Datadog.GetString("proxy.https"); addr != "" {
+	if addr := config.C.Proxy.HTTPS; addr != "" {
 		url, err := url.Parse(addr)
 		if err == nil {
 			c.ProxyURL = url
@@ -196,20 +104,22 @@ func (c *AgentConfig) applyDatadogConfig() error {
 		}
 	}
 
-	if config.Datadog.IsSet("skip_ssl_validation") {
-		c.SkipSSLValidation = config.Datadog.GetBool("skip_ssl_validation")
+	cf := config.C
+
+	if cf.SkipSSLValidation {
+		c.SkipSSLValidation = cf.SkipSSLValidation
 	}
-	if config.Datadog.IsSet("apm_config.enabled") {
-		c.Enabled = config.Datadog.GetBool("apm_config.enabled")
+	if cf.Apm.Enabled {
+		c.Enabled = cf.Apm.Enabled
 	}
-	if config.Datadog.IsSet("apm_config.log_file") {
-		c.LogFilePath = config.Datadog.GetString("apm_config.log_file")
+	if cf.Apm.LogFile != "" {
+		c.LogFilePath = cf.Apm.LogFile
 	}
-	if config.Datadog.IsSet("apm_config.env") {
-		c.DefaultEnv = config.Datadog.GetString("apm_config.env")
+	if cf.Apm.Env != "" {
+		c.DefaultEnv = cf.Apm.Env
 		log.Debugf("Setting DefaultEnv to %q (from apm_config.env)", c.DefaultEnv)
-	} else if config.Datadog.IsSet("env") {
-		c.DefaultEnv = config.Datadog.GetString("env")
+	} else if cf.Env != "" {
+		c.DefaultEnv = cf.Env
 		log.Debugf("Setting DefaultEnv to %q (from 'env' config option)", c.DefaultEnv)
 	} else {
 		for _, tag := range config.GetConfiguredTags(false) {
@@ -225,51 +135,42 @@ func (c *AgentConfig) applyDatadogConfig() error {
 	if c.DefaultEnv != prevEnv {
 		log.Debugf("Normalized DefaultEnv from %q to %q", prevEnv, c.DefaultEnv)
 	}
-	if config.Datadog.IsSet("apm_config.receiver_port") {
-		c.ReceiverPort = config.Datadog.GetInt("apm_config.receiver_port")
+	if cf.Apm.ReceiverPort > 0 {
+		c.ReceiverPort = cf.Apm.ReceiverPort
 	}
-	if config.Datadog.IsSet("apm_config.receiver_socket") {
-		c.ReceiverSocket = config.Datadog.GetString("apm_config.receiver_socket")
+	if cf.Apm.ReceiverSocket != "" {
+		c.ReceiverSocket = cf.Apm.ReceiverSocket
 	}
-	if config.Datadog.IsSet("apm_config.connection_limit") {
-		c.ConnectionLimit = config.Datadog.GetInt("apm_config.connection_limit")
+	if cf.Apm.ConnectionLimit > 0 {
+		c.ConnectionLimit = cf.Apm.ConnectionLimit
 	}
-	if config.Datadog.IsSet("apm_config.extra_sample_rate") {
-		c.ExtraSampleRate = config.Datadog.GetFloat64("apm_config.extra_sample_rate")
+	if cf.Apm.ExtraSampleRate > 0 {
+		c.ExtraSampleRate = cf.Apm.ExtraSampleRate
 	}
-	if config.Datadog.IsSet("apm_config.max_events_per_second") {
-		c.MaxEPS = config.Datadog.GetFloat64("apm_config.max_events_per_second")
+	if cf.Apm.MaxEventsPerSecond > 0 {
+		c.MaxEPS = cf.Apm.MaxEventsPerSecond
 	}
-	if config.Datadog.IsSet("apm_config.max_traces_per_second") {
-		c.TargetTPS = config.Datadog.GetFloat64("apm_config.max_traces_per_second")
+	if cf.Apm.MaxTracesPerSecond > 0 {
+		c.TargetTPS = cf.Apm.MaxTracesPerSecond
 	}
-	if k := "apm_config.ignore_resources"; config.Datadog.IsSet(k) {
-		c.Ignore["resource"] = config.Datadog.GetStringSlice(k)
+	if v := cf.Apm.IgnoreResources; len(v) > 0 {
+		c.Ignore["resource"] = v
 	}
-	if k := "apm_config.max_payload_size"; config.Datadog.IsSet(k) {
-		c.MaxRequestBytes = config.Datadog.GetInt64(k)
+	if v := cf.Apm.MaxPayloadSize; v > 0 {
+		c.MaxRequestBytes = v
 	}
-	if k := "apm_config.replace_tags"; config.Datadog.IsSet(k) {
-		rt := make([]*ReplaceRule, 0)
-		if err := config.Datadog.UnmarshalKey(k, &rt); err != nil {
-			log.Errorf("Bad format for %q it should be of the form '[{\"name\": \"tag_name\",\"pattern\":\"pattern\",\"repl\":\"replace_str\"}]', error: %v", "apm_config.replace_tags", err)
-		} else {
-			err := compileReplaceRules(rt)
-			if err != nil {
-				osutil.Exitf("replace_tags: %s", err)
-			}
-			c.ReplaceTags = rt
-		}
+	if v := cf.Apm.ReplaceTags; len(v) > 0 {
+		c.ReplaceTags = v
 	}
 
-	if config.Datadog.IsSet("bind_host") || config.Datadog.IsSet("apm_config.apm_non_local_traffic") {
-		if config.Datadog.IsSet("bind_host") {
-			host := config.Datadog.GetString("bind_host")
+	if cf.BindHost != "" || cf.Apm.ApmNonLocalTraffic {
+		if cf.BindHost != "" {
+			host := cf.BindHost
 			c.StatsdHost = host
 			c.ReceiverHost = host
 		}
 
-		if config.Datadog.IsSet("apm_config.apm_non_local_traffic") && config.Datadog.GetBool("apm_config.apm_non_local_traffic") {
+		if cf.Apm.ApmNonLocalTraffic {
 			c.ReceiverHost = "0.0.0.0"
 		}
 	} else if config.IsContainerized() {
@@ -280,99 +181,80 @@ func (c *AgentConfig) applyDatadogConfig() error {
 
 	c.OTLPReceiver = &OTLP{
 		BindHost:        c.ReceiverHost,
-		HTTPPort:        config.Datadog.GetInt("experimental.otlp.http_port"),
-		GRPCPort:        config.Datadog.GetInt("experimental.otlp.grpc_port"),
+		HTTPPort:        cf.Experimental.OTLP.HTTPPort,
+		GRPCPort:        cf.Experimental.OTLP.GRPCPort,
 		MaxRequestBytes: c.MaxRequestBytes,
 	}
 
-	if config.Datadog.IsSet("apm_config.obfuscation") {
-		var o ObfuscationConfig
-		err := config.Datadog.UnmarshalKey("apm_config.obfuscation", &o)
-		if err == nil {
-			c.Obfuscation = &o
-			if c.Obfuscation.RemoveStackTraces {
-				c.addReplaceRule("error.stack", `(?s).*`, "?")
-			}
-		}
+	if cf.Apm.Obfuscation != nil {
+		//var o ObfuscationConfig
+		c.Obfuscation = cf.Apm.Obfuscation
+		//if err == nil {
+		//	c.Obfuscation = &o
+		//	if c.Obfuscation.RemoveStackTraces {
+		//		c.addReplaceRule("error.stack", `(?s).*`, "?")
+		//	}
+		//}
 	}
 
-	if config.Datadog.IsSet("apm_config.filter_tags.require") {
-		tags := config.Datadog.GetStringSlice("apm_config.filter_tags.require")
-		for _, tag := range tags {
+	if v := cf.Apm.FilterTagsRequire; len(v) > 0 {
+		for _, tag := range v {
 			c.RequireTags = append(c.RequireTags, splitTag(tag))
 		}
 	}
-	if config.Datadog.IsSet("apm_config.filter_tags.reject") {
-		tags := config.Datadog.GetStringSlice("apm_config.filter_tags.reject")
-		for _, tag := range tags {
+	if v := cf.Apm.FilterTagsReject; len(v) > 0 {
+		for _, tag := range v {
 			c.RejectTags = append(c.RejectTags, splitTag(tag))
 		}
 	}
 
 	// undocumented
-	if config.Datadog.IsSet("apm_config.max_cpu_percent") {
-		c.MaxCPU = config.Datadog.GetFloat64("apm_config.max_cpu_percent") / 100
+	if v := cf.Apm.MaxCpuPercent; v > 0 {
+		c.MaxCPU = v / 100
 	}
-	if config.Datadog.IsSet("apm_config.max_memory") {
-		c.MaxMemory = config.Datadog.GetFloat64("apm_config.max_memory")
+	if v := cf.Apm.MaxMemory; v > 0 {
+		c.MaxMemory = v
 	}
 
 	// undocumented writers
-	for key, cfg := range map[string]*WriterConfig{
-		"apm_config.trace_writer": c.TraceWriter,
-		"apm_config.stats_writer": c.StatsWriter,
-	} {
-		if err := config.Datadog.UnmarshalKey(key, cfg); err != nil {
-			log.Errorf("Error reading writer config %q: %v", key, err)
-		}
+	if cf.Apm.TraceWriter != nil {
+		c.TraceWriter = cf.Apm.TraceWriter
 	}
-	if config.Datadog.IsSet("apm_config.connection_reset_interval") {
-		c.ConnectionResetInterval = getDuration(config.Datadog.GetInt("apm_config.connection_reset_interval"))
-	}
-	if config.Datadog.IsSet("apm_config.sync_flushing") {
-		c.SynchronousFlushing = config.Datadog.GetBool("apm_config.sync_flushing")
+	if cf.Apm.StatsWriter != nil {
+		c.StatsWriter = cf.Apm.StatsWriter
 	}
 
-	// undocumented deprecated
-	if config.Datadog.IsSet("apm_config.analyzed_rate_by_service") {
-		rateByService := make(map[string]float64)
-		if err := config.Datadog.UnmarshalKey("apm_config.analyzed_rate_by_service", &rateByService); err != nil {
-			return err
-		}
-		c.AnalyzedRateByServiceLegacy = rateByService
-		if len(rateByService) > 0 {
-			log.Warn("analyzed_rate_by_service is deprecated, please use analyzed_spans instead")
-		}
+	if v := cf.Apm.ConnectionResetInterval; v > 0 {
+		c.ConnectionResetInterval = getDuration(v)
 	}
+	if v := cf.Apm.SyncFlushing; v {
+		c.SynchronousFlushing = v
+	}
+
 	// undocumeted
-	if k := "apm_config.analyzed_spans"; config.Datadog.IsSet(k) {
-		for key, rate := range config.Datadog.GetStringMap("apm_config.analyzed_spans") {
-			serviceName, operationName, err := parseServiceAndOp(key)
-			if err != nil {
-				log.Errorf("Error parsing names: %v", err)
-				continue
-			}
-			if floatrate, err := toFloat64(rate); err != nil {
-				log.Errorf("Invalid value for apm_config.analyzed_spans: %v", err)
-			} else {
-				if _, ok := c.AnalyzedSpansByService[serviceName]; !ok {
-					c.AnalyzedSpansByService[serviceName] = make(map[string]float64)
-				}
-				c.AnalyzedSpansByService[serviceName][operationName] = floatrate
-			}
+	for key, rate := range cf.Apm.AnalyzedSpans {
+		serviceName, operationName, err := parseServiceAndOp(key)
+		if err != nil {
+			log.Errorf("Error parsing names: %v", err)
+			continue
 		}
+		if _, ok := c.AnalyzedSpansByService[serviceName]; !ok {
+			c.AnalyzedSpansByService[serviceName] = make(map[string]float64)
+		}
+		c.AnalyzedSpansByService[serviceName][operationName] = rate
+
 	}
 
 	// undocumented
-	if config.Datadog.IsSet("apm_config.dd_agent_bin") {
-		c.DDAgentBin = config.Datadog.GetString("apm_config.dd_agent_bin")
+	if v := cf.Apm.DDAgentBin; len(v) > 0 {
+		c.DDAgentBin = v
 	}
 
 	if err := c.loadDeprecatedValues(); err != nil {
 		return err
 	}
 
-	if strings.ToLower(c.LogLevel) == "debug" && !config.Datadog.IsSet("apm_config.log_throttling") {
+	if strings.ToLower(c.LogLevel) == "debug" && !cf.Apm.LogThrottling {
 		// if we are in "debug mode" and log throttling behavior was not
 		// set by the user, disable it
 		c.LogThrottling = false
@@ -385,26 +267,24 @@ func (c *AgentConfig) applyDatadogConfig() error {
 // backwards compatibility with Agent 5. These should eventually be removed.
 // TODO(x): remove them gradually or fully in a future release.
 func (c *AgentConfig) loadDeprecatedValues() error {
-	cfg := config.Datadog
-	if cfg.IsSet("apm_config.api_key") {
-		c.Endpoints[0].APIKey = config.SanitizeAPIKey(config.Datadog.GetString("apm_config.api_key"))
+	cfg := config.C.Apm
+	if v := cfg.ApiKey; v != "" {
+		c.Endpoints[0].APIKey = config.SanitizeAPIKey(v)
 	}
-	if cfg.IsSet("apm_config.log_level") {
-		c.LogLevel = config.Datadog.GetString("apm_config.log_level")
+	if v := cfg.LogLevel; len(v) > 0 {
+		c.LogLevel = v
 	}
-	if cfg.IsSet("apm_config.log_throttling") {
-		c.LogThrottling = cfg.GetBool("apm_config.log_throttling")
+	if v := cfg.LogThrottling; v {
+		c.LogThrottling = v
 	}
-	if cfg.IsSet("apm_config.bucket_size_seconds") {
-		d := time.Duration(cfg.GetInt("apm_config.bucket_size_seconds"))
-		c.BucketInterval = d * time.Second
+	if v := cfg.BucketSizeSeconds; v > 0 {
+		c.BucketInterval = getDuration(v)
 	}
-	if cfg.IsSet("apm_config.receiver_timeout") {
-		c.ReceiverTimeout = cfg.GetInt("apm_config.receiver_timeout")
+	if v := cfg.ReceiverTimeout; v > 0 {
+		c.ReceiverTimeout = v
 	}
-	if cfg.IsSet("apm_config.watchdog_check_delay") {
-		d := time.Duration(cfg.GetInt("apm_config.watchdog_check_delay"))
-		c.WatchdogInterval = d * time.Second
+	if v := cfg.WatchdogCheckDelay; v > 0 {
+		c.WatchdogInterval = getDuration(v)
 	}
 	return nil
 }
@@ -416,7 +296,7 @@ func (c *AgentConfig) addReplaceRule(tag, pattern, repl string) {
 	if err != nil {
 		osutil.Exitf("error adding replace rule: %s", err)
 	}
-	c.ReplaceTags = append(c.ReplaceTags, &ReplaceRule{
+	c.ReplaceTags = append(c.ReplaceTags, &apm.ReplaceRule{
 		Name:    tag,
 		Pattern: pattern,
 		Re:      re,
@@ -426,7 +306,7 @@ func (c *AgentConfig) addReplaceRule(tag, pattern, repl string) {
 
 // compileReplaceRules compiles the regular expressions found in the replace rules.
 // If it fails it returns the first error.
-func compileReplaceRules(rules []*ReplaceRule) error {
+func compileReplaceRules(rules []*apm.ReplaceRule) error {
 	for _, r := range rules {
 		if r.Name == "" {
 			return errors.New(`all rules must have a "name" property (use "*" to target all)`)

@@ -11,7 +11,7 @@ add_executable(demo main.c)
 
 ## Add our paths for includes. Note that these may be different depending on
 ## where you have rtloader built and/or checked out
-include_directories("${CMAKE_SOURCE_DIR}/../include" "${CMAKE_SOURCE_DIR}/../common")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include" "${CMAKE_CURRENT_SOURCE_DIR}/../common")
 
 
 if(WIN32)
@@ -26,7 +26,7 @@ else()
 
 
   if (USE_AGENT_RTLOADER_LIB)
-    set(RTLOADER_LIB_PREFIX "${CMAKE_SOURCE_DIR}/../build/rtloader/")
+	  set(RTLOADER_LIB_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/../build/rtloader/")
   else()
     set(RTLOADER_LIB_PREFIX "")
   endif()

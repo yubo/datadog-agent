@@ -11,14 +11,14 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/forwarder"
 	"github.com/DataDog/datadog-agent/pkg/orchestrator/redact"
 	apicfg "github.com/DataDog/datadog-agent/pkg/process/util/api/config"
 	coreutil "github.com/DataDog/datadog-agent/pkg/util"
-	"github.com/DataDog/datadog-agent/pkg/util/flavor"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/clustername"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/flavor"
 )
 
 const (
@@ -162,7 +162,7 @@ func NewOrchestratorForwarder() *forwarder.DefaultForwarder {
 	if !config.Datadog.GetBool("orchestrator_explorer.enabled") {
 		return nil
 	}
-	if flavor.GetFlavor() == flavor.DefaultAgent && !config.IsCLCRunner() {
+	if config.GetFlavor() == flavor.DefaultAgent && !config.IsCLCRunner() {
 		return nil
 	}
 	orchestratorCfg := NewDefaultOrchestratorConfig()

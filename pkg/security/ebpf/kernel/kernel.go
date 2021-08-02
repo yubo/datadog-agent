@@ -15,7 +15,7 @@ import (
 	"github.com/cobaugh/osrelease"
 	"github.com/pkg/errors"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/util/kernel"
 )

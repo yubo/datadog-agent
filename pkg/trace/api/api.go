@@ -31,7 +31,7 @@ import (
 	"github.com/tinylib/msgp/msgp"
 
 	"github.com/DataDog/datadog-agent/pkg/appsec"
-	mainconfig "github.com/DataDog/datadog-agent/pkg/config"
+	mainconfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
 	"github.com/DataDog/datadog-agent/pkg/trace/api/apiutil"

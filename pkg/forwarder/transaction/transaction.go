@@ -17,9 +17,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -359,7 +359,7 @@ func (t *HTTPTransaction) internalProcess(ctx context.Context, client *http.Clie
 	transactionsSuccessBytesByEndpoint.Add(transactionEndpointName, int64(t.GetPayloadSize()))
 	transactionsSuccess.Add(1)
 
-	loggingFrequency := config.Datadog.GetInt64("logging_frequency")
+	loggingFrequency := config.C.LoggingFrequency
 
 	if transactionsSuccess.Value() == 1 {
 		log.Infof("Successfully posted payload to %q, the agent will only log transaction success every %d transactions", logURL, loggingFrequency)

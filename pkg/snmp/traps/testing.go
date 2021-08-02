@@ -8,15 +8,13 @@ package traps
 import (
 	"net"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/gosnmp/gosnmp"
+	"github.com/n9e/n9e-agentd/pkg/config/snmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 )
 
 // List of variables for a NetSNMP::ExampleHeartBeatNotification trap message.
@@ -53,21 +51,19 @@ func GetPort(t *testing.T) uint16 {
 }
 
 // Configure sets Datadog Agent configuration from a config object.
-func Configure(t *testing.T, trapConfig Config) {
-	datadogYaml := map[string]interface{}{
-		"snmp_traps_enabled": true,
-		"snmp_traps_config":  trapConfig,
-	}
+func Configure(t *testing.T, trapConfig snmp.TrapsConfig) {
+	//datadogYaml := map[string]interface{}{
+	//	"snmp_traps_enabled": true,
+	//	"snmp_traps_config":  trapConfig,
+	//}
 
-	config.Datadog.SetConfigType("yaml")
-	out, err := yaml.Marshal(datadogYaml)
-	require.NoError(t, err)
+	//out, err := yaml.Marshal(datadogYaml)
+	//require.NoError(t, err)
 
-	err = config.Datadog.ReadConfig(strings.NewReader(string(out)))
-	require.NoError(t, err)
+	//require.NoError(t, err)
 }
 
-func sendTestV2Trap(t *testing.T, trapConfig Config, community string) *gosnmp.GoSNMP {
+func sendTestV2Trap(t *testing.T, trapConfig snmp.TrapsConfig, community string) *gosnmp.GoSNMP {
 	params := trapConfig.BuildV2Params()
 	params.Community = community
 	params.Timeout = 1 * time.Second // Must be non-zero when sending traps.
@@ -95,7 +91,7 @@ func receivePacket(t *testing.T) *SnmpPacket {
 	}
 }
 
-func assertIsValidV2Packet(t *testing.T, packet *SnmpPacket, trapConfig Config) {
+func assertIsValidV2Packet(t *testing.T, packet *SnmpPacket, trapConfig snmp.TrapsConfig) {
 	require.Equal(t, gosnmp.Version2c, packet.Content.Version)
 	communityValid := false
 	for _, community := range trapConfig.CommunityStrings {

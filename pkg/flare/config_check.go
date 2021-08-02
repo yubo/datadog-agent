@@ -12,11 +12,11 @@ import (
 
 	"github.com/fatih/color"
 
-	"github.com/DataDog/datadog-agent/cmd/agent/api/response"
+	"github.com/n9e/n9e-agentd/pkg/apiserver/response"
 	"github.com/DataDog/datadog-agent/pkg/api/util"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
-	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // configCheckURL contains the Agent API endpoint URL exposing the loaded checks
