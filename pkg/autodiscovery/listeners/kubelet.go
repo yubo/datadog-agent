@@ -18,12 +18,12 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/common/utils"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/kubelet"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -93,7 +93,7 @@ func NewKubeletListener() (ServiceListener, error) {
 		watcher:  watcher,
 		filters:  filters,
 		services: make(map[string]Service),
-		ticker:   time.NewTicker(config.Datadog.GetDuration("kubelet_listener_polling_interval") * time.Second),
+		ticker:   time.NewTicker(config.C.KubeletListenerPollingInterval),
 		stop:     make(chan bool),
 		health:   health.RegisterLiveness("ad-kubeletlistener"),
 	}, nil

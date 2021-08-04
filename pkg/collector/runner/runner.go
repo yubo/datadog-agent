@@ -19,10 +19,10 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	"github.com/DataDog/datadog-agent/pkg/collector/scheduler"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -78,7 +78,7 @@ type Runner struct {
 
 // NewRunner takes the number of desired goroutines processing incoming checks.
 func NewRunner() *Runner {
-	numWorkers := config.Datadog.GetInt("check_runners")
+	numWorkers := config.C.CheckRunners
 
 	r := &Runner{
 		// initialize the channel
@@ -332,7 +332,7 @@ func (r *Runner) work() {
 		l := "Done running check"
 		if doLog {
 			if lastLog {
-				l = l + fmt.Sprintf(", next runs will be logged every %v runs", config.Datadog.GetInt64("logging_frequency"))
+				l = l + fmt.Sprintf(", next runs will be logged every %v runs", config.C.LoggingFrequency)
 			}
 			log.Infoc(l, "check", check.String())
 		} else {
@@ -355,7 +355,7 @@ func shouldLog(id check.ID) (doLog bool, lastLog bool) {
 	var nameFound, idFound bool
 	var s *check.Stats
 
-	loggingFrequency := uint64(config.Datadog.GetInt64("logging_frequency"))
+	loggingFrequency := uint64(config.C.LoggingFrequency)
 	name := strings.Split(string(id), ":")[0]
 
 	stats, nameFound := checkStats.Stats[name]

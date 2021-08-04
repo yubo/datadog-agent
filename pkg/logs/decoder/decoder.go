@@ -12,6 +12,7 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/parser"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 )
 
 // defaultContentLenLimit represents the max size for a line,
@@ -95,7 +96,7 @@ func NewDecoderWithEndLineMatcher(source *config.LogSource, parser parser.Parser
 	var lineParser LineParser
 
 	for _, rule := range source.Config.ProcessingRules {
-		if rule.Type == config.MultiLine {
+		if rule.Type == MultiLine {
 			lh := NewMultiLineHandler(outputChan, rule.Regex, config.AggregationTimeout(), lineLimit)
 
 			// Since a single source can have multiple file tailers - each with their own decoder instance,

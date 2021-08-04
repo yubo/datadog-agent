@@ -20,12 +20,12 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
 	"github.com/DataDog/datadog-agent/pkg/collector/corechecks/ebpf/probe"
-	dd_config "github.com/n9e/n9e-agentd/pkg/config"
 	process_net "github.com/DataDog/datadog-agent/pkg/process/net"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	aconfig "github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -66,7 +66,7 @@ func (t *TCPQueueLengthConfig) Parse(data []byte) error {
 //Configure parses the check configuration and init the check
 func (t *TCPQueueLengthCheck) Configure(config, initConfig integration.Data, source string) error {
 	// TODO: Remove that hard-code and put it somewhere else
-	process_net.SetSystemProbePath(dd_config.Datadog.GetString("system_probe_config.sysprobe_socket"))
+	process_net.SetSystemProbePath(aconfig.C.SystemProbe.SysprobeSocket)
 
 	err := t.CommonConfigure(config, source)
 	if err != nil {

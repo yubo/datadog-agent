@@ -9,11 +9,11 @@ import (
 	"code.cloudfoundry.org/garden"
 	"code.cloudfoundry.org/garden/client"
 	"code.cloudfoundry.org/garden/client/connection"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/containers/providers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/util/retry"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -66,8 +66,8 @@ type GardenUtil struct {
 func GetGardenUtil() (*GardenUtil, error) {
 	globalGardenUtilLock.Lock()
 	defer globalGardenUtilLock.Unlock()
-	network := config.Datadog.GetString("cloud_foundry_garden.listen_network")
-	address := config.Datadog.GetString("cloud_foundry_garden.listen_address")
+	network := config.C.CloudFoundryGarden.ListenNetwork
+	address := config.C.CloudFoundryGarden.ListenAddress
 	if globalGardenUtil == nil {
 		globalGardenUtil = &GardenUtil{
 			cli: client.New(connection.New(network, address)),

@@ -19,8 +19,8 @@ import (
 
 	"golang.org/x/net/proxy"
 
-	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/status"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -32,13 +32,13 @@ const (
 
 // A ConnectionManager manages connections
 type ConnectionManager struct {
-	endpoint  config.Endpoint
+	endpoint  Endpoint
 	mutex     sync.Mutex
 	firstConn sync.Once
 }
 
 // NewConnectionManager returns an initialized ConnectionManager
-func NewConnectionManager(endpoint config.Endpoint) *ConnectionManager {
+func NewConnectionManager(endpoint Endpoint) *ConnectionManager {
 	return &ConnectionManager{
 		endpoint: endpoint,
 	}

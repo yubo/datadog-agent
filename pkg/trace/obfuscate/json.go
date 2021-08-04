@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/DataDog/datadog-agent/pkg/trace/config"
 	"github.com/DataDog/datadog-agent/pkg/trace/pb"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config/apm"
 )
 
 // obfuscateJSON obfuscates the given span's tag using the given obfuscator. If the obfuscator is
@@ -42,7 +42,7 @@ type jsonObfuscator struct {
 	keepDepth         int  // the depth at which we've stopped obfuscating
 }
 
-func newJSONObfuscator(cfg *config.JSONObfuscationConfig, o *Obfuscator) *jsonObfuscator {
+func newJSONObfuscator(cfg *apm.JSONObfuscationConfig, o *Obfuscator) *jsonObfuscator {
 	keepValue := make(map[string]bool, len(cfg.KeepValues))
 	for _, v := range cfg.KeepValues {
 		keepValue[v] = true

@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/forwarder/internal/retry"
 	"github.com/DataDog/datadog-agent/pkg/forwarder/transaction"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -170,9 +170,10 @@ func (f *domainForwarder) scheduleConnectionResets() {
 }
 
 func (f *domainForwarder) init() {
-	highPrioBuffSize := config.Datadog.GetInt("forwarder_high_prio_buffer_size")
-	lowPrioBuffSize := config.Datadog.GetInt("forwarder_low_prio_buffer_size")
-	requeuedTransactionBuffSize := config.Datadog.GetInt("forwarder_requeue_buffer_size")
+	cf := config.C.Forwarder
+	highPrioBuffSize := cf.HighPrioBufferSize
+	lowPrioBuffSize := cf.LowPrioBufferSize
+	requeuedTransactionBuffSize := cf.RequeueBufferSize
 
 	f.highPrio = make(chan transaction.Transaction, highPrioBuffSize)
 	f.lowPrio = make(chan transaction.Transaction, lowPrioBuffSize)

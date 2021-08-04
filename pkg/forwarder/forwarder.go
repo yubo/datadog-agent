@@ -15,11 +15,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/forwarder/internal/retry"
 	"github.com/DataDog/datadog-agent/pkg/forwarder/transaction"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/version"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -140,7 +140,8 @@ func HasFeature(features, flag Features) bool { return features&flag != 0 }
 
 // NewOptions creates new Options with default values
 func NewOptions(keysPerDomain map[string][]string) *Options {
-	validationInterval := config.Datadog.GetInt("forwarder_apikey_validation_interval")
+	cf := config.C.Forwarder
+	validationInterval := cf.ApikeyValidationInterval
 	if validationInterval <= 0 {
 		log.Warnf(
 			"'forwarder_apikey_validation_interval' set to invalid value (%d), defaulting to %d minute(s)",
@@ -154,24 +155,24 @@ func NewOptions(keysPerDomain map[string][]string) *Options {
 	const forwarderRetryQueuePayloadsMaxSizeKey = "forwarder_retry_queue_payloads_max_size"
 
 	retryQueuePayloadsTotalMaxSize := 15 * 1024 * 1024
-	if config.Datadog.IsSet(forwarderRetryQueuePayloadsMaxSizeKey) {
-		retryQueuePayloadsTotalMaxSize = config.Datadog.GetInt(forwarderRetryQueuePayloadsMaxSizeKey)
+	if cf.RetryQueueMaxSize > 0 {
+		retryQueuePayloadsTotalMaxSize = cf.RetryQueueMaxSize
 	}
 
 	option := &Options{
-		NumberOfWorkers:                config.Datadog.GetInt("forwarder_num_workers"),
+		NumberOfWorkers:                cf.NumWorkers,
 		DisableAPIKeyChecking:          false,
 		RetryQueuePayloadsTotalMaxSize: retryQueuePayloadsTotalMaxSize,
-		APIKeyValidationInterval:       time.Duration(validationInterval) * time.Minute,
+		APIKeyValidationInterval:       validationInterval,
 		KeysPerDomain:                  keysPerDomain,
-		ConnectionResetInterval:        time.Duration(config.Datadog.GetInt("forwarder_connection_reset_interval")) * time.Second,
+		ConnectionResetInterval:        cf.ConnectionResetInterval,
 	}
 
-	if config.Datadog.IsSet(forwarderRetryQueueMaxSizeKey) {
-		if config.Datadog.IsSet(forwarderRetryQueuePayloadsMaxSizeKey) {
+	if cf.RetryQueueMaxSize > 0 {
+		if cf.RetryQueuePayloadsMaxSize > 0 {
 			log.Warnf("'%v' is set, but as this setting is deprecated, '%v' is used instead.", forwarderRetryQueueMaxSizeKey, forwarderRetryQueuePayloadsMaxSizeKey)
 		} else {
-			forwarderRetryQueueMaxSize := config.Datadog.GetInt(forwarderRetryQueueMaxSizeKey)
+			forwarderRetryQueueMaxSize := cf.RetryQueueMaxSize
 			option.setRetryQueuePayloadsTotalMaxSizeFromQueueMax(forwarderRetryQueueMaxSize)
 			log.Warnf("'%v = %v' is used, but this setting is deprecated. '%v = %v' (%v * 2MB) is used instead as the maximum payload size is 2MB.",
 				forwarderRetryQueueMaxSizeKey,
@@ -183,6 +184,7 @@ func NewOptions(keysPerDomain map[string][]string) *Options {
 	}
 
 	return option
+
 }
 
 // setRetryQueuePayloadsTotalMaxSizeFromQueueMax set `RetryQueuePayloadsTotalMaxSize` from the value
@@ -220,18 +222,20 @@ func NewDefaultForwarder(options *Options) *DefaultForwarder {
 		},
 		completionHandler: options.CompletionHandler,
 	}
+
+	cf := config.C.Forwarder
 	var optionalRemovalPolicy *retry.FileRemovalPolicy
-	storageMaxSize := config.Datadog.GetInt64("forwarder_storage_max_size_in_bytes")
+	storageMaxSize := cf.StorageMaxSizeInBytes
 
 	// Disk Persistence is a core-only feature for now.
 	if storageMaxSize == 0 {
 		log.Infof("Retry queue storage on disk is disabled")
 	} else if agentFolder := getAgentFolder(options); agentFolder != "" {
-		storagePath := config.Datadog.GetString("forwarder_storage_path")
+		storagePath := cf.StoragePath
 		if storagePath == "" {
-			storagePath = path.Join(config.Datadog.GetString("run_path"), "transactions_to_retry")
+			storagePath = path.Join(config.C.RunPath, "transactions_to_retry")
 		}
-		outdatedFileInDays := config.Datadog.GetInt("forwarder_outdated_file_in_days")
+		outdatedFileInDays := cf.OutdatedFileInDays
 		var err error
 
 		storagePath = path.Join(storagePath, agentFolder)
@@ -249,10 +253,11 @@ func NewDefaultForwarder(options *Options) *DefaultForwarder {
 		log.Infof("Retry queue storage on disk is disabled because the feature is unavailable for this process.")
 	}
 
-	flushToDiskMemRatio := config.Datadog.GetFloat64("forwarder_flush_to_disk_mem_ratio")
+	flushToDiskMemRatio := cf.FlushToDiskMemRatio
 	domainForwarderSort := transaction.SortByCreatedTimeAndPriority{HighPriorityFirst: true}
 	transactionContainerSort := transaction.SortByCreatedTimeAndPriority{HighPriorityFirst: false}
 
+	// TODO.yubo
 	for domain, keys := range options.KeysPerDomain {
 		domain, _ := config.AddAgentVersionToDomain(domain, "app")
 		if keys == nil || len(keys) == 0 {
@@ -346,7 +351,7 @@ func (f *DefaultForwarder) Stop() {
 
 	f.internalState = Stopped
 
-	purgeTimeout := config.Datadog.GetDuration("forwarder_stop_timeout") * time.Second
+	purgeTimeout := config.C.Forwarder.StopTimeout
 	if purgeTimeout > 0 {
 		var wg sync.WaitGroup
 
@@ -396,7 +401,7 @@ func (f *DefaultForwarder) createHTTPTransactions(endpoint transaction.Endpoint,
 
 func (f *DefaultForwarder) createAdvancedHTTPTransactions(endpoint transaction.Endpoint, payloads Payloads, apiKeyInQueryString bool, extra http.Header, priority transaction.Priority, storableOnDisk bool) []*transaction.HTTPTransaction {
 	transactions := make([]*transaction.HTTPTransaction, 0, len(payloads)*len(f.keysPerDomains))
-	allowArbitraryTags := config.Datadog.GetBool("allow_arbitrary_tags")
+	allowArbitraryTags := config.C.AllowArbitraryTags
 
 	for _, payload := range payloads {
 		for domain, apiKeys := range f.keysPerDomains {

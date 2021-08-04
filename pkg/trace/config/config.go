@@ -25,7 +25,6 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/grpc"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	coreconfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/n9e/n9e-agentd/pkg/config/apm"
 )
@@ -110,7 +109,7 @@ type AgentConfig struct {
 
 	// ReplaceTags is used to filter out sensitive information from tag values.
 	// It maps tag keys to a set of replacements. Only supported in A6.
-	ReplaceTags []*ReplaceRule
+	ReplaceTags []*apm.ReplaceRule
 
 	// GlobalTags list metadata that will be added to all spans
 	GlobalTags map[string]string
@@ -123,7 +122,7 @@ type AgentConfig struct {
 	DDAgentBin string
 
 	// Obfuscation holds sensitive data obufscator's configuration.
-	Obfuscation *ObfuscationConfig
+	Obfuscation *apm.ObfuscationConfig
 
 	// RequireTags specifies a list of tags which must be present on the root span in order for a trace to be accepted.
 	RequireTags []*Tag
@@ -152,7 +151,7 @@ func New() *AgentConfig {
 		Enabled:    true,
 		IsFargate:  isFargate,
 		DefaultEnv: "none",
-		Endpoints:  []*Endpoint{{Host: "https://trace.agent.datadoghq.com"}},
+		Endpoints:  []*Endpoint{{Hosts: []string{"https://trace.agent.datadoghq.com"}}},
 
 		BucketInterval: time.Duration(10) * time.Second,
 
@@ -164,8 +163,8 @@ func New() *AgentConfig {
 		ReceiverPort:    8126,
 		MaxRequestBytes: 50 * 1024 * 1024, // 50MB
 
-		StatsWriter:             new(WriterConfig),
-		TraceWriter:             new(WriterConfig),
+		StatsWriter:             new(apm.WriterConfig),
+		TraceWriter:             new(apm.WriterConfig),
 		ConnectionResetInterval: 0, // disabled
 
 		StatsdHost: "localhost",
@@ -324,11 +323,12 @@ func Load(path string) (*AgentConfig, error) {
 }
 
 func prepareConfig(path string) (*AgentConfig, error) {
-	cfg := New()
-	config.Datadog.SetConfigFile(path)
-	if _, err := config.Load(); err != nil {
-		return cfg, err
-	}
-	cfg.ConfigPath = path
-	return cfg, nil
+	//cfg := New()
+	//config.Datadog.SetConfigFile(path)
+	//if _, err := config.Load(); err != nil {
+	//	return cfg, err
+	//}
+	//cfg.ConfigPath = path
+	//return cfg, nil
+	return nil, fmt.Errorf("unsupported")
 }

@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/version"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 type versionHistoryEntry struct {
@@ -30,7 +30,7 @@ const maxVersionHistoryEntries = 60
 // LogVersionHistory loads version history file, append new entry if agent version is different than the last entry in the
 // JSON file, trim the file if too many entries then save the file.
 func LogVersionHistory() {
-	versionHistoryFilePath := filepath.Join(config.Datadog.GetString("run_path"), "version-history.json")
+	versionHistoryFilePath := filepath.Join(config.C.RunPath, "version-history.json")
 	logVersionHistoryToFile(versionHistoryFilePath, version.AgentVersion, time.Now().UTC())
 }
 

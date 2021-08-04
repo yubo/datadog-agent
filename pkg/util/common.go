@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/version"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 func init() {
@@ -204,7 +204,7 @@ func GetGoRoutinesDump() (string, error) {
 	}
 
 	pprofURL := fmt.Sprintf("http://%v:%s/debug/pprof/goroutine?debug=2",
-		ipcAddress, config.Datadog.GetString("expvar_port"))
+		ipcAddress, config.C.Telemetry.Port)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	client := http.Client{}

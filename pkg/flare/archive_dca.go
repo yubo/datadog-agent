@@ -19,18 +19,18 @@ import (
 
 	apiv1 "github.com/DataDog/datadog-agent/pkg/clusteragent/api/v1"
 	"github.com/DataDog/datadog-agent/pkg/clusteragent/custommetrics"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/status"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/apiserver"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // CreateDCAArchive packages up the files
 func CreateDCAArchive(local bool, distPath, logFilePath string) (string, error) {
 	zipFilePath := getArchivePath()
 	confSearchPaths := SearchPaths{
-		"":     config.Datadog.GetString("confd_path"),
+		"":     config.C.ConfdPath,
 		"dist": filepath.Join(distPath, "conf.d"),
 	}
 	return createDCAArchive(zipFilePath, local, confSearchPaths, logFilePath)
@@ -108,7 +108,7 @@ func createDCAArchive(zipFilePath string, local bool, confSearchPaths SearchPath
 		log.Errorf("Could not zip diagnose: %s", err)
 	}
 
-	if config.Datadog.GetBool("external_metrics_provider.enabled") {
+	if config.C.ExternalMetricsProvider.Enabled {
 		err = zipHPAStatus(tempDir, hostname)
 		if err != nil {
 			return "", err

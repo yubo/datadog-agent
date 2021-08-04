@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/jmxfetch"
 	"github.com/DataDog/datadog-agent/pkg/status"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 type runner struct {
@@ -23,7 +23,7 @@ type runner struct {
 
 func (r *runner) initRunner() {
 	r.jmxfetch = &jmxfetch.JMXFetch{}
-	r.jmxfetch.LogLevel = config.Datadog.GetString("log_level")
+	r.jmxfetch.LogLevel = config.C.LogLevel
 }
 
 func (r *runner) startRunner() error {

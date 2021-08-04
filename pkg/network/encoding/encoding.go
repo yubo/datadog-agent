@@ -3,12 +3,12 @@ package encoding
 import (
 	"strings"
 
-	model "github.com/n9e/agent-payload/process"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/network"
 	"github.com/DataDog/datadog-agent/pkg/network/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/gogo/protobuf/jsonpb"
+	model "github.com/n9e/agent-payload/process"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -56,7 +56,7 @@ func modelConnections(conns *network.Connections) *model.Connections {
 	httpIndex := FormatHTTPStats(conns.HTTP)
 	httpMatches := make(map[http.Key]struct{}, len(httpIndex))
 
-	dnsWithQueryType := config.Datadog.GetBool("network_config.enable_dns_by_querytype")
+	dnsWithQueryType := config.C.NetworkConfig.EnableDnsByQuerytype
 
 	for i, conn := range conns.Conns {
 		httpKey := httpKeyFromConn(conn)

@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/metadata/host"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 )
 
 type localProvider struct {
@@ -31,7 +31,7 @@ func NewLocalProvider(t []string) Provider {
 
 	if config.IsExpectedTagsSet() {
 		p.expectedTags = append(p.tags, host.GetHostTags(context.TODO(), false).System...)
-		p.expectedTagsDeadline = coreConfig.StartTime.Add(coreConfig.Datadog.GetDuration("logs_config.expected_tags_duration"))
+		p.expectedTagsDeadline = coreConfig.StartTime.Add(coreConfig.C.LogsConfig.ExpectedTagsDuration)
 
 		// reset submitExpectedTags after deadline elapsed
 		go func() {

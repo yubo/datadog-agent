@@ -43,8 +43,8 @@ func readCtxSwitches(procStatPath string) (ctxSwitches int64, err error) {
 
 func (c *Check) collectCtxSwitches(sender aggregator.Sender) error {
 	procfsPath := "/proc"
-	if config.Datadog.IsSet("procfs_path") {
-		procfsPath = config.Datadog.GetString("procfs_path")
+	if v := config.C.ProcfsPath; v != "" {
+		procfsPath = v
 	}
 	ctxSwitches, err := readCtxSwitches(filepath.Join(procfsPath, "/stat"))
 	if err != nil {

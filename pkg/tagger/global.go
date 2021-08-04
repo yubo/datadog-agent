@@ -8,8 +8,6 @@ package tagger
 import (
 	"sync"
 
-	"github.com/n9e/n9e-agentd/pkg/apiserver/response"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
 	"github.com/DataDog/datadog-agent/pkg/tagger/local"
 	"github.com/DataDog/datadog-agent/pkg/tagger/types"
@@ -18,6 +16,8 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/containers/providers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/apiserver/response"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // defaultTagger is the shared tagger instance backing the global Tag and Init functions
@@ -41,8 +41,8 @@ var DogstatsdCardinality collectors.TagCardinality
 func Init() {
 	initOnce.Do(func() {
 		var err error
-		checkCard := config.Datadog.GetString("checks_tag_cardinality")
-		dsdCard := config.Datadog.GetString("dogstatsd_tag_cardinality")
+		checkCard := config.C.ChecksTagCardinality
+		dsdCard := config.C.Statsd.TagCardinality
 
 		ChecksCardinality, err = collectors.StringToTagCardinality(checkCard)
 		if err != nil {

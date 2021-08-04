@@ -10,9 +10,9 @@ package hostinfo
 import (
 	"context"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/clusteragent"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/kubelet"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // GetNodeLabels returns node labels for this host
@@ -27,7 +27,7 @@ func GetNodeLabels(ctx context.Context) (map[string]string, error) {
 		return nil, err
 	}
 
-	if config.Datadog.GetBool("cluster_agent.enabled") {
+	if config.C.ClusterAgent.Enabled {
 		cl, err := clusteragent.GetClusterAgentClient()
 		if err != nil {
 			return nil, err

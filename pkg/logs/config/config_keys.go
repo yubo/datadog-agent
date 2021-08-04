@@ -6,59 +6,67 @@
 package config
 
 import (
-	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
-	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // LogsConfigKeys stores logs configuration keys stored in YAML configuration files
 type LogsConfigKeys struct {
 	prefix string
-	config coreConfig.Config
+	config *coreConfig.Config
+	c      *coreConfig.LogsConfig
 }
 
 // defaultLogsConfigKeys defines the default YAML keys used to retrieve logs configuration
 func defaultLogsConfigKeys() *LogsConfigKeys {
-	return NewLogsConfigKeys("logs_config.", coreConfig.Datadog)
+	return NewLogsConfigKeys("logs_config.", coreConfig.C)
 }
 
 // NewLogsConfigKeys returns a new logs configuration keys set
-func NewLogsConfigKeys(configPrefix string, config coreConfig.Config) *LogsConfigKeys {
-	return &LogsConfigKeys{prefix: configPrefix, config: config}
+func NewLogsConfigKeys(configPrefix string, config *coreConfig.Config) *LogsConfigKeys {
+	path := fmt.Sprintf("agent.%s", strings.Trim(configPrefix, "."))
+	c := &coreConfig.LogsConfig{}
+	if err := config.Read(configPrefix, c); err != nil {
+		log.Warnf("read logs_config at %s error %s", path, err)
+	}
+
+	return &LogsConfigKeys{prefix: configPrefix, config: config, c: c}
 }
 
-func (l *LogsConfigKeys) getConfig() coreConfig.Config {
+func (l *LogsConfigKeys) getConfig() *coreConfig.Config {
 	if l.config != nil {
 		return l.config
 	}
-	return coreConfig.Datadog
+	return coreConfig.C
 }
 
 func (l *LogsConfigKeys) getConfigKey(key string) string {
 	return l.prefix + key
 }
 
-func isSetAndNotEmpty(config coreConfig.Config, key string) bool {
-	return config.IsSet(key) && len(config.GetString(key)) > 0
-}
+//func isSetAndNotEmpty(config coreConfig.Config, key string) bool {
+//	return config.IsSet(key) && len(config.GetString(key)) > 0
+//}
 
-func (l *LogsConfigKeys) isSetAndNotEmpty(key string) bool {
-	return isSetAndNotEmpty(l.getConfig(), key)
-}
+//func (l *LogsConfigKeys) isSetAndNotEmpty(key string) bool {
+//	return isSetAndNotEmpty(l.getConfig(), key)
+//}
 
 func (l *LogsConfigKeys) ddURL443() string {
-	return l.getConfig().GetString(l.getConfigKey("dd_url_443"))
+	return l.c.Url443
 }
 
 func (l *LogsConfigKeys) logsDDURL() (string, bool) {
-	configKey := l.getConfigKey("logs_dd_url")
-	return l.getConfig().GetString(configKey), l.isSetAndNotEmpty(configKey)
+	return l.c.LogsUrl, l.c.LogsUrl != ""
 }
 
 func (l *LogsConfigKeys) ddPort() int {
-	return l.getConfig().GetInt(l.getConfigKey("dd_port"))
+	return l.c.DDPort
 }
 
 func (l *LogsConfigKeys) isSocks5ProxySet() bool {
@@ -66,39 +74,39 @@ func (l *LogsConfigKeys) isSocks5ProxySet() bool {
 }
 
 func (l *LogsConfigKeys) socks5ProxyAddress() string {
-	return l.getConfig().GetString(l.getConfigKey("socks5_proxy_address"))
+	return l.c.Socks5ProxyAddress
 }
 
 func (l *LogsConfigKeys) isForceTCPUse() bool {
-	return l.getConfig().GetBool(l.getConfigKey("use_tcp"))
+	return l.c.UseTCP
 }
 
 func (l *LogsConfigKeys) usePort443() bool {
-	return l.getConfig().GetBool(l.getConfigKey("use_port_443"))
+	return l.c.UsePort443
 }
 
 func (l *LogsConfigKeys) isForceHTTPUse() bool {
-	return l.getConfig().GetBool(l.getConfigKey("use_http"))
+	return l.c.UseHTTP
 }
 
 func (l *LogsConfigKeys) logsNoSSL() bool {
-	return l.getConfig().GetBool(l.getConfigKey("logs_no_ssl"))
+	return !l.c.UseSSL
 }
 
 func (l *LogsConfigKeys) devModeNoSSL() bool {
-	return l.getConfig().GetBool(l.getConfigKey("dev_mode_no_ssl"))
+	return l.c.DevModeNoSSL
 }
 
 func (l *LogsConfigKeys) devModeUseProto() bool {
-	return l.getConfig().GetBool(l.getConfigKey("dev_mode_use_proto"))
+	return l.c.DevModeUseProto
 }
 
 func (l *LogsConfigKeys) compressionLevel() int {
-	return l.getConfig().GetInt(l.getConfigKey("compression_level"))
+	return l.c.CompressionLevel
 }
 
 func (l *LogsConfigKeys) useCompression() bool {
-	return l.getConfig().GetBool(l.getConfigKey("use_compression"))
+	return l.c.UseCompression
 }
 
 func (l *LogsConfigKeys) hasAdditionalEndpoints() bool {
@@ -107,133 +115,66 @@ func (l *LogsConfigKeys) hasAdditionalEndpoints() bool {
 
 // getLogsAPIKey provides the dd api key used by the main logs agent sender.
 func (l *LogsConfigKeys) getLogsAPIKey() string {
-	if configKey := l.getConfigKey("api_key"); l.isSetAndNotEmpty(configKey) {
-		return coreConfig.SanitizeAPIKey(l.getConfig().GetString(configKey))
-	}
-	return coreConfig.SanitizeAPIKey(l.getConfig().GetString("api_key"))
+	return l.c.APIKey
 }
 
 func (l *LogsConfigKeys) connectionResetInterval() time.Duration {
-	return time.Duration(l.getConfig().GetInt(l.getConfigKey("connection_reset_interval"))) * time.Second
-
+	return l.c.ConnectionResetInterval
 }
 
 func (l *LogsConfigKeys) getAdditionalEndpoints() []Endpoint {
-	var endpoints []Endpoint
-	var err error
-	configKey := l.getConfigKey("additional_endpoints")
-	raw := l.getConfig().Get(configKey)
-	if raw == nil {
-		return endpoints
-	}
-	if s, ok := raw.(string); ok && s != "" {
-		err = json.Unmarshal([]byte(s), &endpoints)
-	} else {
-		err = l.getConfig().UnmarshalKey(configKey, &endpoints)
-	}
-	if err != nil {
-		log.Warnf("Could not parse additional_endpoints for logs: %v", err)
-	}
-	return endpoints
+	return l.c.AdditionalEndpoints
 }
 
 func (l *LogsConfigKeys) expectedTagsDuration() time.Duration {
-	return l.getConfig().GetDuration(l.getConfigKey("expected_tags_duration"))
+	return l.c.ExpectedTagsDuration
 }
 
 func (l *LogsConfigKeys) taggerWarmupDuration() time.Duration {
-	return l.getConfig().GetDuration(l.getConfigKey("tagger_warmup_duration")) * time.Second
+	return l.c.TaggerWarmupDuration
 }
 
 func (l *LogsConfigKeys) batchWait() time.Duration {
-	key := l.getConfigKey("batch_wait")
-	batchWait := l.getConfig().GetInt(key)
-	if batchWait < 1 || 10 < batchWait {
-		log.Warnf("Invalid %s: %v should be in [1, 10], fallback on %v", key, batchWait, coreConfig.DefaultBatchWait)
-		return coreConfig.DefaultBatchWait * time.Second
-	}
-	return (time.Duration(batchWait) * time.Second)
+	return l.c.BatchWait
 }
 
 func (l *LogsConfigKeys) batchMaxConcurrentSend() int {
-	key := l.getConfigKey("batch_max_concurrent_send")
-	batchMaxConcurrentSend := l.getConfig().GetInt(key)
-	if batchMaxConcurrentSend < 0 {
-		log.Warnf("Invalid %s: %v should be >= 0, fallback on %v", key, batchMaxConcurrentSend, coreConfig.DefaultBatchMaxConcurrentSend)
-		return coreConfig.DefaultBatchMaxConcurrentSend
-	}
-	return batchMaxConcurrentSend
+	return l.c.BatchMaxConcurrentSend
 }
 
 func (l *LogsConfigKeys) batchMaxSize() int {
-	key := l.getConfigKey("batch_max_size")
-	batchMaxSize := l.getConfig().GetInt(key)
-	if batchMaxSize <= 0 {
-		log.Warnf("Invalid %s: %v should be > 0, fallback on %v", key, batchMaxSize, coreConfig.DefaultBatchMaxSize)
-		return coreConfig.DefaultBatchMaxSize
-	}
-	return batchMaxSize
+	return l.c.BatchMaxSize
 }
 
 func (l *LogsConfigKeys) batchMaxContentSize() int {
-	key := l.getConfigKey("batch_max_content_size")
-	batchMaxContentSize := l.getConfig().GetInt(key)
-	if batchMaxContentSize <= 0 {
-		log.Warnf("Invalid %s: %v should be > 0, fallback on %v", key, batchMaxContentSize, coreConfig.DefaultBatchMaxContentSize)
-		return coreConfig.DefaultBatchMaxContentSize
-	}
-	return batchMaxContentSize
+	return l.c.BatchMaxContentSize
 }
 
 func (l *LogsConfigKeys) senderBackoffFactor() float64 {
-	key := l.getConfigKey("sender_backoff_factor")
-	senderBackoffFactor := l.getConfig().GetFloat64(key)
-	if senderBackoffFactor < 2 {
-		log.Warnf("Invalid %s: %v should be >= 2, fallback on %v", key, senderBackoffFactor, coreConfig.DefaultLogsSenderBackoffFactor)
-		return coreConfig.DefaultLogsSenderBackoffFactor
-	}
-	return senderBackoffFactor
+	return l.c.SenderBackoffFactor
 }
 
 func (l *LogsConfigKeys) senderBackoffBase() float64 {
-	key := l.getConfigKey("sender_backoff_base")
-	senderBackoffBase := l.getConfig().GetFloat64(key)
-	if senderBackoffBase <= 0 {
-		log.Warnf("Invalid %s: %v should be > 0, fallback on %v", key, senderBackoffBase, coreConfig.DefaultLogsSenderBackoffBase)
-		return coreConfig.DefaultLogsSenderBackoffBase
-	}
-	return senderBackoffBase
+	return l.c.SenderBackoffBase
 }
 
 func (l *LogsConfigKeys) senderBackoffMax() float64 {
-	key := l.getConfigKey("sender_backoff_max")
-	senderBackoffMax := l.getConfig().GetFloat64(key)
-	if senderBackoffMax <= 0 {
-		log.Warnf("Invalid %s: %v should be > 0, fallback on %v", key, senderBackoffMax, coreConfig.DefaultLogsSenderBackoffMax)
-		return coreConfig.DefaultLogsSenderBackoffMax
-	}
-	return senderBackoffMax
+	return l.c.SenderBackoffMax
 }
 
 func (l *LogsConfigKeys) senderRecoveryInterval() int {
-	key := l.getConfigKey("sender_recovery_interval")
-	recoveryInterval := l.getConfig().GetInt(key)
-	if recoveryInterval <= 0 {
-		log.Warnf("Invalid %s: %v should be > 0, fallback on %v", key, recoveryInterval, coreConfig.DefaultLogsSenderBackoffRecoveryInterval)
-		return coreConfig.DefaultLogsSenderBackoffRecoveryInterval
-	}
-	return recoveryInterval
+	return l.c.SenderRecoveryInterval
 }
 
 func (l *LogsConfigKeys) senderRecoveryReset() bool {
-	return l.getConfig().GetBool(l.getConfigKey("sender_recovery_reset"))
+	return l.c.SenderRecoveryReset
 }
 
 // AggregationTimeout is used when performing aggregation operations
 func (l *LogsConfigKeys) aggregationTimeout() time.Duration {
-	return l.getConfig().GetDuration(l.getConfigKey("aggregation_timeout")) * time.Millisecond
+	return l.c.AggregationTimeout
 }
 
 func (l *LogsConfigKeys) useV2API() bool {
-	return l.getConfig().GetBool(l.getConfigKey("use_v2_api"))
+	return l.c.UseV2Api
 }

@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/forwarder"
 	"github.com/DataDog/datadog-agent/pkg/process/util/api/headers"
 	"github.com/DataDog/datadog-agent/pkg/serializer/marshaler"
@@ -22,6 +21,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/serializer/stream"
 	"github.com/DataDog/datadog-agent/pkg/util/compression"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -127,19 +127,20 @@ type Serializer struct {
 
 // NewSerializer returns a new Serializer initialized
 func NewSerializer(forwarder forwarder.Forwarder, orchestratorForwarder forwarder.Forwarder) *Serializer {
+	cf := config.C.EnablePayloads
 	s := &Serializer{
 		Forwarder:                     forwarder,
 		orchestratorForwarder:         orchestratorForwarder,
-		seriesJSONPayloadBuilder:      stream.NewJSONPayloadBuilder(config.Datadog.GetBool("enable_json_stream_shared_compressor_buffers")),
-		enableEvents:                  config.Datadog.GetBool("enable_payloads.events"),
-		enableSeries:                  config.Datadog.GetBool("enable_payloads.series"),
-		enableServiceChecks:           config.Datadog.GetBool("enable_payloads.service_checks"),
-		enableSketches:                config.Datadog.GetBool("enable_payloads.sketches"),
-		enableJSONToV1Intake:          config.Datadog.GetBool("enable_payloads.json_to_v1_intake"),
-		enableJSONStream:              stream.Available && config.Datadog.GetBool("enable_stream_payload_serialization"),
-		enableServiceChecksJSONStream: stream.Available && config.Datadog.GetBool("enable_service_checks_stream_payload_serialization"),
-		enableEventsJSONStream:        stream.Available && config.Datadog.GetBool("enable_events_stream_payload_serialization"),
-		enableSketchProtobufStream:    stream.Available && config.Datadog.GetBool("enable_sketch_stream_payload_serialization"),
+		seriesJSONPayloadBuilder:      stream.NewJSONPayloadBuilder(config.C.EnableJsonStreamSharedCompressorBuffers),
+		enableEvents:                  cf.Events,
+		enableSeries:                  cf.Series,
+		enableServiceChecks:           cf.ServiceChecks,
+		enableSketches:                cf.Sketches,
+		enableJSONToV1Intake:          cf.JsonToV1Intake,
+		enableJSONStream:              stream.Available && config.C.EnableStreamPayloadSerialization,
+		enableServiceChecksJSONStream: stream.Available && config.C.EnableServiceChecksStreamPayloadSerialization,
+		enableEventsJSONStream:        stream.Available && config.C.EnableEventsStreamPayloadSerialization,
+		enableSketchProtobufStream:    stream.Available && config.C.EnableSketchStreamPayloadSerialization,
 	}
 
 	if !s.enableEvents {
@@ -238,7 +239,7 @@ func (s *Serializer) SendEvents(e EventsStreamJSONMarshaler) error {
 		return nil
 	}
 
-	useV1API := !config.Datadog.GetBool("use_v2_api.events")
+	useV1API := !config.C.UseV2Api.Events
 	var eventPayloads forwarder.Payloads
 	var extraHeaders http.Header
 	var err error
@@ -265,7 +266,7 @@ func (s *Serializer) SendServiceChecks(sc marshaler.StreamJSONMarshaler) error {
 		return nil
 	}
 
-	useV1API := !config.Datadog.GetBool("use_v2_api.service_checks")
+	useV1API := !config.C.UseV2Api.ServiceChecks
 
 	var serviceCheckPayloads forwarder.Payloads
 	var extraHeaders http.Header
@@ -293,7 +294,7 @@ func (s *Serializer) SendSeries(series marshaler.StreamJSONMarshaler) error {
 		return nil
 	}
 
-	useV1API := !config.Datadog.GetBool("use_v2_api.series")
+	useV1API := !config.C.UseV2Api.Series
 
 	var seriesPayloads forwarder.Payloads
 	var extraHeaders http.Header

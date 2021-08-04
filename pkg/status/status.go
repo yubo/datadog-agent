@@ -66,15 +66,15 @@ func GetStatus() (map[string]interface{}, error) {
 		stats["endpointsInfos"] = nil
 	}
 
-	if config.Datadog.GetBool("cluster_agent.enabled") {
+	if config.C.ClusterAgent.Enabled {
 		stats["clusterAgentStatus"] = getDCAStatus()
 	}
 
-	if config.Datadog.GetBool("system_probe_config.enabled") {
-		stats["systemProbeStats"] = GetSystemProbeStats(config.Datadog.GetString("system_probe_config.sysprobe_socket"))
+	if config.C.SystemProbe.Enabled {
+		stats["systemProbeStats"] = GetSystemProbeStats(config.C.SystemProbe.SysprobeSocket)
 	}
 
-	if !config.Datadog.GetBool("no_proxy_nonexact_match") {
+	if !config.C.NoProxyNonexactMatch {
 		httputils.NoProxyMapMutex.Lock()
 		stats["TransportWarnings"] = len(httputils.NoProxyIgnoredWarningMap)+len(httputils.NoProxyUsedInFuture)+len(httputils.NoProxyChanged) > 0
 		stats["NoProxyIgnoredWarningMap"] = httputils.NoProxyIgnoredWarningMap
@@ -174,7 +174,7 @@ func GetDCAStatus() (map[string]interface{}, error) {
 		stats["admissionWebhook"] = admission.GetStatus(apiCl.Cl)
 	}
 
-	if config.Datadog.GetBool("cluster_checks.enabled") {
+	if config.C.ClusterChecks.Enabled {
 		cchecks, err := clusterchecks.GetStats()
 		if err != nil {
 			log.Errorf("Error grabbing clusterchecks stats: %s", err)
@@ -183,7 +183,7 @@ func GetDCAStatus() (map[string]interface{}, error) {
 		}
 	}
 
-	if config.Datadog.GetBool("orchestrator_explorer.enabled") {
+	if config.C.OrchestratorExplorer.Enabled {
 		if apiErr != nil {
 			stats["orchestrator"] = map[string]string{"Error": apiErr.Error()}
 		} else {
@@ -239,18 +239,18 @@ func GetAndFormatSecurityAgentStatus(runtimeStatus map[string]interface{}) ([]by
 // getDCAPartialConfig returns config parameters of interest for the status page.
 func getDCAPartialConfig() map[string]string {
 	conf := make(map[string]string)
-	conf["log_level"] = config.Datadog.GetString("log_level")
-	conf["confd_path"] = config.Datadog.GetString("confd_path")
+	conf["log_level"] = config.C.LogLevel
+	conf["confd_path"] = config.C.ConfdPath
 	return conf
 }
 
 // getPartialConfig returns config parameters of interest for the status page
 func getPartialConfig() map[string]string {
 	conf := make(map[string]string)
-	conf["log_file"] = config.Datadog.GetString("log_file")
-	conf["log_level"] = config.Datadog.GetString("log_level")
-	conf["confd_path"] = config.Datadog.GetString("confd_path")
-	conf["additional_checksd"] = config.Datadog.GetString("additional_checksd")
+	conf["log_file"] = config.C.LogFile
+	conf["log_level"] = config.C.LogLevel
+	conf["confd_path"] = config.C.ConfdPath
+	conf["additional_checksd"] = config.C.AdditionalChecksd
 	return conf
 }
 
@@ -295,7 +295,7 @@ func getCommonStatus() (map[string]interface{}, error) {
 		stats["metadata"] = host.GetPayloadFromCache(context.TODO(), hostnameData)
 	}
 
-	stats["conf_file"] = config.Datadog.ConfigFileUsed()
+	stats["conf_file"] = config.ConfigFileUsed()
 	stats["pid"] = os.Getpid()
 	stats["go_version"] = runtime.Version()
 	stats["agent_start_nano"] = config.StartTime.UnixNano()

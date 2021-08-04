@@ -9,10 +9,10 @@ import (
 	"context"
 	"time"
 
-	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/auditor"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
@@ -30,6 +30,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/pipeline"
 	"github.com/DataDog/datadog-agent/pkg/logs/restart"
 	"github.com/DataDog/datadog-agent/pkg/logs/service"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 )
 
 // Agent represents the data pipeline that collects, decodes,
@@ -49,14 +50,14 @@ type Agent struct {
 }
 
 // NewAgent returns a new Logs Agent
-func NewAgent(sources *config.LogSources, services *service.Services, processingRules []*config.ProcessingRule, endpoints *config.Endpoints) *Agent {
+func NewAgent(sources *config.LogSources, services *service.Services, processingRules []*ProcessingRule, endpoints *Endpoints) *Agent {
 	health := health.RegisterLiveness("logs-agent")
 
+	cf := coreConfig.C.LogsConfig
 	// setup the auditor
 	// We pass the health handle to the auditor because it's the end of the pipeline and the most
 	// critical part. Arguably it could also be plugged to the destination.
-	auditorTTL := time.Duration(coreConfig.Datadog.GetInt("logs_config.auditor_ttl")) * time.Hour
-	auditor := auditor.New(coreConfig.Datadog.GetString("logs_config.run_path"), auditor.DefaultRegistryFilename, auditorTTL, health)
+	auditor := auditor.New(cf.RunPath, auditor.DefaultRegistryFilename, cf.AuditorTTL, health)
 	destinationsCtx := client.NewDestinationsContext()
 	diagnosticMessageReceiver := diagnostic.NewBufferedMessageReceiver()
 
@@ -68,35 +69,36 @@ func NewAgent(sources *config.LogSources, services *service.Services, processing
 			IsAvailable: docker.IsAvailable,
 			Launcher: func() restart.Restartable {
 				return docker.NewLauncher(
-					time.Duration(coreConfig.Datadog.GetInt("logs_config.docker_client_read_timeout"))*time.Second,
+					cf.DockerClientReadTimeout,
 					sources,
 					services,
 					pipelineProvider,
 					auditor,
-					coreConfig.Datadog.GetBool("logs_config.docker_container_use_file"),
-					coreConfig.Datadog.GetBool("logs_config.docker_container_force_use_file"))
+					cf.DockerContainerUseFile,
+					cf.DockerContainerForceUseFile,
+				)
 			},
 		},
 		{
 			IsAvailable: kubernetes.IsAvailable,
 			Launcher: func() restart.Restartable {
-				return kubernetes.NewLauncher(sources, services, coreConfig.Datadog.GetBool("logs_config.container_collect_all"))
+				return kubernetes.NewLauncher(sources, services, cf.ContainerCollectAll)
 			},
 		},
 	}
 
 	// when k8s_container_use_file is true, always attempt to use the kubernetes launcher first
-	if coreConfig.Datadog.GetBool("logs_config.k8s_container_use_file") {
+	if cf.K8SContainerUseFile {
 		containerLaunchables[0], containerLaunchables[1] = containerLaunchables[1], containerLaunchables[0]
 	}
 
-	validatePodContainerID := coreConfig.Datadog.GetBool("logs_config.validate_pod_container_id")
+	validatePodContainerID := cf.ValidatePodContainerId
 
 	// setup the inputs
 	inputs := []restart.Restartable{
-		file.NewScanner(sources, coreConfig.Datadog.GetInt("logs_config.open_files_limit"), pipelineProvider, auditor,
-			file.DefaultSleepDuration, validatePodContainerID, time.Duration(coreConfig.Datadog.GetFloat64("logs_config.file_scan_period")*float64(time.Second))),
-		listener.NewLauncher(sources, coreConfig.Datadog.GetInt("logs_config.frame_size"), pipelineProvider),
+		file.NewScanner(sources, cf.OpenFilesLimit, pipelineProvider, auditor,
+			file.DefaultSleepDuration, validatePodContainerID, time.Duration(cf.FileScanPeriod)*time.Second),
+		listener.NewLauncher(sources, cf.FrameSize, pipelineProvider),
 		journald.NewLauncher(sources, pipelineProvider, auditor),
 		windowsevent.NewLauncher(sources, pipelineProvider),
 		traps.NewLauncher(sources, pipelineProvider),
@@ -120,7 +122,7 @@ func NewAgent(sources *config.LogSources, services *service.Services, processing
 // NewServerless returns a Logs Agent instance to run in a serverless environment.
 // The Serverless Logs Agent has only one input being the channel to receive the logs to process.
 // It is using a NullAuditor because we've nothing to do after having sent the logs to the intake.
-func NewServerless(sources *config.LogSources, services *service.Services, processingRules []*config.ProcessingRule, endpoints *config.Endpoints) *Agent {
+func NewServerless(sources *config.LogSources, services *service.Services, processingRules []*ProcessingRule, endpoints *Endpoints) *Agent {
 	health := health.RegisterLiveness("logs-agent")
 
 	diagnosticMessageReceiver := diagnostic.NewBufferedMessageReceiver()
@@ -187,7 +189,7 @@ func (a *Agent) Stop() {
 		stopper.Stop()
 		close(c)
 	}()
-	timeout := time.Duration(coreConfig.Datadog.GetInt("logs_config.stop_grace_period")) * time.Second
+	timeout := coreConfig.C.LogsConfig.StopGracePeriod
 	select {
 	case <-c:
 	case <-time.After(timeout):

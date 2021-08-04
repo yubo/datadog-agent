@@ -13,9 +13,9 @@ import (
 	"errors"
 	"expvar"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/compression"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -79,8 +79,8 @@ type Compressor struct {
 func NewCompressor(input, output *bytes.Buffer, header, footer []byte, separator []byte) (*Compressor, error) {
 	// the backend accepts payloads up to 3MB compressed / 50MB uncompressed but
 	// prefers small uncompressed payloads of ~4MB
-	maxPayloadSize := config.Datadog.GetInt("serializer_max_payload_size")
-	maxUncompressedSize := config.Datadog.GetInt("serializer_max_uncompressed_payload_size")
+	maxPayloadSize := config.C.SerializerMaxPayloadSize
+	maxUncompressedSize := config.C.SerializerMaxUncompressedPayloadSize
 	c := &Compressor{
 		header:              header,
 		footer:              footer,

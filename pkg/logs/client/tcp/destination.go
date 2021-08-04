@@ -14,6 +14,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -34,7 +35,7 @@ type Destination struct {
 }
 
 // NewDestination returns a new destination.
-func NewDestination(endpoint config.Endpoint, useProto bool, destinationsContext *client.DestinationsContext) *Destination {
+func NewDestination(endpoint Endpoint, useProto bool, destinationsContext *client.DestinationsContext) *Destination {
 	prefix := endpoint.APIKey + string(' ')
 	return &Destination{
 		prefixer:            newPrefixer(prefix),

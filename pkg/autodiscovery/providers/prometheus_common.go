@@ -7,18 +7,14 @@ package providers
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/common/types"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // getPrometheusConfigs reads and initializes the openmetrics checks from the configuration
 // It defines a default openmetrics instances with default AD if the checks configuration is empty
 func getPrometheusConfigs() ([]*types.PrometheusCheck, error) {
-	checks := []*types.PrometheusCheck{}
-	err := config.Datadog.UnmarshalKey("prometheus_scrape.checks", &checks)
-	if err != nil {
-		return []*types.PrometheusCheck{}, err
-	}
+	checks := config.C.PrometheusScrape.Checks
 
 	if len(checks) == 0 {
 		log.Info("The 'prometheus_scrape.checks' configuration is empty, a default openmetrics check configuration will be used")

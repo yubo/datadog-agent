@@ -9,7 +9,7 @@ import (
 	"net"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
-	"github.com/DataDog/datadog-agent/pkg/logs/config"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 )
 
 // AddrToHostPort converts a net.Addr to a (string, int).
@@ -24,9 +24,9 @@ func AddrToHostPort(remoteAddr net.Addr) (string, int) {
 }
 
 // AddrToEndPoint creates an EndPoint from an Addr.
-func AddrToEndPoint(addr net.Addr) config.Endpoint {
+func AddrToEndPoint(addr net.Addr) Endpoint {
 	host, port := AddrToHostPort(addr)
-	return config.Endpoint{Host: host, Port: port}
+	return Endpoint{Host: host, Port: port}
 }
 
 // AddrToDestination creates a Destination from an Addr

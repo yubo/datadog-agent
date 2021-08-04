@@ -12,10 +12,10 @@ import (
 	"strconv"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/common/types"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -159,12 +159,7 @@ func (f *containerFilters) IsExcluded(filter containers.FilterType, name, image,
 // getPrometheusIncludeAnnotations returns the Prometheus AD include annotations based on the Prometheus config
 func getPrometheusIncludeAnnotations() types.PrometheusAnnotations {
 	annotations := types.PrometheusAnnotations{}
-	checks := []*types.PrometheusCheck{}
-	err := config.Datadog.UnmarshalKey("prometheus_scrape.checks", &checks)
-	if err != nil {
-		log.Warnf("Couldn't get configurations from 'prometheus_scrape.checks': %v", err)
-		return annotations
-	}
+	checks := config.C.PrometheusScrape.Checks
 
 	if len(checks) == 0 {
 		annotations[types.PrometheusScrapeAnnotation] = "true"

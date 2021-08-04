@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -26,9 +26,9 @@ const (
 
 func init() {
 	// Where to look for check templates if no custom path is defined
-	config.Datadog.SetDefault("autoconf_template_dir", "/datadog/check_configs")
+	//config.Datadog.SetDefault("autoconf_template_dir", "/datadog/check_configs")
 	// Defaut Timeout in second when talking to storage for configuration (etcd, zookeeper, ...)
-	config.Datadog.SetDefault("autoconf_template_url_timeout", 5)
+	//config.Datadog.SetDefault("autoconf_template_url_timeout", 5)
 }
 
 // parseJSONValue returns a slice of slice of ConfigData parsed from the JSON
@@ -96,7 +96,7 @@ func parseCheckNames(names string) (res []string, err error) {
 }
 
 func buildStoreKey(key ...string) string {
-	parts := []string{config.Datadog.GetString("autoconf_template_dir")}
+	parts := []string{config.C.AutoconfTemplateDir}
 	parts = append(parts, key...)
 	return path.Join(parts...)
 }
@@ -211,5 +211,5 @@ func GetPollInterval(cp config.ConfigurationProviders) time.Duration {
 			return customInterval
 		}
 	}
-	return config.Datadog.GetDuration("ad_config_poll_interval") * time.Second
+	return config.C.AdConfigPollInterval
 }

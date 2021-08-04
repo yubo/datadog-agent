@@ -6,6 +6,8 @@ replace (
 	github.com/n9e/n9e-agentd => ../n9e-agentd
 	github.com/yubo/apiserver => ../apiserver
 	github.com/yubo/golib => ../golib
+	github.com/yubo/golib => ../golib
+	github.com/n9e/agent-payload => ../agent-payload
 )
 
 // NOTE: Prefer using simple `require` directives instead of using `replace` if possible.

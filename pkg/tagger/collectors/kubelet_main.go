@@ -12,11 +12,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	agenterr "github.com/DataDog/datadog-agent/pkg/errors"
 	"github.com/DataDog/datadog-agent/pkg/tagger/utils"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/kubelet"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 
 	"github.com/gobwas/glob"
 )
@@ -53,8 +53,8 @@ func (c *KubeletCollector) Detect(ctx context.Context, out chan<- []*TagInfo) (C
 	c.init(
 		watcher,
 		out,
-		config.Datadog.GetStringMapString("kubernetes_pod_labels_as_tags"),
-		config.Datadog.GetStringMapString("kubernetes_pod_annotations_as_tags"),
+		config.C.KubernetesPodLabelsAsTags,
+		config.C.KubernetesPodAnnotationsAsTags,
 	)
 
 	return PullCollection, nil

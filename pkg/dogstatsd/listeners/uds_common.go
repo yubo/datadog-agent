@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/dogstatsd/packets"
 	"github.com/DataDog/datadog-agent/pkg/dogstatsd/replay"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -50,8 +50,9 @@ type UDSListener struct {
 
 // NewUDSListener returns an idle UDS Statsd listener
 func NewUDSListener(packetOut chan packets.Packets, sharedPacketPoolManager *packets.PoolManager, capture *replay.TrafficCapture) (*UDSListener, error) {
-	socketPath := config.Datadog.GetString("dogstatsd_socket")
-	originDetection := config.Datadog.GetBool("dogstatsd_origin_detection")
+	cf := config.C.Statsd
+	socketPath := cf.Socket
+	originDetection := cf.OriginDetection
 
 	address, addrErr := net.ResolveUnixAddr("unixgram", socketPath)
 	if addrErr != nil {
@@ -90,7 +91,7 @@ func NewUDSListener(packetOut chan packets.Packets, sharedPacketPoolManager *pac
 		}
 	}
 
-	if rcvbuf := config.Datadog.GetInt("dogstatsd_so_rcvbuf"); rcvbuf != 0 {
+	if rcvbuf := cf.SocketRcvbuf; rcvbuf != 0 {
 		if err := conn.SetReadBuffer(rcvbuf); err != nil {
 			return nil, fmt.Errorf("could not set socket rcvbuf: %s", err)
 		}
@@ -99,8 +100,8 @@ func NewUDSListener(packetOut chan packets.Packets, sharedPacketPoolManager *pac
 	listener := &UDSListener{
 		OriginDetection: originDetection,
 		conn:            conn,
-		packetsBuffer: packets.NewBuffer(uint(config.Datadog.GetInt("dogstatsd_packet_buffer_size")),
-			config.Datadog.GetDuration("dogstatsd_packet_buffer_flush_timeout"), packetOut),
+		packetsBuffer: packets.NewBuffer(uint(cf.PacketBufferSize),
+			cf.PacketBufferFlushTimeout, packetOut),
 		sharedPacketPoolManager: sharedPacketPoolManager,
 		trafficCapture:          capture,
 	}
@@ -248,7 +249,7 @@ func (l *UDSListener) Stop() {
 	l.conn.Close()
 
 	// Socket cleanup on exit
-	socketPath := config.Datadog.GetString("dogstatsd_socket")
+	socketPath := config.C.Statsd.Socket
 	if len(socketPath) > 0 {
 		err := os.Remove(socketPath)
 		if err != nil {

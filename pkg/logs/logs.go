@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery"
-	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/client/http"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
@@ -24,6 +24,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/scheduler"
 	"github.com/DataDog/datadog-agent/pkg/logs/service"
 	"github.com/DataDog/datadog-agent/pkg/logs/status"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 )
 
 const (
@@ -57,7 +58,7 @@ func StartServerless(getAC func() *autodiscovery.AutoConfig, logsChan chan *conf
 }
 
 // buildEndpoints builds endpoints for the logs agent
-func buildEndpoints(serverless bool) (*config.Endpoints, error) {
+func buildEndpoints(serverless bool) (*Endpoints, error) {
 	if serverless {
 		return config.BuildServerlessEndpoints(intakeTrackType, config.DefaultIntakeProtocol, config.DefaultIntakeSource)
 	}
@@ -141,7 +142,7 @@ func start(getAC func() *autodiscovery.AutoConfig, serverless bool, logsChan cha
 	// but ensure that it is enabled after the AutoConfig initialization
 	if source := config.ContainerCollectAllSource(); source != nil {
 		go func() {
-			BlockUntilAutoConfigRanOnce(getAC, time.Millisecond*time.Duration(coreConfig.Datadog.GetInt("ac_load_timeout")))
+			BlockUntilAutoConfigRanOnce(getAC, coreConfig.C.AcLoadTimeout)
 			log.Debug("Adding ContainerCollectAll source to the Logs Agent")
 			sources.AddSource(source)
 		}()

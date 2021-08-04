@@ -19,6 +19,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/trace/traceutil"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/apm"
 )
 
 // apiEndpointPrefix is the URL prefix prepended to the default site value from YamlAgentConfig.

@@ -4,11 +4,10 @@ import (
 	"context"
 	"expvar"
 	"fmt"
-	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metadata/inventories"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 
 	"github.com/DataDog/datadog-agent/pkg/serializer"
 	"github.com/DataDog/datadog-agent/pkg/util"
@@ -48,7 +47,7 @@ func (c inventoriesCollector) Send(ctx context.Context, s *serializer.Serializer
 
 // Init initializes the inventory metadata collection
 func (c inventoriesCollector) Init() error {
-	return inventories.StartMetadataUpdatedGoroutine(c.sc, config.Datadog.GetDuration("inventories_min_interval")*time.Second)
+	return inventories.StartMetadataUpdatedGoroutine(c.sc, config.C.InventoriesMinInterval)
 }
 
 // SetupInventoriesExpvar init the expvar function for inventories
@@ -73,7 +72,7 @@ func SetupInventories(sc *Scheduler, ac inventories.AutoConfigInterface, coll in
 	}
 	RegisterCollector("inventories", ic)
 
-	if err := sc.AddCollector("inventories", config.Datadog.GetDuration("inventories_max_interval")*time.Second); err != nil {
+	if err := sc.AddCollector("inventories", config.C.InventoriesMaxInterval); err != nil {
 		return err
 	}
 

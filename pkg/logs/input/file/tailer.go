@@ -15,10 +15,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	lineParser "github.com/DataDog/datadog-agent/pkg/logs/parser"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/decoder"
@@ -95,7 +95,7 @@ func NewTailer(outputChan chan *message.Message, file *File, sleepDuration time.
 	}
 
 	forwardContext, stopForward := context.WithCancel(context.Background())
-	closeTimeout := coreConfig.Datadog.GetDuration("logs_config.close_timeout") * time.Second
+	closeTimeout := coreConfig.C.LogsConfig.CloseTimeout
 
 	return &Tailer{
 		file:           file,

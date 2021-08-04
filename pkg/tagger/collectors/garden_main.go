@@ -9,12 +9,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/cloudfoundry"
 	"github.com/DataDog/datadog-agent/pkg/util/clusteragent"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/util/retry"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -47,7 +47,7 @@ func (c *GardenCollector) Detect(ctx context.Context, out chan<- []*TagInfo) (Co
 
 	// if DCA is enabled and can't communicate with the DCA, let the tagger retry.
 	var errDCA error
-	if config.Datadog.GetBool("cluster_agent.enabled") {
+	if config.C.ClusterAgent.Enabled {
 		c.clusterAgentEnabled = false
 		c.dcaClient, errDCA = clusteragent.GetClusterAgentClient()
 		if errDCA != nil {
@@ -69,7 +69,7 @@ func (c *GardenCollector) Detect(ctx context.Context, out chan<- []*TagInfo) (Co
 func (c *GardenCollector) Pull(ctx context.Context) error {
 	var tagsByInstanceGUID map[string][]string
 	var tagInfo []*TagInfo
-	tagsByInstanceGUID, err := c.extractTags(config.Datadog.GetString("bosh_id"))
+	tagsByInstanceGUID, err := c.extractTags(config.C.BoshID)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (c *GardenCollector) Pull(ctx context.Context) error {
 // Fetch gets the tags for a specific entity
 func (c *GardenCollector) Fetch(ctx context.Context, entity string) ([]string, []string, []string, error) {
 	_, cid := containers.SplitEntityName(entity)
-	tagsByInstanceGUID, err := c.extractTags(config.Datadog.GetString("bosh_id"))
+	tagsByInstanceGUID, err := c.extractTags(config.C.BoshID)
 	if err != nil {
 		return []string{}, []string{}, []string{}, err
 	}

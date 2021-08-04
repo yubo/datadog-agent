@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/backoff"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 type block struct {
@@ -26,31 +26,31 @@ type blockedEndpoints struct {
 }
 
 func newBlockedEndpoints() *blockedEndpoints {
-	backoffFactor := config.Datadog.GetFloat64("forwarder_backoff_factor")
+	backoffFactor := config.C.Forwarder.BackoffFactor
 	if backoffFactor < 2 {
 		log.Warnf("Configured forwarder_backoff_factor (%v) is less than 2; 2 will be used", backoffFactor)
 		backoffFactor = 2
 	}
 
-	backoffBase := config.Datadog.GetFloat64("forwarder_backoff_base")
+	backoffBase := config.C.Forwarder.BackoffBase
 	if backoffBase <= 0 {
 		log.Warnf("Configured forwarder_backoff_base (%v) is not positive; 2 will be used", backoffBase)
 		backoffBase = 2
 	}
 
-	backoffMax := config.Datadog.GetFloat64("forwarder_backoff_max")
+	backoffMax := config.C.Forwarder.BackoffMax
 	if backoffMax <= 0 {
 		log.Warnf("Configured forwarder_backoff_max (%v) is not positive; 64 seconds will be used", backoffMax)
 		backoffMax = 64
 	}
 
-	recInterval := config.Datadog.GetInt("forwarder_recovery_interval")
+	recInterval := config.C.Forwarder.RecoveryInterval
 	if recInterval <= 0 {
 		log.Warnf("Configured forwarder_recovery_interval (%v) is not positive; %v will be used", recInterval, config.DefaultForwarderRecoveryInterval)
 		recInterval = config.DefaultForwarderRecoveryInterval
 	}
 
-	recoveryReset := config.Datadog.GetBool("forwarder_recovery_reset")
+	recoveryReset := config.C.Forwarder.RecoveryReset
 
 	return &blockedEndpoints{
 		errorPerEndpoint: make(map[string]*block),

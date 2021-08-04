@@ -12,7 +12,6 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/azure"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/clusteragent"
@@ -20,6 +19,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/gce"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/hostinfo"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -69,7 +69,7 @@ func getClusterName(ctx context.Context, data *clusterNameData, hostname string)
 	defer data.mutex.Unlock()
 
 	if !data.initDone {
-		data.clusterName = config.Datadog.GetString("cluster_name")
+		data.clusterName = config.C.ClusterName
 		if data.clusterName != "" {
 			log.Infof("Got cluster name %s from config", data.clusterName)
 			// the host alias "hostname-clustername" must not exceed 255 chars

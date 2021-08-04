@@ -10,13 +10,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptrace"
-	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/forwarder/transaction"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // Worker consumes Transaction (aka transactions) from the Forwarder and
@@ -61,7 +60,7 @@ func newHTTPClient() *http.Client {
 	transport := httputils.CreateHTTPTransport()
 
 	return &http.Client{
-		Timeout:   config.Datadog.GetDuration("forwarder_timeout") * time.Second,
+		Timeout:   config.C.Forwarder.Timeout,
 		Transport: transport,
 	}
 }

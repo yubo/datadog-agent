@@ -6,15 +6,15 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
 	"time"
 
-	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/snmp/traps"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // ContainerCollectAll is the name of the docker integration that collect logs from all containers
@@ -56,7 +56,7 @@ var (
 
 // ContainerCollectAllSource returns a source to collect all logs from all containers.
 func ContainerCollectAllSource() *LogSource {
-	if coreConfig.Datadog.GetBool("logs_config.container_collect_all") {
+	if coreConfig.C.LogsConfig.ContainerCollectAll {
 		// source to collect all logs from all containers
 		return NewLogSource(ContainerCollectAll, &LogsConfig{
 			Type:    DockerType,
@@ -82,21 +82,8 @@ func SNMPTrapsSource() *LogSource {
 
 // GlobalProcessingRules returns the global processing rules to apply to all logs.
 func GlobalProcessingRules() ([]*ProcessingRule, error) {
-	var rules []*ProcessingRule
-	var err error
-	raw := coreConfig.Datadog.Get("logs_config.processing_rules")
-	if raw == nil {
-		return rules, nil
-	}
-	if s, ok := raw.(string); ok && s != "" {
-		err = json.Unmarshal([]byte(s), &rules)
-	} else {
-		err = coreConfig.Datadog.UnmarshalKey("logs_config.processing_rules", &rules)
-	}
-	if err != nil {
-		return nil, err
-	}
-	err = ValidateProcessingRules(rules)
+	rules := coreConfig.C.LogsConfig.ProcessingRules
+	err := ValidateProcessingRules(rules)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +96,7 @@ func GlobalProcessingRules() ([]*ProcessingRule, error) {
 
 // BuildEndpoints returns the endpoints to send logs.
 func BuildEndpoints(httpConnectivity HTTPConnectivity, intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeSource IntakeSource) (*Endpoints, error) {
-	coreConfig.SanitizeAPIKeyConfig(coreConfig.Datadog, "logs_config.api_key")
+	//coreConfig.SanitizeAPIKeyConfig(coreConfig.Datadog, "logs_config.api_key")
 	return BuildEndpointsWithConfig(defaultLogsConfigKeys(), httpEndpointPrefix, httpConnectivity, intakeTrackType, intakeProtocol, intakeSource)
 }
 
@@ -131,7 +118,7 @@ func BuildEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix string,
 
 // BuildServerlessEndpoints returns the endpoints to send logs for the Serverless agent.
 func BuildServerlessEndpoints(intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeSource IntakeSource) (*Endpoints, error) {
-	coreConfig.SanitizeAPIKeyConfig(coreConfig.Datadog, "logs_config.api_key")
+	//coreConfig.SanitizeAPIKeyConfig(coreConfig.Datadog, "logs_config.api_key")
 	return BuildHTTPEndpointsWithConfig(defaultLogsConfigKeys(), serverlessHTTPEndpointPrefix, intakeTrackType, intakeProtocol, intakeSource)
 }
 
@@ -172,7 +159,7 @@ func buildTCPEndpoints(logsConfig *LogsConfigKeys) (*Endpoints, error) {
 	} else {
 		// If no proxy is set, we default to 'logs_config.dd_url' if set, or to 'site'.
 		// if none of them is set, we default to the US agent endpoint.
-		main.Host = coreConfig.GetMainEndpoint(tcpEndpointPrefix, logsConfig.getConfigKey("dd_url"))
+		main.Host = coreConfig.GetMainEndpoint()
 		if port, found := logsEndpoints[main.Host]; found {
 			main.Port = port
 		} else {
@@ -187,7 +174,7 @@ func buildTCPEndpoints(logsConfig *LogsConfigKeys) (*Endpoints, error) {
 		additionals[i].ProxyAddress = proxyAddress
 		additionals[i].APIKey = coreConfig.SanitizeAPIKey(additionals[i].APIKey)
 	}
-	return NewEndpoints(main, additionals, useProto, false), nil
+	return coreConfig.NewEndpoints(main, additionals, useProto, false), nil
 }
 
 // BuildHTTPEndpoints returns the HTTP endpoints to send logs to.
@@ -230,7 +217,7 @@ func BuildHTTPEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix str
 		main.Port = port
 		main.UseSSL = !defaultNoSSL
 	} else {
-		main.Host = coreConfig.GetMainEndpoint(endpointPrefix, logsConfig.getConfigKey("dd_url"))
+		main.Host = coreConfig.GetMainEndpoint()
 		main.UseSSL = !logsConfig.devModeNoSSL()
 	}
 
@@ -253,7 +240,7 @@ func BuildHTTPEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix str
 	batchMaxSize := logsConfig.batchMaxSize()
 	batchMaxContentSize := logsConfig.batchMaxContentSize()
 
-	return NewEndpointsWithBatchSettings(main, additionals, false, true, batchWait, batchMaxConcurrentSend, batchMaxSize, batchMaxContentSize), nil
+	return coreConfig.NewEndpointsWithBatchSettings(main, additionals, false, true, batchWait, batchMaxConcurrentSend, batchMaxSize, batchMaxContentSize), nil
 }
 
 // parseAddress returns the host and the port of the address.

@@ -13,12 +13,13 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 )
 
 // Builder is used to build the status.
 type Builder struct {
 	isRunning   *int32
-	endpoints   *config.Endpoints
+	endpoints   *Endpoints
 	sources     *config.LogSources
 	warnings    *config.Messages
 	errors      *config.Messages
@@ -26,7 +27,7 @@ type Builder struct {
 }
 
 // NewBuilder returns a new builder.
-func NewBuilder(isRunning *int32, endpoints *config.Endpoints, sources *config.LogSources, warnings *config.Messages, errors *config.Messages, logExpVars *expvar.Map) *Builder {
+func NewBuilder(isRunning *int32, endpoints *Endpoints, sources *config.LogSources, warnings *config.Messages, errors *config.Messages, logExpVars *expvar.Map) *Builder {
 	return &Builder{
 		isRunning:   isRunning,
 		endpoints:   endpoints,
@@ -70,7 +71,7 @@ func (b *Builder) getEndpoints() []string {
 	return result
 }
 
-func (b *Builder) formatEndpoint(endpoint config.Endpoint, prefix string) string {
+func (b *Builder) formatEndpoint(endpoint Endpoint, prefix string) string {
 	compression := "uncompressed"
 	if endpoint.UseCompression {
 		compression = "compressed"

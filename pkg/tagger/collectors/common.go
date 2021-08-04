@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/tagger/utils"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
@@ -23,8 +22,8 @@ const (
 
 // retrieveMappingFromConfig gets a stringmapstring config key and
 // lowercases all map keys to make envvar and yaml sources consistent
-func retrieveMappingFromConfig(configKey string) map[string]string {
-	labelsList := config.Datadog.GetStringMapString(configKey)
+func retrieveMappingFromConfig(labelsList map[string]string) map[string]string {
+	//labelsList := config.C.Get.GetStringMapString(configKey)
 	for label, value := range labelsList {
 		delete(labelsList, label)
 		labelsList[strings.ToLower(label)] = value

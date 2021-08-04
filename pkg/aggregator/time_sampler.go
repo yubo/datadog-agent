@@ -7,9 +7,9 @@ package aggregator
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/aggregator/ckey"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // SerieSignature holds the elements that allow to know whether two similar `Serie`s
@@ -183,7 +183,7 @@ func (s *TimeSampler) flush(timestamp float64) (metrics.Series, metrics.SketchSe
 	sketches := s.flushSketches(cutoffTime)
 
 	// expiring contexts
-	s.contextResolver.expireContexts(timestamp - config.Datadog.GetFloat64("dogstatsd_context_expiry_seconds"))
+	s.contextResolver.expireContexts(timestamp - config.C.Statsd.ContextExpirySeconds.Seconds())
 	s.lastCutOffTime = cutoffTime
 
 	aggregatorDogstatsdContexts.Set(int64(s.contextResolver.length()))
@@ -206,7 +206,7 @@ func (s *TimeSampler) flushContextMetrics(timestamp int64, contextMetrics metric
 }
 
 func (s *TimeSampler) countersSampleZeroValue(timestamp int64, contextMetrics metrics.ContextMetrics, counterContextsToDelete map[ckey.ContextKey]struct{}) {
-	expirySeconds := config.Datadog.GetFloat64("dogstatsd_expiry_seconds")
+	expirySeconds := config.C.Statsd.ExpirySeconds.Seconds()
 	for counterContext, lastSampled := range s.counterLastSampledByContext {
 		if expirySeconds+lastSampled > float64(timestamp) {
 			sample := &metrics.MetricSample{

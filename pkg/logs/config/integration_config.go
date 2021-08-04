@@ -8,6 +8,8 @@ package config
 import (
 	"fmt"
 	"strings"
+
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 )
 
 // Logs source types

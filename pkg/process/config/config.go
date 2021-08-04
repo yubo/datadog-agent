@@ -3,7 +3,7 @@ package config
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -15,17 +15,16 @@ import (
 	"strings"
 	"time"
 
-	model "github.com/n9e/agent-payload/process"
-	sysconfig "github.com/n9e/n9e-agentd/pkg/system-probe/config"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	oconfig "github.com/DataDog/datadog-agent/pkg/orchestrator/config"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	apicfg "github.com/DataDog/datadog-agent/pkg/process/util/api/config"
 	pb "github.com/DataDog/datadog-agent/pkg/proto/pbgo"
 	"github.com/DataDog/datadog-agent/pkg/util/fargate"
 	ddgrpc "github.com/DataDog/datadog-agent/pkg/util/grpc"
-	"github.com/DataDog/datadog-agent/pkg/util/hostname/validate"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	model "github.com/n9e/agent-payload/process"
+	"github.com/n9e/n9e-agentd/pkg/config"
+	sysconfig "github.com/n9e/n9e-agentd/pkg/system-probe/config"
 	"google.golang.org/grpc"
 )
 
@@ -253,120 +252,122 @@ func NewDefaultAgentConfig(canAccessContainers bool) *AgentConfig {
 }
 
 func loadConfigIfExists(path string) error {
-	if path != "" {
-		if util.PathExists(path) {
-			config.Datadog.AddConfigPath(path)
-			if strings.HasSuffix(path, ".yaml") { // If they set a config file directly, let's try to honor that
-				config.Datadog.SetConfigFile(path)
-			}
+	//if path != "" {
+	//	if util.PathExists(path) {
+	//		config.Datadog.AddConfigPath(path)
+	//		if strings.HasSuffix(path, ".yaml") { // If they set a config file directly, let's try to honor that
+	//			config.Datadog.SetConfigFile(path)
+	//		}
 
-			if _, err := config.LoadWithoutSecret(); err != nil {
-				return err
-			}
-		} else {
-			log.Infof("no config exists at %s, ignoring...", path)
-		}
-	}
-	return nil
+	//		if _, err := config.LoadWithoutSecret(); err != nil {
+	//			return err
+	//		}
+	//	} else {
+	//		log.Infof("no config exists at %s, ignoring...", path)
+	//	}
+	//}
+	log.Infof("unsupported load config")
+	return errors.New("unsupported load config")
 }
 
 // NewAgentConfig returns an AgentConfig using a configuration file. It can be nil
 // if there is no file available. In this case we'll configure only via environment.
 func NewAgentConfig(loggerName config.LoggerName, yamlPath, netYamlPath string) (*AgentConfig, error) {
-	var err error
+	return nil, errors.New("unsupported")
+	//var err error
 
-	// For Agent 6 we will have a YAML config file to use.
-	if err := loadConfigIfExists(yamlPath); err != nil {
-		return nil, err
-	}
+	//// For Agent 6 we will have a YAML config file to use.
+	//if err := loadConfigIfExists(yamlPath); err != nil {
+	//	return nil, err
+	//}
 
-	// Note: This only considers container sources that are already setup. It's possible that container sources may
-	//       need a few minutes to be ready on newly provisioned hosts.
-	_, err = util.GetContainers()
-	canAccessContainers := err == nil
+	//// Note: This only considers container sources that are already setup. It's possible that container sources may
+	////       need a few minutes to be ready on newly provisioned hosts.
+	//_, err = util.GetContainers()
+	//canAccessContainers := err == nil
 
-	cfg := NewDefaultAgentConfig(canAccessContainers)
+	//cfg := NewDefaultAgentConfig(canAccessContainers)
 
-	if err := cfg.LoadProcessYamlConfig(yamlPath); err != nil {
-		return nil, err
-	}
+	//if err := cfg.LoadProcessYamlConfig(yamlPath); err != nil {
+	//	return nil, err
+	//}
 
-	if err := cfg.Orchestrator.Load(); err != nil {
-		return nil, err
-	}
+	//if err := cfg.Orchestrator.Load(); err != nil {
+	//	return nil, err
+	//}
 
-	// (Re)configure the logging from our configuration
-	if err := setupLogger(loggerName, cfg.LogFile, cfg); err != nil {
-		log.Errorf("failed to setup configured logger: %s", err)
-		return nil, err
-	}
+	//// (Re)configure the logging from our configuration
+	//if err := setupLogger(loggerName, cfg.LogFile, cfg); err != nil {
+	//	log.Errorf("failed to setup configured logger: %s", err)
+	//	return nil, err
+	//}
 
-	// For system probe, there is an additional config file that is shared with the system-probe
-	syscfg, err := sysconfig.Merge(netYamlPath)
-	if err != nil {
-		return nil, err
-	}
-	if syscfg.Enabled {
-		cfg.EnableSystemProbe = true
-		cfg.MaxConnsPerMessage = syscfg.MaxConnsPerMessage
-		cfg.SystemProbeAddress = syscfg.SocketAddress
+	//// For system probe, there is an additional config file that is shared with the system-probe
+	//syscfg, err := sysconfig.Merge(netYamlPath)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if syscfg.Enabled {
+	//	cfg.EnableSystemProbe = true
+	//	cfg.MaxConnsPerMessage = syscfg.MaxConnsPerMessage
+	//	cfg.SystemProbeAddress = syscfg.SocketAddress
 
-		// enable corresponding checks to system-probe modules
-		for mod := range syscfg.EnabledModules {
-			if checks, ok := moduleCheckMap[mod]; ok {
-				cfg.EnabledChecks = append(cfg.EnabledChecks, checks...)
-			}
-		}
+	//	// enable corresponding checks to system-probe modules
+	//	for mod := range syscfg.EnabledModules {
+	//		if checks, ok := moduleCheckMap[mod]; ok {
+	//			cfg.EnabledChecks = append(cfg.EnabledChecks, checks...)
+	//		}
+	//	}
 
-		if !cfg.Enabled {
-			log.Info("enabling process-agent for connections check as the system-probe is enabled")
-			cfg.Enabled = true
-		}
-	}
+	//	if !cfg.Enabled {
+	//		log.Info("enabling process-agent for connections check as the system-probe is enabled")
+	//		cfg.Enabled = true
+	//	}
+	//}
 
-	// TODO: Once proxies have been moved to common config util, remove this
-	if cfg.proxy, err = proxyFromEnv(cfg.proxy); err != nil {
-		log.Errorf("error parsing environment proxy settings, not using a proxy: %s", err)
-		cfg.proxy = nil
-	}
+	//// TODO: Once proxies have been moved to common config util, remove this
+	//if cfg.proxy, err = proxyFromEnv(cfg.proxy); err != nil {
+	//	log.Errorf("error parsing environment proxy settings, not using a proxy: %s", err)
+	//	cfg.proxy = nil
+	//}
 
-	// Python-style log level has WARNING vs WARN
-	if strings.ToLower(cfg.LogLevel) == "warning" {
-		cfg.LogLevel = "warn"
-	}
+	//// Python-style log level has WARNING vs WARN
+	//if strings.ToLower(cfg.LogLevel) == "warning" {
+	//	cfg.LogLevel = "warn"
+	//}
 
-	if err := validate.ValidHostname(cfg.HostName); err != nil {
-		// lookup hostname if there is no config override or if the override is invalid
-		if hostname, err := getHostname(context.TODO(), cfg.DDAgentBin, cfg.grpcConnectionTimeout); err == nil {
-			cfg.HostName = hostname
-		} else {
-			log.Errorf("Cannot get hostname: %v", err)
-		}
-	}
+	//if err := validate.ValidHostname(cfg.HostName); err != nil {
+	//	// lookup hostname if there is no config override or if the override is invalid
+	//	if hostname, err := getHostname(context.TODO(), cfg.DDAgentBin, cfg.grpcConnectionTimeout); err == nil {
+	//		cfg.HostName = hostname
+	//	} else {
+	//		log.Errorf("Cannot get hostname: %v", err)
+	//	}
+	//}
 
-	cfg.ContainerHostType = getContainerHostType()
+	//cfg.ContainerHostType = getContainerHostType()
 
-	if cfg.proxy != nil {
-		cfg.Transport.Proxy = cfg.proxy
-	}
+	//if cfg.proxy != nil {
+	//	cfg.Transport.Proxy = cfg.proxy
+	//}
 
-	// sanity check. This element is used with the modulo operator (%), so it can't be zero.
-	// if it is, log the error, and assume the config was attempting to disable
-	if cfg.Windows.ArgsRefreshInterval == 0 {
-		log.Warnf("invalid configuration: windows_collect_skip_new_args was set to 0.  Disabling argument collection")
-		cfg.Windows.ArgsRefreshInterval = -1
-	}
+	//// sanity check. This element is used with the modulo operator (%), so it can't be zero.
+	//// if it is, log the error, and assume the config was attempting to disable
+	//if cfg.Windows.ArgsRefreshInterval == 0 {
+	//	log.Warnf("invalid configuration: windows_collect_skip_new_args was set to 0.  Disabling argument collection")
+	//	cfg.Windows.ArgsRefreshInterval = -1
+	//}
 
-	// activate the pod collection if enabled and we have the cluster name set
-	if cfg.Orchestrator.OrchestrationCollectionEnabled {
-		if cfg.Orchestrator.KubeClusterName != "" {
-			cfg.EnabledChecks = append(cfg.EnabledChecks, PodCheckName)
-		} else {
-			log.Warnf("Failed to auto-detect a Kubernetes cluster name. Pod collection will not start. To fix this, set it manually via the cluster_name config option")
-		}
-	}
+	//// activate the pod collection if enabled and we have the cluster name set
+	//if cfg.Orchestrator.OrchestrationCollectionEnabled {
+	//	if cfg.Orchestrator.KubeClusterName != "" {
+	//		cfg.EnabledChecks = append(cfg.EnabledChecks, PodCheckName)
+	//	} else {
+	//		log.Warnf("Failed to auto-detect a Kubernetes cluster name. Pod collection will not start. To fix this, set it manually via the cluster_name config option")
+	//	}
+	//}
 
-	return cfg, nil
+	//return cfg, nil
 }
 
 // getContainerHostType uses the fargate library to detect container environment and returns the protobuf version of it
@@ -381,67 +382,68 @@ func getContainerHostType() model.ContainerHostType {
 }
 
 func loadEnvVariables() {
+	log.Errorf("TODO")
 	// The following environment variables will be loaded in the order listed, meaning variables
 	// further down the list may override prior variables.
-	for _, variable := range []struct{ env, cfg string }{
-		{"DD_PROCESS_AGENT_CONTAINER_SOURCE", "process_config.container_source"},
-		{"DD_SCRUB_ARGS", "process_config.scrub_args"},
-		{"DD_STRIP_PROCESS_ARGS", "process_config.strip_proc_arguments"},
-		{"DD_PROCESS_AGENT_URL", "process_config.process_dd_url"},
-		{"DD_PROCESS_AGENT_INTERNAL_PROFILING_ENABLED", "process_config.internal_profiling.enabled"},
-		{"DD_PROCESS_AGENT_REMOTE_TAGGER", "process_config.remote_tagger"},
-		{"DD_PROCESS_AGENT_MAX_PER_MESSAGE", "process_config.max_per_message"},
-		{"DD_PROCESS_AGENT_MAX_CTR_PROCS_PER_MESSAGE", "process_config.max_ctr_procs_per_message"},
-		{"DD_ORCHESTRATOR_URL", "orchestrator_explorer.orchestrator_dd_url"},
-		{"DD_HOSTNAME", "hostname"},
-		{"DD_DOGSTATSD_PORT", "dogstatsd_port"},
-		{"DD_BIND_HOST", "bind_host"},
-		{"HTTPS_PROXY", "proxy.https"},
-		{"DD_PROXY_HTTPS", "proxy.https"},
+	//for _, variable := range []struct{ env, cfg string }{
+	//	{"DD_PROCESS_AGENT_CONTAINER_SOURCE", "process_config.container_source"},
+	//	{"DD_SCRUB_ARGS", "process_config.scrub_args"},
+	//	{"DD_STRIP_PROCESS_ARGS", "process_config.strip_proc_arguments"},
+	//	{"DD_PROCESS_AGENT_URL", "process_config.process_dd_url"},
+	//	{"DD_PROCESS_AGENT_INTERNAL_PROFILING_ENABLED", "process_config.internal_profiling.enabled"},
+	//	{"DD_PROCESS_AGENT_REMOTE_TAGGER", "process_config.remote_tagger"},
+	//	{"DD_PROCESS_AGENT_MAX_PER_MESSAGE", "process_config.max_per_message"},
+	//	{"DD_PROCESS_AGENT_MAX_CTR_PROCS_PER_MESSAGE", "process_config.max_ctr_procs_per_message"},
+	//	{"DD_ORCHESTRATOR_URL", "orchestrator_explorer.orchestrator_dd_url"},
+	//	{"DD_HOSTNAME", "hostname"},
+	//	{"DD_DOGSTATSD_PORT", "dogstatsd_port"},
+	//	{"DD_BIND_HOST", "bind_host"},
+	//	{"HTTPS_PROXY", "proxy.https"},
+	//	{"DD_PROXY_HTTPS", "proxy.https"},
 
-		{"DD_LOGS_STDOUT", "log_to_console"},
-		{"LOG_TO_CONSOLE", "log_to_console"},
-		{"DD_LOG_TO_CONSOLE", "log_to_console"},
-		{"LOG_LEVEL", "log_level"}, // Support LOG_LEVEL and DD_LOG_LEVEL but prefer DD_LOG_LEVEL
-		{"DD_LOG_LEVEL", "log_level"},
-	} {
-		if v, ok := os.LookupEnv(variable.env); ok {
-			config.Datadog.Set(variable.cfg, v)
-		}
-	}
+	//	{"DD_LOGS_STDOUT", "log_to_console"},
+	//	{"LOG_TO_CONSOLE", "log_to_console"},
+	//	{"DD_LOG_TO_CONSOLE", "log_to_console"},
+	//	{"LOG_LEVEL", "log_level"}, // Support LOG_LEVEL and DD_LOG_LEVEL but prefer DD_LOG_LEVEL
+	//	{"DD_LOG_LEVEL", "log_level"},
+	//} {
+	//	if v, ok := os.LookupEnv(variable.env); ok {
+	//		config.Datadog.Set(variable.cfg, v)
+	//	}
+	//}
 
-	// Support API_KEY and DD_API_KEY but prefer DD_API_KEY.
-	apiKey, envKey := os.Getenv("DD_API_KEY"), "DD_API_KEY"
-	if apiKey == "" {
-		apiKey, envKey = os.Getenv("API_KEY"), "API_KEY"
-	}
+	//// Support API_KEY and DD_API_KEY but prefer DD_API_KEY.
+	//apiKey, envKey := os.Getenv("DD_API_KEY"), "DD_API_KEY"
+	//if apiKey == "" {
+	//	apiKey, envKey = os.Getenv("API_KEY"), "API_KEY"
+	//}
 
-	if apiKey != "" { // We don't want to overwrite the API KEY provided as an environment variable
-		log.Infof("overriding API key from env %s value", envKey)
-		config.Datadog.Set("api_key", config.SanitizeAPIKey(strings.Split(apiKey, ",")[0]))
-	}
+	//if apiKey != "" { // We don't want to overwrite the API KEY provided as an environment variable
+	//	log.Infof("overriding API key from env %s value", envKey)
+	//	config.Datadog.Set("api_key", config.SanitizeAPIKey(strings.Split(apiKey, ",")[0]))
+	//}
 
-	if v := os.Getenv("DD_CUSTOM_SENSITIVE_WORDS"); v != "" {
-		config.Datadog.Set("process_config.custom_sensitive_words", strings.Split(v, ","))
-	}
+	//if v := os.Getenv("DD_CUSTOM_SENSITIVE_WORDS"); v != "" {
+	//	config.Datadog.Set("process_config.custom_sensitive_words", strings.Split(v, ","))
+	//}
 
-	if v := os.Getenv("DD_PROCESS_ADDITIONAL_ENDPOINTS"); v != "" {
-		endpoints := make(map[string][]string)
-		if err := json.Unmarshal([]byte(v), &endpoints); err != nil {
-			log.Errorf(`Could not parse DD_PROCESS_ADDITIONAL_ENDPOINTS: %v. It must be of the form '{"https://process.agent.datadoghq.com": ["apikey1", ...], ...}'.`, err)
-		} else {
-			config.Datadog.Set("process_config.additional_endpoints", endpoints)
-		}
-	}
+	//if v := os.Getenv("DD_PROCESS_ADDITIONAL_ENDPOINTS"); v != "" {
+	//	endpoints := make(map[string][]string)
+	//	if err := json.Unmarshal([]byte(v), &endpoints); err != nil {
+	//		log.Errorf(`Could not parse DD_PROCESS_ADDITIONAL_ENDPOINTS: %v. It must be of the form '{"https://process.agent.datadoghq.com": ["apikey1", ...], ...}'.`, err)
+	//	} else {
+	//		config.Datadog.Set("process_config.additional_endpoints", endpoints)
+	//	}
+	//}
 
-	if v := os.Getenv("DD_ORCHESTRATOR_ADDITIONAL_ENDPOINTS"); v != "" {
-		endpoints := make(map[string][]string)
-		if err := json.Unmarshal([]byte(v), &endpoints); err != nil {
-			log.Errorf(`Could not parse DD_ORCHESTRATOR_ADDITIONAL_ENDPOINTS: %v. It must be of the form '{"https://process.agent.datadoghq.com": ["apikey1", ...], ...}'.`, err)
-		} else {
-			config.Datadog.Set("orchestrator_explorer.orchestrator_additional_endpoints", endpoints)
-		}
-	}
+	//if v := os.Getenv("DD_ORCHESTRATOR_ADDITIONAL_ENDPOINTS"); v != "" {
+	//	endpoints := make(map[string][]string)
+	//	if err := json.Unmarshal([]byte(v), &endpoints); err != nil {
+	//		log.Errorf(`Could not parse DD_ORCHESTRATOR_ADDITIONAL_ENDPOINTS: %v. It must be of the form '{"https://process.agent.datadoghq.com": ["apikey1", ...], ...}'.`, err)
+	//	} else {
+	//		config.Datadog.Set("orchestrator_explorer.orchestrator_additional_endpoints", endpoints)
+	//	}
+	//}
 }
 
 // IsBlacklisted returns a boolean indicating if the given command is blacklisted by our config.
@@ -609,8 +611,8 @@ func setupLogger(loggerName config.LoggerName, logFile string, cfg *AgentConfig)
 		cfg.LogLevel,
 		logFile,
 		config.GetSyslogURI(),
-		config.Datadog.GetBool("syslog_rfc"),
-		config.Datadog.GetBool("log_to_console"),
-		config.Datadog.GetBool("log_format_json"),
+		config.C.SyslogRfc,
+		config.C.LogToConsole,
+		config.C.LogFormatJson,
 	)
 }

@@ -8,8 +8,8 @@ package collectors
 import (
 	"strings"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/tagger/utils"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 func addResourceTags(t *utils.TagList, m map[string]string) {
@@ -19,7 +19,7 @@ func addResourceTags(t *utils.TagList, m map[string]string) {
 			continue
 		}
 
-		if config.Datadog.GetBool("ecs_resource_tags_replace_colon") {
+		if config.C.EcsResourceTagsReplaceColon {
 			k = strings.ReplaceAll(k, ":", "_")
 		}
 

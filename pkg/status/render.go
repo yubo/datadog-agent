@@ -16,9 +16,9 @@ import (
 	"text/template"
 
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/snmp/traps"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var fmap = Textfmap()
@@ -57,13 +57,13 @@ func FormatStatus(data []byte) (string, error) {
 	renderStatusTemplate(b, "/forwarder.tmpl", forwarderStats)
 	renderStatusTemplate(b, "/endpoints.tmpl", endpointsInfos)
 	renderStatusTemplate(b, "/logsagent.tmpl", logsStats)
-	if config.Datadog.GetBool("system_probe_config.enabled") {
+	if config.C.SystemProbe.Enabled {
 		renderStatusTemplate(b, "/systemprobe.tmpl", systemProbeStats)
 	}
 	renderStatusTemplate(b, "/trace-agent.tmpl", stats["apmStats"])
 	renderStatusTemplate(b, "/aggregator.tmpl", aggregatorStats)
 	renderStatusTemplate(b, "/dogstatsd.tmpl", dogstatsdStats)
-	if config.Datadog.GetBool("cluster_agent.enabled") || config.Datadog.GetBool("cluster_checks.enabled") {
+	if config.C.ClusterAgent.Enabled || config.C.ClusterChecks.Enabled {
 		renderStatusTemplate(b, "/clusteragent.tmpl", dcaStats)
 	}
 	if traps.IsEnabled() {
@@ -95,10 +95,10 @@ func FormatDCAStatus(data []byte) (string, error) {
 	renderChecksStats(b, runnerStats, nil, nil, autoConfigStats, checkSchedulerStats, nil, "")
 	renderStatusTemplate(b, "/forwarder.tmpl", forwarderStats)
 	renderStatusTemplate(b, "/endpoints.tmpl", endpointsInfos)
-	if config.Datadog.GetBool("compliance_config.enabled") {
+	if config.C.ComplianceConfigEnabled {
 		renderStatusTemplate(b, "/logsagent.tmpl", logsStats)
 	}
-	if config.Datadog.GetBool("orchestrator_explorer.enabled") {
+	if config.C.OrchestratorExplorer.Enabled {
 		renderStatusTemplate(b, "/orchestrator.tmpl", orchestratorStats)
 	}
 

@@ -34,7 +34,7 @@ type parser struct {
 }
 
 func newParser(float64List *float64ListPool) *parser {
-	stringInternerCacheSize := config.Datadog.GetInt("dogstatsd_string_interner_size")
+	stringInternerCacheSize := config.C.Statsd.StringInternerSize
 
 	return &parser{
 		interner:    newStringInterner(stringInternerCacheSize),

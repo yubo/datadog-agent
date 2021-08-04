@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -90,31 +90,25 @@ func addDefaultCollector(name string, sch *Scheduler) error {
 // collectors listed in 'additionalCollectors' if they're not listed in the
 // configuration.
 func SetupMetadataCollection(sch *Scheduler, additionalCollectors []string) error {
-	if !config.Datadog.GetBool("enable_metadata_collection") {
+	if !config.C.EnableMetadataCollection {
 		log.Warnf("Metadata collection disabled, only do that if another agent/dogstatsd is running on this host")
 		return nil
 	}
 
 	collectorAdded := map[string]interface{}{}
-	var C []config.MetadataProviders
-	err := config.Datadog.UnmarshalKey("metadata_providers", &C)
-	if err == nil {
-		log.Debugf("Adding configured providers to the metadata collector")
-		for _, c := range C {
-			if c.Interval == 0 {
-				log.Infof("Interval of metadata provider '%v' set to 0, skipping provider", c.Name)
-				continue
-			}
-
-			intl := c.Interval * time.Second
-			if err := addCollector(c.Name, intl, sch); err != nil {
-				log.Error(err.Error())
-			} else {
-				collectorAdded[c.Name] = nil
-			}
+	log.Debugf("Adding configured providers to the metadata collector")
+	for _, c := range config.C.MetadataProviders {
+		if c.Interval == 0 {
+			log.Infof("Interval of metadata provider '%v' set to 0, skipping provider", c.Name)
+			continue
 		}
-	} else {
-		log.Errorf("Unable to parse metadata_providers config: %v", err)
+
+		intl := c.Interval * time.Second
+		if err := addCollector(c.Name, intl, sch); err != nil {
+			log.Error(err.Error())
+		} else {
+			collectorAdded[c.Name] = nil
+		}
 	}
 
 	// Adding default collectors if they were not listed in the configuration

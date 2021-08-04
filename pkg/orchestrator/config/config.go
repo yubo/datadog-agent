@@ -70,9 +70,10 @@ func (oc *OrchestratorConfig) Load() error {
 		return err
 	}
 	oc.OrchestratorEndpoints[0].Endpoint = URL
+	cf := config.C.OrchestratorExplorer
 
-	if key := "api_key"; config.Datadog.IsSet(key) {
-		oc.OrchestratorEndpoints[0].APIKey = config.SanitizeAPIKey(config.Datadog.GetString(key))
+	if key := config.C.ApiKey; len(key) > 0 {
+		oc.OrchestratorEndpoints[0].APIKey = key
 	}
 
 	if err := extractOrchestratorAdditionalEndpoints(URL, &oc.OrchestratorEndpoints); err != nil {
@@ -80,29 +81,25 @@ func (oc *OrchestratorConfig) Load() error {
 	}
 
 	// A custom word list to enhance the default one used by the DataScrubber
-	if k := key(orchestratorNS, "custom_sensitive_words"); config.Datadog.IsSet(k) {
-		oc.Scrubber.AddCustomSensitiveWords(config.Datadog.GetStringSlice(k))
+	if v := cf.CustomSensitiveWords; len(v) > 0 {
+		oc.Scrubber.AddCustomSensitiveWords(v)
 	}
 
 	// The maximum number of pods, nodes, replicaSets, deployments and services per message. Note: Only change if the defaults are causing issues.
-	if k := key(orchestratorNS, "max_per_message"); config.Datadog.IsSet(k) {
-		if maxPerMessage := config.Datadog.GetInt(k); maxPerMessage <= 0 {
-			log.Warn("Invalid item count per message (<= 0), ignoring...")
-		} else if maxPerMessage <= maxMessageBatch {
-			oc.MaxPerMessage = maxPerMessage
-		} else if maxPerMessage > 0 {
+	if v := cf.MaxPerMessage; v > 0 {
+		if v <= maxMessageBatch {
+			oc.MaxPerMessage = v
+		} else if v > 0 {
 			log.Warn("Overriding the configured item count per message limit because it exceeds maximum")
 		}
 	}
 
-	if k := key(processNS, "pod_queue_bytes"); config.Datadog.IsSet(k) {
-		if queueBytes := config.Datadog.GetInt(k); queueBytes > 0 {
-			oc.PodQueueBytes = queueBytes
-		}
+	if v := cf.PodQueueBytes; v > 0 {
+		oc.PodQueueBytes = v
 	}
 
 	// Orchestrator Explorer
-	if config.Datadog.GetBool("orchestrator_explorer.enabled") {
+	if cf.Enabled {
 		oc.OrchestrationCollectionEnabled = true
 		// Set clustername
 		hostname, _ := coreutil.GetHostname(context.TODO())
@@ -110,27 +107,27 @@ func (oc *OrchestratorConfig) Load() error {
 			oc.KubeClusterName = clusterName
 		}
 	}
-	oc.IsScrubbingEnabled = config.Datadog.GetBool("orchestrator_explorer.container_scrubbing.enabled")
-	oc.ExtraTags = config.Datadog.GetStringSlice("orchestrator_explorer.extra_tags")
+	oc.IsScrubbingEnabled = cf.ContainerScrubbingEnabled
+	oc.ExtraTags = cf.ExtraTags
 
 	return nil
 }
 
 func extractOrchestratorAdditionalEndpoints(URL *url.URL, orchestratorEndpoints *[]apicfg.Endpoint) error {
-	if k := key(orchestratorNS, "orchestrator_additional_endpoints"); config.Datadog.IsSet(k) {
-		if err := extractEndpoints(URL, k, orchestratorEndpoints); err != nil {
+	if v := config.C.OrchestratorExplorer.AdditionalEndpoints; len(v) > 0 {
+		if err := extractEndpoints(URL, v, orchestratorEndpoints); err != nil {
 			return err
 		}
-	} else if k := key(processNS, "orchestrator_additional_endpoints"); config.Datadog.IsSet(k) {
-		if err := extractEndpoints(URL, k, orchestratorEndpoints); err != nil {
+	} else if v := config.C.ProcessConfig.OrchestratorAdditionalEndpoints; len(v) > 0 {
+		if err := extractEndpoints(URL, v, orchestratorEndpoints); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func extractEndpoints(URL *url.URL, k string, endpoints *[]apicfg.Endpoint) error {
-	for endpointURL, apiKeys := range config.Datadog.GetStringMapStringSlice(k) {
+func extractEndpoints(URL *url.URL, in map[string][]string, endpoints *[]apicfg.Endpoint) error {
+	for endpointURL, apiKeys := range in {
 		u, err := URL.Parse(endpointURL)
 		if err != nil {
 			return fmt.Errorf("invalid additional endpoint url '%s': %s", endpointURL, err)
@@ -147,9 +144,11 @@ func extractEndpoints(URL *url.URL, k string, endpoints *[]apicfg.Endpoint) erro
 
 // extractOrchestratorDDUrl contains backward compatible config parsing code.
 func extractOrchestratorDDUrl() (*url.URL, error) {
-	orchestratorURL := key(orchestratorNS, "orchestrator_dd_url")
-	processURL := key(processNS, "orchestrator_dd_url")
-	URL, err := url.Parse(config.GetMainEndpointWithConfigBackwardCompatible(config.Datadog, "https://orchestrator.", orchestratorURL, processURL))
+	u := config.C.OrchestratorExplorer.Url
+	if u == "" {
+		u = config.C.ProcessConfig.Url
+	}
+	URL, err := url.Parse(u)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing orchestrator_dd_url: %s", err)
 	}
@@ -159,7 +158,7 @@ func extractOrchestratorDDUrl() (*url.URL, error) {
 // NewOrchestratorForwarder returns an orchestratorForwarder
 // if the feature is activated on the cluster-agent/cluster-check runner, nil otherwise
 func NewOrchestratorForwarder() *forwarder.DefaultForwarder {
-	if !config.Datadog.GetBool("orchestrator_explorer.enabled") {
+	if !config.C.OrchestratorExplorer.Enabled {
 		return nil
 	}
 	if config.GetFlavor() == flavor.DefaultAgent && !config.IsCLCRunner() {

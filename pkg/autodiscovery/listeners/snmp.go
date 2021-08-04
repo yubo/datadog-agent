@@ -20,6 +20,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/snmp"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	. "github.com/n9e/n9e-agentd/pkg/config/snmp"
 )
 
 const (
@@ -39,7 +40,7 @@ type SNMPListener struct {
 	newService chan<- Service
 	delService chan<- Service
 	stop       chan bool
-	config     snmp.ListenerConfig
+	config     ListenerConfig
 	services   map[string]Service
 }
 
@@ -49,7 +50,7 @@ type SNMPService struct {
 	entityID     string
 	deviceIP     string
 	creationTime integration.CreationTime
-	config       snmp.Config
+	config       Config
 }
 
 // Make sure SNMPService implements the Service interface
@@ -57,7 +58,7 @@ var _ Service = &SNMPService{}
 
 type snmpSubnet struct {
 	adIdentifier   string
-	config         snmp.Config
+	config         Config
 	startingIP     net.IP
 	network        net.IPNet
 	cacheKey       string

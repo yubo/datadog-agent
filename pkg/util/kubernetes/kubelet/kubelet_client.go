@@ -20,10 +20,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/filesystem"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -142,17 +142,19 @@ func (kc *kubeletClient) query(ctx context.Context, path string) ([]byte, int, e
 func getKubeletClient(ctx context.Context) (*kubeletClient, error) {
 	var err error
 
+	cf := config.C
+
 	kubeletTimeout := 30 * time.Second
-	kubeletProxyEnabled := config.Datadog.GetBool("eks_fargate")
-	kubeletHost := config.Datadog.GetString("kubernetes_kubelet_host")
-	kubeletHTTPSPort := config.Datadog.GetInt("kubernetes_https_kubelet_port")
-	kubeletHTTPPort := config.Datadog.GetInt("kubernetes_http_kubelet_port")
-	kubeletTLSVerify := config.Datadog.GetBool("kubelet_tls_verify")
-	kubeletCAPath := config.Datadog.GetString("kubelet_client_ca")
-	kubeletTokenPath := config.Datadog.GetString("kubelet_auth_token_path")
-	kubeletClientCertPath := config.Datadog.GetString("kubelet_client_crt")
-	kubeletClientKeyPath := config.Datadog.GetString("kubelet_client_key")
-	kubeletNodeName := config.Datadog.Get("kubernetes_kubelet_nodename")
+	kubeletProxyEnabled := cf.EKSFargate
+	kubeletHost := cf.KubernetesKubeletHost
+	kubeletHTTPSPort := cf.KubernetesHttpsKubeletPort
+	kubeletHTTPPort := cf.KubernetesHttpKubeletPort
+	kubeletTLSVerify := cf.KubeletTlsVerify
+	kubeletCAPath := cf.KubeletClientCa
+	kubeletTokenPath := cf.KubeletAuthTokenPath
+	kubeletClientCertPath := cf.KubeletClientCrt
+	kubeletClientKeyPath := cf.KubeletClientKey
+	kubeletNodeName := cf.KubernetesKubeletNodename
 	var kubeletPathPrefix string
 	var kubeletToken string
 
@@ -187,7 +189,7 @@ func getKubeletClient(ctx context.Context) (*kubeletClient, error) {
 		}
 		kubeletHTTPSPort = int(httpsPort)
 
-		if config.Datadog.Get("kubernetes_kubelet_nodename") != "" {
+		if cf.KubernetesKubeletNodename != "" {
 			kubeletPathPrefix = fmt.Sprintf("/api/v1/nodes/%s/proxy", kubeletNodeName)
 			apiServerHost := os.Getenv("KUBERNETES_SERVICE_HOST")
 

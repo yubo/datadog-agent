@@ -19,13 +19,13 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/ec2"
 	"github.com/DataDog/datadog-agent/pkg/util/ecs"
 	"github.com/DataDog/datadog-agent/pkg/util/fargate"
 	"github.com/DataDog/datadog-agent/pkg/util/hostname"
 	"github.com/DataDog/datadog-agent/pkg/util/hostname/validate"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -127,7 +127,7 @@ func saveHostnameData(cacheHostnameKey string, hostname string, provider string)
 
 func saveAndValidateHostnameData(ctx context.Context, cacheHostnameKey string, hostname string, provider string) HostnameData {
 	hostnameData := saveHostnameData(cacheHostnameKey, hostname, HostnameProviderConfiguration)
-	if !isHostnameCanonicalForIntake(ctx, hostname) && !config.Datadog.GetBool("hostname_force_config_as_canonical") {
+	if !isHostnameCanonicalForIntake(ctx, hostname) && !config.C.HostnameForceConfigAsCanonical {
 		log.Warnf(
 			"Hostname '%s' defined in configuration will not be used as the in-app hostname. "+
 				"For more information: https://dtdg.co/agent-hostname-force-config-as-canonical",
@@ -158,7 +158,7 @@ func GetHostnameData(ctx context.Context) (HostnameData, error) {
 	var provider string
 
 	// Try the name provided in the configuration file
-	configName := config.Datadog.GetString("hostname")
+	configName := config.C.Hostname
 	err = validate.ValidHostname(configName)
 	if err == nil {
 		return saveAndValidateHostnameData(
@@ -176,7 +176,7 @@ func GetHostnameData(ctx context.Context) (HostnameData, error) {
 	log.Debugf("Unable to get the hostname from the config file: %s", err)
 
 	// Try `hostname_file` config option next
-	configHostnameFilepath := config.Datadog.GetString("hostname_file")
+	configHostnameFilepath := config.C.HostnameFile
 	if configHostnameFilepath != "" {
 		log.Debug("GetHostname trying `hostname_file` config option...")
 		if fileHostnameProvider, found := hostname.ProviderCatalog["file"]; found {
@@ -224,7 +224,7 @@ func GetHostnameData(ctx context.Context) (HostnameData, error) {
 	if canUseOSHostname {
 		log.Debug("GetHostname trying FQDN/`hostname -f`...")
 		fqdn, err = getSystemFQDN()
-		if config.Datadog.GetBool("hostname_fqdn") && err == nil {
+		if config.C.HostnameFQDN && err == nil {
 			hostName = fqdn
 			provider = "fqdn"
 		} else {
@@ -326,7 +326,7 @@ func GetHostnameData(ctx context.Context) (HostnameData, error) {
 	// We have a FQDN not equals to the resolved hostname, and the configuration
 	// field `hostname_fqdn` isn't set -> we display a warning message about
 	// the future behavior
-	if err == nil && !config.Datadog.GetBool("hostname_fqdn") && fqdn != "" && hostName == h && h != fqdn {
+	if err == nil && !config.C.HostnameFQDN && fqdn != "" && hostName == h && h != fqdn {
 		if runtime.GOOS != "windows" {
 			// REMOVEME: This should be removed when the default `hostname_fqdn` is set to true
 			log.Warnf("DEPRECATION NOTICE: The agent resolved your hostname as '%s'. However in a future version, it will be resolved as '%s' by default. To enable the future behavior, please enable the `hostname_fqdn` flag in the configuration. For more information: https://dtdg.co/flag-hostname-fqdn", h, fqdn)

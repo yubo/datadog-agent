@@ -11,9 +11,9 @@ import (
 	"bytes"
 	"sync/atomic"
 
-	"github.com/DataDog/datadog-agent/pkg/trace/config"
 	"github.com/DataDog/datadog-agent/pkg/trace/pb"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config/apm"
 )
 
 //go:generate easyjson -no_std_marshalers $GOFILE
@@ -21,7 +21,7 @@ import (
 // Obfuscator quantizes and obfuscates spans. The obfuscator is not safe for
 // concurrent use.
 type Obfuscator struct {
-	opts                 *config.ObfuscationConfig
+	opts                 *apm.ObfuscationConfig
 	es                   *jsonObfuscator // nil if disabled
 	mongo                *jsonObfuscator // nil if disabled
 	sqlExecPlan          *jsonObfuscator // nil if disabled
@@ -57,9 +57,9 @@ func (o *Obfuscator) SQLLiteralEscapes() bool {
 }
 
 // NewObfuscator creates a new obfuscator
-func NewObfuscator(cfg *config.ObfuscationConfig) *Obfuscator {
+func NewObfuscator(cfg *apm.ObfuscationConfig) *Obfuscator {
 	if cfg == nil {
-		cfg = new(config.ObfuscationConfig)
+		cfg = new(apm.ObfuscationConfig)
 	}
 	o := Obfuscator{
 		opts:       cfg,

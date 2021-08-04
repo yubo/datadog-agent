@@ -13,10 +13,10 @@ import (
 
 	"github.com/mholt/archiver/v3"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/status"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // CreateSecurityAgentArchive packages up the files
@@ -151,7 +151,7 @@ func zipSecurityAgentStatusFile(tempDir, hostname string, runtimeStatus map[stri
 }
 
 func zipComplianceFiles(tempDir, hostname string, permsInfos permissionsInfos) error {
-	compDir := config.Datadog.GetString("compliance_config.dir")
+	compDir := config.C.ComplianceConfigDir
 
 	if permsInfos != nil {
 		addParentPerms(compDir, permsInfos)
@@ -178,7 +178,7 @@ func zipComplianceFiles(tempDir, hostname string, permsInfos permissionsInfos) e
 }
 
 func zipRuntimeFiles(tempDir, hostname string, permsInfos permissionsInfos) error {
-	runtimeDir := config.Datadog.GetString("runtime_security_config.policies.dir")
+	runtimeDir := config.C.RuntimeSecurity.PoliciesDir
 
 	if permsInfos != nil {
 		addParentPerms(runtimeDir, permsInfos)

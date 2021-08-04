@@ -15,13 +15,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/errors"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/containers/providers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/util/retry"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -85,13 +85,13 @@ func (ku *KubeUtil) init() error {
 func NewKubeUtil() *KubeUtil {
 	ku := &KubeUtil{
 		rawConnectionInfo:    make(map[string]string),
-		podListCacheDuration: config.Datadog.GetDuration("kubelet_cache_pods_duration") * time.Second,
+		podListCacheDuration: config.C.KubeletCachePodsDuration,
 		podUnmarshaller:      newPodUnmarshaller(),
 	}
 
-	waitOnMissingContainer := config.Datadog.GetDuration("kubelet_wait_on_missing_container")
+	waitOnMissingContainer := config.C.KubeletWaitOnMissingContainer
 	if waitOnMissingContainer > 0 {
-		ku.waitOnMissingContainer = waitOnMissingContainer * time.Second
+		ku.waitOnMissingContainer = waitOnMissingContainer
 	}
 
 	return ku

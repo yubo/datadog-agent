@@ -179,7 +179,7 @@ func getMeta(ctx context.Context, hostnameData util.HostnameData) *Meta {
 
 	var agentHostname string
 
-	if config.Datadog.GetBool("hostname_force_config_as_canonical") &&
+	if config.C.HostnameForceConfigAsCanonical &&
 		hostnameData.Provider == util.HostnameProviderConfiguration {
 		agentHostname = hostnameData.Hostname
 	}
@@ -271,7 +271,7 @@ func getProxyMeta() *ProxyMeta {
 	defer httputils.NoProxyMapMutex.Unlock()
 
 	return &ProxyMeta{
-		NoProxyNonexactMatch: config.Datadog.GetBool("no_proxy_nonexact_match"),
+		NoProxyNonexactMatch: config.C.NoProxyNonexactMatch,
 		ProxyBehaviorChanged: len(httputils.NoProxyIgnoredWarningMap)+len(httputils.NoProxyUsedInFuture)+len(httputils.NoProxyChanged) > 0,
 	}
 }

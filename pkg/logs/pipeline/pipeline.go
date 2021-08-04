@@ -16,6 +16,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 	"github.com/DataDog/datadog-agent/pkg/logs/processor"
 	"github.com/DataDog/datadog-agent/pkg/logs/sender"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 )
 
 // Pipeline processes and sends messages to the backend
@@ -26,7 +27,7 @@ type Pipeline struct {
 }
 
 // NewPipeline returns a new Pipeline
-func NewPipeline(outputChan chan *message.Message, processingRules []*config.ProcessingRule, endpoints *config.Endpoints, destinationsContext *client.DestinationsContext, diagnosticMessageReceiver diagnostic.MessageReceiver, serverless bool) *Pipeline {
+func NewPipeline(outputChan chan *message.Message, processingRules []*ProcessingRule, endpoints *Endpoints, destinationsContext *client.DestinationsContext, diagnosticMessageReceiver diagnostic.MessageReceiver, serverless bool) *Pipeline {
 	var destinations *client.Destinations
 	if endpoints.UseHTTP {
 		main := http.NewDestination(endpoints.Main, http.JSONContentType, destinationsContext, endpoints.BatchMaxConcurrentSend)

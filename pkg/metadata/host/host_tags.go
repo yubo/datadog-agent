@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/docker"
@@ -15,6 +14,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/clustername"
 	k8s "github.com/DataDog/datadog-agent/pkg/util/kubernetes/hostinfo"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var retrySleepTime = time.Second
@@ -65,7 +65,7 @@ func GetHostTags(ctx context.Context, cached bool) *Tags {
 		}
 	}
 
-	splits := config.Datadog.GetStringMapString("tag_value_split_separator")
+	splits := config.C.TagValueSplitSeparator
 	appendToHostTags := func(old, new []string) []string {
 		return appendAndSplitTags(old, new, splits)
 	}
@@ -74,7 +74,7 @@ func GetHostTags(ctx context.Context, cached bool) *Tags {
 	hostTags := make([]string, 0, len(rawHostTags))
 	hostTags = appendToHostTags(hostTags, rawHostTags)
 
-	env := config.Datadog.GetString("env")
+	env := config.C.Env
 	if env != "" {
 		hostTags = appendToHostTags(hostTags, []string{"env:" + env})
 	}
@@ -83,7 +83,7 @@ func GetHostTags(ctx context.Context, cached bool) *Tags {
 	clusterName := clustername.GetClusterName(ctx, hostname)
 	if len(clusterName) != 0 {
 		clusterNameTags := []string{"kube_cluster_name:" + clusterName}
-		if !config.Datadog.GetBool("disable_cluster_name_tag_key") {
+		if !config.C.DisableClusterNameTagKey {
 			clusterNameTags = append(clusterNameTags, "cluster_name:"+clusterName)
 			log.Info("Adding both tags cluster_name and kube_cluster_name. You can use 'disable_cluster_name_tag_key' in the Agent config to keep the kube_cluster_name tag only")
 		}
@@ -102,11 +102,11 @@ func GetHostTags(ctx context.Context, cached bool) *Tags {
 
 	providers := make(map[string]*providerDef)
 
-	if config.Datadog.GetBool("collect_ec2_tags") {
+	if config.C.CollectEC2Tags {
 		providers["ec2"] = &providerDef{1, ec2.GetTags, false}
 	}
 
-	if config.Datadog.GetBool("collect_gce_tags") {
+	if config.C.CollectGCETags {
 		providers["gce"] = &providerDef{1, getGCE, false}
 	}
 

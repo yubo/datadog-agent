@@ -24,12 +24,12 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	core "github.com/DataDog/datadog-agent/pkg/collector/corechecks"
-	dd_config "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	process_net "github.com/DataDog/datadog-agent/pkg/process/net"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	aconfig "github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -70,7 +70,7 @@ func (c *OOMKillConfig) Parse(data []byte) error {
 // Configure parses the check configuration and init the check
 func (m *OOMKillCheck) Configure(config, initConfig integration.Data, source string) error {
 	// TODO: Remove that hard-code and put it somewhere else
-	process_net.SetSystemProbePath(dd_config.Datadog.GetString("system_probe_config.sysprobe_socket"))
+	process_net.SetSystemProbePath(aconfig.C.SystemProbe.SysprobeSocket)
 
 	err := m.CommonConfigure(config, source)
 	if err != nil {

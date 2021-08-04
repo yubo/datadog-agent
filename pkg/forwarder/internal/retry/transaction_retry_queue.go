@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/forwarder/transaction"
 	"github.com/DataDog/datadog-agent/pkg/util/filesystem"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/hashicorp/go-multierror"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // TransactionSerializer is an interface to serialize / deserialize transactions
@@ -54,7 +54,7 @@ func BuildTransactionRetryQueue(
 
 	if optionalDomainFolderPath != "" && storageMaxSize > 0 {
 		serializer := NewHTTPTransactionsSerializer(domain, apiKeys)
-		diskRatio := config.Datadog.GetFloat64("forwarder_storage_max_disk_ratio")
+		diskRatio := config.C.Forwarder.StorageMaxDiskRatio
 
 		diskUsageLimit := newDiskUsageLimit(optionalDomainFolderPath, filesystem.NewDisk(), storageMaxSize, diskRatio)
 		storage, err = newOnDiskRetryQueue(serializer, optionalDomainFolderPath, diskUsageLimit, onDiskRetryQueueTelemetry{})

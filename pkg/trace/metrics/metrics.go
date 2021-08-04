@@ -13,9 +13,9 @@ import (
 	"errors"
 	"fmt"
 
-	mainconfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/trace/config"
 	"github.com/DataDog/datadog-go/statsd"
+	mainconfig "github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // findAddr finds the correct address to connect to the Dogstatsd server.
@@ -24,12 +24,12 @@ func findAddr(conf *config.AgentConfig) (string, error) {
 		// UDP enabled
 		return fmt.Sprintf("%s:%d", conf.StatsdHost, conf.StatsdPort), nil
 	}
-	pipename := mainconfig.Datadog.GetString("dogstatsd_pipe_name")
+	pipename := mainconfig.C.Statsd.PipeName
 	if pipename != "" {
 		// Windows Pipes can be used
 		return `\\.\pipe\` + pipename, nil
 	}
-	sockname := mainconfig.Datadog.GetString("dogstatsd_socket")
+	sockname := mainconfig.C.Statsd.Socket
 	if sockname != "" {
 		// Unix sockets can be used
 		return `unix://` + sockname, nil

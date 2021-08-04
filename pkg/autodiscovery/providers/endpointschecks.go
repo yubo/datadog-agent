@@ -13,10 +13,10 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/providers/names"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/clusteragent"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/kubelet"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // EndpointsChecksConfigProvider implements the ConfigProvider interface
@@ -80,8 +80,8 @@ func (c *EndpointsChecksConfigProvider) Collect(ctx context.Context) ([]integrat
 // getNodename retrieves current node name from kubelet (if running on Kubernetes)
 // or bosh ID of current node (if running on Cloud Foundry).
 func getNodename(ctx context.Context) (string, error) {
-	if config.Datadog.GetBool("cloud_foundry") {
-		boshID := config.Datadog.GetString("bosh_id")
+	if config.C.CloudFoundry {
+		boshID := config.C.BoshID
 		if boshID == "" {
 			return "", fmt.Errorf("configuration variable cloud_foundry is set to true, but bosh_id is empty, can't retrieve node name")
 		}

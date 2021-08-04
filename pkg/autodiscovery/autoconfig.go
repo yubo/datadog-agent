@@ -19,13 +19,13 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/providers"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/scheduler"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/secrets"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/util/retry"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -428,7 +428,7 @@ func (ac *AutoConfig) RemoveScheduler(name string) {
 }
 
 func decryptConfig(conf integration.Config) (integration.Config, error) {
-	if config.Datadog.GetBool("secret_backend_skip_checks") {
+	if config.C.SecretBackendSkipChecks {
 		log.Tracef("'secret_backend_skip_checks' is enabled, not decrypting configuration %q", conf.Name)
 		return conf, nil
 	}

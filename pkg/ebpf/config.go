@@ -2,9 +2,6 @@ package ebpf
 
 import (
 	"strings"
-
-	aconfig "github.com/n9e/n9e-agentd/pkg/config"
-	"github.com/DataDog/datadog-agent/pkg/process/util"
 )
 
 const (
@@ -50,20 +47,21 @@ func key(pieces ...string) string {
 
 // NewConfig creates a config with ebpf-related settings
 func NewConfig() *Config {
-	cfg := aconfig.Datadog
-	aconfig.InitSystemProbeConfig(cfg)
+	return nil
+	//cfg := aconfig.C
+	//aconfig.InitSystemProbeConfig(cfg)
 
-	return &Config{
-		BPFDebug:                 cfg.GetBool(key(spNS, "bpf_debug")),
-		BPFDir:                   cfg.GetString(key(spNS, "bpf_dir")),
-		ExcludedBPFLinuxVersions: cfg.GetStringSlice(key(spNS, "excluded_linux_versions")),
-		EnableTracepoints:        cfg.GetBool(key(spNS, "enable_tracepoints")),
-		ProcRoot:                 util.GetProcRoot(),
+	//return &Config{
+	//	BPFDebug:                 cfg.BPFDebug,
+	//	BPFDir:                   cfg.BPFDir,
+	//	ExcludedBPFLinuxVersions: cfg.SystemProbe.ExcludedLinuxVersions,
+	//	EnableTracepoints:        cfg.SystemProbe.EnableTracepoints,
+	//	ProcRoot:                 util.GetProcRoot(),
 
-		EnableRuntimeCompiler:    cfg.GetBool(key(spNS, "enable_runtime_compiler")),
-		RuntimeCompilerOutputDir: cfg.GetString(key(spNS, "runtime_compiler_output_dir")),
-		KernelHeadersDirs:        cfg.GetStringSlice(key(spNS, "kernel_header_dirs")),
-		KernelHeadersDownloadDir: cfg.GetString(key(spNS, "kernel_header_download_dir")),
-		AllowPrecompiledFallback: true,
-	}
+	//	EnableRuntimeCompiler:    cfg.SystemProbe.EnableRuntimeCompiler,
+	//	RuntimeCompilerOutputDir: cfg.SystemProbe.RuntimeCompilerOutputDir,
+	//	KernelHeadersDirs:        cfg.SystemProbe.KernelHeaderDirs,
+	//	KernelHeadersDownloadDir: cfg.SystemProb.KernelHeadersDownloadDir,
+	//	AllowPrecompiledFallback: true,
+	//}
 }

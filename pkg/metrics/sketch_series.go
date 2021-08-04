@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"expvar"
 
-	"github.com/n9e/agent-payload/gogen"
 	"github.com/DataDog/datadog-agent/pkg/aggregator/ckey"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/quantile"
 	"github.com/DataDog/datadog-agent/pkg/serializer/marshaler"
 	"github.com/DataDog/datadog-agent/pkg/serializer/stream"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/common"
+	"github.com/n9e/agent-payload/gogen"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // A SketchSeries is a timeseries of quantile sketches.
@@ -80,7 +80,7 @@ func (sl SketchSeriesList) MarshalJSON() ([]byte, error) {
 	}
 
 	// use an alias to avoid infinite recursion while serializing a SketchSeriesList
-	if config.Datadog.GetBool("cmd.check.fullsketches") {
+	if config.C.Cmd.Check.Fullsketches {
 		data := map[string]interface{}{
 			"sketches": customSketchSeries(sl),
 		}

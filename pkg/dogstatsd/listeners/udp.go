@@ -9,13 +9,14 @@ import (
 	"expvar"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/dogstatsd/packets"
 	"github.com/DataDog/datadog-agent/pkg/dogstatsd/replay"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 var (
@@ -48,11 +49,13 @@ func NewUDPListener(packetOut chan packets.Packets, sharedPacketPoolManager *pac
 	var err error
 	var url string
 
-	if config.Datadog.GetBool("dogstatsd_non_local_traffic") == true {
+	cf := config.C.Statsd
+
+	if cf.NonLocalTraffic == true {
 		// Listen to all network interfaces
-		url = fmt.Sprintf(":%d", config.Datadog.GetInt("dogstatsd_port"))
+		url = fmt.Sprintf(":%d", cf.Port)
 	} else {
-		url = net.JoinHostPort(config.GetBindHost(), config.Datadog.GetString("dogstatsd_port"))
+		url = net.JoinHostPort(config.C.GetBindHost(), strconv.Itoa(cf.Port))
 	}
 
 	addr, err := net.ResolveUDPAddr("udp", url)
@@ -64,15 +67,15 @@ func NewUDPListener(packetOut chan packets.Packets, sharedPacketPoolManager *pac
 		return nil, fmt.Errorf("can't listen: %s", err)
 	}
 
-	if rcvbuf := config.Datadog.GetInt("dogstatsd_so_rcvbuf"); rcvbuf != 0 {
+	if rcvbuf := cf.SocketRcvbuf; rcvbuf != 0 {
 		if err := conn.SetReadBuffer(rcvbuf); err != nil {
 			return nil, fmt.Errorf("could not set socket rcvbuf: %s", err)
 		}
 	}
 
-	bufferSize := config.Datadog.GetInt("dogstatsd_buffer_size")
-	packetsBufferSize := config.Datadog.GetInt("dogstatsd_packet_buffer_size")
-	flushTimeout := config.Datadog.GetDuration("dogstatsd_packet_buffer_flush_timeout")
+	bufferSize := cf.BufferSize
+	packetsBufferSize := cf.PacketBufferSize
+	flushTimeout := cf.PacketBufferFlushTimeout
 
 	buffer := make([]byte, bufferSize)
 	packetsBuffer := packets.NewBuffer(uint(packetsBufferSize), flushTimeout, packetOut)

@@ -17,8 +17,8 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/configresolver"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/providers/names"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 
 	"gopkg.in/yaml.v2"
 )
@@ -158,7 +158,7 @@ func (c *FileConfigProvider) collectEntry(file os.FileInfo, path string, integra
 	absPath := filepath.Join(path, fileName)
 
 	// skip auto conf files based on the agent configuration
-	if fileName == "auto_conf.yaml" && containsString(config.Datadog.GetStringSlice("ignore_autoconf"), integrationName) {
+	if fileName == "auto_conf.yaml" && containsString(config.C.IgnoreAutoconf, integrationName) {
 		log.Infof("Skipping 'auto_conf.yaml' for integration '%s'", integrationName)
 		entry.err = fmt.Errorf("'auto_conf.yaml' for integration '%s' is skipped", integrationName)
 		return entry

@@ -7,7 +7,6 @@ import (
 
 	pkgconfig "github.com/n9e/n9e-agentd/pkg/config"
 
-	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/auditor"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/client/http"
@@ -15,7 +14,9 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 	"github.com/DataDog/datadog-agent/pkg/logs/restart"
 	"github.com/DataDog/datadog-agent/pkg/logs/sender"
+	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
 )
 
 const (
@@ -136,7 +137,7 @@ type passthroughPipeline struct {
 
 type passthroughPipelineDesc struct {
 	eventType                     string
-	intakeTrackType               config.IntakeTrackType
+	intakeTrackType               IntakeTrackType
 	endpointsConfigPrefix         string
 	hostnameEndpointPrefix        string
 	defaultBatchMaxConcurrentSend int
@@ -147,7 +148,7 @@ type passthroughPipelineDesc struct {
 // newHTTPPassthroughPipeline creates a new HTTP-only event platform pipeline that sends messages directly to intake
 // without any of the processing that exists in regular logs pipelines.
 func newHTTPPassthroughPipeline(desc passthroughPipelineDesc, destinationsContext *client.DestinationsContext) (p *passthroughPipeline, err error) {
-	configKeys := config.NewLogsConfigKeys(desc.endpointsConfigPrefix, coreConfig.Datadog)
+	configKeys := config.NewLogsConfigKeys(desc.endpointsConfigPrefix, coreConfig.C)
 	endpoints, err := config.BuildHTTPEndpointsWithConfig(configKeys, desc.hostnameEndpointPrefix, desc.intakeTrackType, config.DefaultIntakeProtocol, config.DefaultIntakeSource)
 	if err != nil {
 		return nil, err
@@ -195,7 +196,7 @@ func (p *passthroughPipeline) Stop() {
 	p.auditor.Stop()
 }
 
-func joinHosts(endpoints []config.Endpoint) string {
+func joinHosts(endpoints []Endpoint) string {
 	var additionalHosts []string
 	for _, e := range endpoints {
 		additionalHosts = append(additionalHosts, e.Host)

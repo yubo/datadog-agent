@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/ec2"
 	"github.com/DataDog/datadog-agent/pkg/util/gce"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // GetNetworkID retrieves the network_id which can be used to improve network
@@ -24,7 +24,7 @@ func GetNetworkID(ctx context.Context) (string, error) {
 	}
 
 	// the the id from configuration
-	if networkID := config.Datadog.GetString("network.id"); networkID != "" {
+	if networkID := config.C.Network.ID; networkID != "" {
 		cache.Cache.Set(cacheNetworkIDKey, networkID, cache.NoExpiration)
 		log.Debugf("GetNetworkID: using configured network ID: %s", networkID)
 		return networkID, nil

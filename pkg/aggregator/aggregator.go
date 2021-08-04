@@ -237,16 +237,16 @@ type BufferedAggregator struct {
 
 // NewBufferedAggregator instantiates a BufferedAggregator
 func NewBufferedAggregator(s serializer.MetricSerializer, eventPlatformForwarder epforwarder.EventPlatformForwarder, hostname string, flushInterval time.Duration) *BufferedAggregator {
-	bufferSize := config.Datadog.GetInt("aggregator_buffer_size")
+	bufferSize := config.C.AggregatorBufferSize
 
 	agentName := config.GetFlavor()
-	if agentName == flavor.IotAgent && !config.Datadog.GetBool("iot_host") {
+	if agentName == flavor.IotAgent && !config.C.IotHost {
 		agentName = flavor.DefaultAgent
-	} else if config.Datadog.GetBool("iot_host") {
+	} else if config.C.IotHost {
 		// Override the agentName if this Agent is configured to report as IotAgent
 		agentName = flavor.IotAgent
 	}
-	if config.Datadog.GetBool("heroku_dyno") {
+	if config.C.HerokuDyno {
 		// Override the agentName if this Agent is configured to report as Heroku Dyno
 		agentName = flavor.HerokuAgent
 	}
@@ -280,7 +280,7 @@ func NewBufferedAggregator(s serializer.MetricSerializer, eventPlatformForwarder
 		stopChan:                make(chan struct{}),
 		health:                  health.RegisterLiveness("aggregator"),
 		agentName:               agentName,
-		tlmContainerTagsEnabled: config.Datadog.GetBool("basic_telemetry_add_container_tags"),
+		tlmContainerTagsEnabled: config.C.BasicTelemetryAddContainerTags,
 		agentTags:               tagger.AgentTags,
 	}
 
@@ -356,7 +356,7 @@ func (agg *BufferedAggregator) registerSender(id check.ID) error {
 	if _, ok := agg.checkSamplers[id]; ok {
 		return fmt.Errorf("Sender with ID '%s' has already been registered, will use existing sampler", id)
 	}
-	agg.checkSamplers[id] = newCheckSampler(config.Datadog.GetInt("check_sampler_bucket_commits_count_expiry"))
+	agg.checkSamplers[id] = newCheckSampler(config.C.CheckSamplerBucketCommitsCountExpiry)
 	return nil
 }
 
@@ -534,7 +534,7 @@ func (agg *BufferedAggregator) sendSeries(start time.Time, series metrics.Series
 	addFlushCount("Series", int64(len(series)))
 
 	// For debug purposes print out all metrics/tag combinations
-	if config.Datadog.GetBool("log_payloads") {
+	if config.C.LogPayloads {
 		log.Debug("Flushing the following metrics:")
 		for _, serie := range series {
 			log.Debugf("%s", serie)
@@ -603,7 +603,7 @@ func (agg *BufferedAggregator) flushServiceChecks(start time.Time, waitForSerial
 	addFlushCount("ServiceChecks", int64(len(serviceChecks)))
 
 	// For debug purposes print out all serviceCheck/tag combinations
-	if config.Datadog.GetBool("log_payloads") {
+	if config.C.LogPayloads {
 		log.Debug("Flushing the following Service Checks:")
 		for _, sc := range serviceChecks {
 			log.Debugf("%s", sc)
@@ -656,7 +656,7 @@ func (agg *BufferedAggregator) flushEvents(start time.Time, waitForSerializer bo
 	addFlushCount("Events", int64(len(events)))
 
 	// For debug purposes print out all Event/tag combinations
-	if config.Datadog.GetBool("log_payloads") {
+	if config.C.LogPayloads {
 		log.Debug("Flushing the following Events:")
 		for _, event := range events {
 			log.Debugf("%s", event)
@@ -685,7 +685,7 @@ func (agg *BufferedAggregator) Flush(start time.Time, waitForSerializer bool) {
 func (agg *BufferedAggregator) Stop() {
 	agg.stopChan <- struct{}{}
 
-	timeout := config.Datadog.GetDuration("aggregator_stop_timeout") * time.Second
+	timeout := config.C.AggregationTimeout
 	if timeout > 0 {
 		done := make(chan struct{})
 		go func() {

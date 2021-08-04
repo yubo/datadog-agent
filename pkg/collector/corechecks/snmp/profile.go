@@ -10,8 +10,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 type profileDefinitionMap map[string]profileDefinition
@@ -134,7 +134,7 @@ func resolveProfileDefinitionPath(definitionFile string) string {
 }
 
 func getProfileConfdRoot() string {
-	confdPath := config.Datadog.GetString("confd_path")
+	confdPath := config.C.ConfdPath
 	return filepath.Join(confdPath, "snmp.d", "profiles")
 }
 
