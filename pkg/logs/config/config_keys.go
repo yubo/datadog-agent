@@ -10,16 +10,16 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 // LogsConfigKeys stores logs configuration keys stored in YAML configuration files
 type LogsConfigKeys struct {
 	prefix string
 	config *coreConfig.Config
-	c      *coreConfig.LogsConfig
+	c      *logs.Config
 }
 
 // defaultLogsConfigKeys defines the default YAML keys used to retrieve logs configuration
@@ -30,12 +30,12 @@ func defaultLogsConfigKeys() *LogsConfigKeys {
 // NewLogsConfigKeys returns a new logs configuration keys set
 func NewLogsConfigKeys(configPrefix string, config *coreConfig.Config) *LogsConfigKeys {
 	path := fmt.Sprintf("agent.%s", strings.Trim(configPrefix, "."))
-	c := &coreConfig.LogsConfig{}
-	if err := config.Read(configPrefix, c); err != nil {
+	c := &logs.Config{}
+	if err := config.Read(path, c); err != nil {
 		log.Warnf("read logs_config at %s error %s", path, err)
 	}
 
-	return &LogsConfigKeys{prefix: configPrefix, config: config, c: c}
+	return &LogsConfigKeys{prefix: path, config: config, c: c}
 }
 
 func (l *LogsConfigKeys) getConfig() *coreConfig.Config {
@@ -122,7 +122,7 @@ func (l *LogsConfigKeys) connectionResetInterval() time.Duration {
 	return l.c.ConnectionResetInterval
 }
 
-func (l *LogsConfigKeys) getAdditionalEndpoints() []Endpoint {
+func (l *LogsConfigKeys) getAdditionalEndpoints() []logs.Endpoint {
 	return l.c.AdditionalEndpoints
 }
 

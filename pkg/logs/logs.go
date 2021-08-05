@@ -14,17 +14,15 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery"
 	"github.com/DataDog/datadog-agent/pkg/logs/client/http"
-	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
-	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
-
-	"github.com/DataDog/datadog-agent/pkg/util/log"
-
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/diagnostic"
+	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
 	"github.com/DataDog/datadog-agent/pkg/logs/scheduler"
 	"github.com/DataDog/datadog-agent/pkg/logs/service"
 	"github.com/DataDog/datadog-agent/pkg/logs/status"
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 const (
@@ -58,7 +56,7 @@ func StartServerless(getAC func() *autodiscovery.AutoConfig, logsChan chan *conf
 }
 
 // buildEndpoints builds endpoints for the logs agent
-func buildEndpoints(serverless bool) (*Endpoints, error) {
+func buildEndpoints(serverless bool) (*logs.Endpoints, error) {
 	if serverless {
 		return config.BuildServerlessEndpoints(intakeTrackType, config.DefaultIntakeProtocol, config.DefaultIntakeSource)
 	}

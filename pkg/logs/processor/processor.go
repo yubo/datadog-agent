@@ -9,12 +9,11 @@ import (
 	"context"
 	"sync"
 
-	"github.com/DataDog/datadog-agent/pkg/util/log"
-
 	"github.com/DataDog/datadog-agent/pkg/logs/diagnostic"
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 // A Processor updates messages from an inputChan and pushes
@@ -22,7 +21,7 @@ import (
 type Processor struct {
 	inputChan                 chan *message.Message
 	outputChan                chan *message.Message
-	processingRules           []*ProcessingRule
+	processingRules           []*logs.ProcessingRule
 	encoder                   Encoder
 	done                      chan struct{}
 	diagnosticMessageReceiver diagnostic.MessageReceiver
@@ -30,7 +29,7 @@ type Processor struct {
 }
 
 // New returns an initialized Processor.
-func New(inputChan, outputChan chan *message.Message, processingRules []*ProcessingRule, encoder Encoder, diagnosticMessageReceiver diagnostic.MessageReceiver) *Processor {
+func New(inputChan, outputChan chan *message.Message, processingRules []*logs.ProcessingRule, encoder Encoder, diagnosticMessageReceiver diagnostic.MessageReceiver) *Processor {
 	return &Processor{
 		inputChan:                 inputChan,
 		outputChan:                outputChan,
@@ -110,15 +109,15 @@ func (p *Processor) applyRedactingRules(msg *message.Message) (bool, []byte) {
 	rules := append(p.processingRules, msg.Origin.LogSource.Config.ProcessingRules...)
 	for _, rule := range rules {
 		switch rule.Type {
-		case ExcludeAtMatch:
+		case logs.ExcludeAtMatch:
 			if rule.Regex.Match(content) {
 				return false, nil
 			}
-		case IncludeAtMatch:
+		case logs.IncludeAtMatch:
 			if !rule.Regex.Match(content) {
 				return false, nil
 			}
-		case MaskSequences:
+		case logs.MaskSequences:
 			content = rule.Regex.ReplaceAll(content, rule.Placeholder)
 		}
 	}

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 // Logs source types
@@ -63,7 +63,7 @@ type LogsConfig struct {
 	Source          string
 	SourceCategory  string
 	Tags            []string
-	ProcessingRules []*ProcessingRule `mapstructure:"log_processing_rules" json:"log_processing_rules"`
+	ProcessingRules []*logs.ProcessingRule `mapstructure:"log_processing_rules" json:"log_processing_rules"`
 }
 
 // TailingMode type
@@ -128,11 +128,11 @@ func (c *LogsConfig) Validate() error {
 	case c.Type == UDPType && c.Port == 0:
 		return fmt.Errorf("udp source must have a port")
 	}
-	err := ValidateProcessingRules(c.ProcessingRules)
+	err := logs.ValidateProcessingRules(c.ProcessingRules)
 	if err != nil {
 		return err
 	}
-	return CompileProcessingRules(c.ProcessingRules)
+	return logs.CompileProcessingRules(c.ProcessingRules)
 }
 
 func (c *LogsConfig) validateTailingMode() error {

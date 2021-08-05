@@ -27,7 +27,7 @@ import (
 const (
 	protobufContentType                         = "application/x-protobuf"
 	jsonContentType                             = "application/json"
-	payloadVersionHTTPHeader                    = "DD-Agent-Payload"
+	payloadVersionHTTPHeader                    = "N9E-Agent-Payload"
 	maxItemCountForCreateMarshalersBySourceType = 100
 )
 

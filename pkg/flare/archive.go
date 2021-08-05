@@ -632,7 +632,7 @@ func zipFile(originalPath, zippedPath string) error {
 }
 
 func zipRegistryJSON(tempDir, hostname string) error {
-	originalPath := filepath.Join(config.C.LogsConfig.RunPath)
+	originalPath := filepath.Join(config.C.Logs.RunPath)
 	zippedPath := filepath.Join(tempDir, hostname, "registry.json")
 	return zipFile(originalPath, zippedPath)
 }

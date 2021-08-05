@@ -9,7 +9,6 @@ import (
 	"expvar"
 	"fmt"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/DataDog/datadog-agent/pkg/forwarder/transaction"
@@ -130,16 +129,17 @@ func (fh *forwarderHealth) healthCheckLoop() {
 
 // computeDomainsURL populates a map containing API Endpoints per API keys that belongs to the forwarderHealth struct
 func (fh *forwarderHealth) computeDomainsURL() {
-	for domain, apiKeys := range fh.keysPerDomains {
-		apiDomain := ""
-		re := regexp.MustCompile(`((us|eu)\d\.)?datadoghq.[a-z]+$`)
-		if re.MatchString(domain) {
-			apiDomain = "https://api." + re.FindString(domain)
-		} else {
-			apiDomain = domain
-		}
-		fh.keysPerAPIEndpoint[apiDomain] = append(fh.keysPerAPIEndpoint[apiDomain], apiKeys...)
-	}
+	fh.keysPerAPIEndpoint = fh.keysPerDomains
+	//for domain, apiKeys := range fh.keysPerDomains {
+	//	apiDomain := ""
+	//	re := regexp.MustCompile(`((us|eu)\d\.)?datadoghq.[a-z]+$`)
+	//	if re.MatchString(domain) {
+	//		apiDomain = "https://api." + re.FindString(domain)
+	//	} else {
+	//		apiDomain = domain
+	//	}
+	//	fh.keysPerAPIEndpoint[apiDomain] = append(fh.keysPerAPIEndpoint[apiDomain], apiKeys...)
+	//}
 }
 
 func (fh *forwarderHealth) setAPIKeyStatus(apiKey string, domain string, status expvar.Var) {

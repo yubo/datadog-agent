@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"time"
 
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/snmp/traps"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 // ContainerCollectAll is the name of the docker integration that collect logs from all containers
@@ -31,10 +31,10 @@ const (
 )
 
 // DefaultIntakeProtocol indicates that no special protocol is in use for the endpoint intake track type.
-const DefaultIntakeProtocol IntakeProtocol = ""
+const DefaultIntakeProtocol logs.IntakeProtocol = ""
 
 // DefaultIntakeSource indicates that no special DD_SOURCE header is in use for the endpoint intake track type.
-const DefaultIntakeSource IntakeSource = ""
+const DefaultIntakeSource logs.IntakeSource = ""
 
 // logs-intake endpoints depending on the site and environment.
 var logsEndpoints = map[string]int{
@@ -56,7 +56,7 @@ var (
 
 // ContainerCollectAllSource returns a source to collect all logs from all containers.
 func ContainerCollectAllSource() *LogSource {
-	if coreConfig.C.LogsConfig.ContainerCollectAll {
+	if coreConfig.C.Logs.ContainerCollectAll {
 		// source to collect all logs from all containers
 		return NewLogSource(ContainerCollectAll, &LogsConfig{
 			Type:    DockerType,
@@ -81,13 +81,13 @@ func SNMPTrapsSource() *LogSource {
 }
 
 // GlobalProcessingRules returns the global processing rules to apply to all logs.
-func GlobalProcessingRules() ([]*ProcessingRule, error) {
-	rules := coreConfig.C.LogsConfig.ProcessingRules
-	err := ValidateProcessingRules(rules)
+func GlobalProcessingRules() ([]*logs.ProcessingRule, error) {
+	rules := coreConfig.C.Logs.ProcessingRules
+	err := logs.ValidateProcessingRules(rules)
 	if err != nil {
 		return nil, err
 	}
-	err = CompileProcessingRules(rules)
+	err = logs.CompileProcessingRules(rules)
 	if err != nil {
 		return nil, err
 	}
@@ -95,13 +95,13 @@ func GlobalProcessingRules() ([]*ProcessingRule, error) {
 }
 
 // BuildEndpoints returns the endpoints to send logs.
-func BuildEndpoints(httpConnectivity HTTPConnectivity, intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeSource IntakeSource) (*Endpoints, error) {
+func BuildEndpoints(httpConnectivity HTTPConnectivity, intakeTrackType logs.IntakeTrackType, intakeProtocol logs.IntakeProtocol, intakeSource logs.IntakeSource) (*logs.Endpoints, error) {
 	//coreConfig.SanitizeAPIKeyConfig(coreConfig.Datadog, "logs_config.api_key")
 	return BuildEndpointsWithConfig(defaultLogsConfigKeys(), httpEndpointPrefix, httpConnectivity, intakeTrackType, intakeProtocol, intakeSource)
 }
 
 // BuildEndpointsWithConfig returns the endpoints to send logs.
-func BuildEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix string, httpConnectivity HTTPConnectivity, intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeSource IntakeSource) (*Endpoints, error) {
+func BuildEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix string, httpConnectivity HTTPConnectivity, intakeTrackType logs.IntakeTrackType, intakeProtocol logs.IntakeProtocol, intakeSource logs.IntakeSource) (*logs.Endpoints, error) {
 	if logsConfig.devModeNoSSL() {
 		log.Warnf("Use of illegal configuration parameter, if you need to send your logs to a proxy, "+
 			"please use '%s' and '%s' instead", logsConfig.getConfigKey("logs_dd_url"), logsConfig.getConfigKey("logs_no_ssl"))
@@ -117,7 +117,7 @@ func BuildEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix string,
 }
 
 // BuildServerlessEndpoints returns the endpoints to send logs for the Serverless agent.
-func BuildServerlessEndpoints(intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeSource IntakeSource) (*Endpoints, error) {
+func BuildServerlessEndpoints(intakeTrackType logs.IntakeTrackType, intakeProtocol logs.IntakeProtocol, intakeSource logs.IntakeSource) (*logs.Endpoints, error) {
 	//coreConfig.SanitizeAPIKeyConfig(coreConfig.Datadog, "logs_config.api_key")
 	return BuildHTTPEndpointsWithConfig(defaultLogsConfigKeys(), serverlessHTTPEndpointPrefix, intakeTrackType, intakeProtocol, intakeSource)
 }
@@ -132,10 +132,10 @@ func IsExpectedTagsSet() bool {
 	return ExpectedTagsDuration() > 0
 }
 
-func buildTCPEndpoints(logsConfig *LogsConfigKeys) (*Endpoints, error) {
+func buildTCPEndpoints(logsConfig *LogsConfigKeys) (*logs.Endpoints, error) {
 	useProto := logsConfig.devModeUseProto()
 	proxyAddress := logsConfig.socks5ProxyAddress()
-	main := Endpoint{
+	main := logs.Endpoint{
 		APIKey:                  logsConfig.getLogsAPIKey(),
 		ProxyAddress:            proxyAddress,
 		ConnectionResetInterval: logsConfig.connectionResetInterval(),
@@ -174,20 +174,20 @@ func buildTCPEndpoints(logsConfig *LogsConfigKeys) (*Endpoints, error) {
 		additionals[i].ProxyAddress = proxyAddress
 		additionals[i].APIKey = coreConfig.SanitizeAPIKey(additionals[i].APIKey)
 	}
-	return coreConfig.NewEndpoints(main, additionals, useProto, false), nil
+	return logs.NewEndpoints(main, additionals, useProto, false), nil
 }
 
 // BuildHTTPEndpoints returns the HTTP endpoints to send logs to.
-func BuildHTTPEndpoints(intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeSource IntakeSource) (*Endpoints, error) {
+func BuildHTTPEndpoints(intakeTrackType logs.IntakeTrackType, intakeProtocol logs.IntakeProtocol, intakeSource logs.IntakeSource) (*logs.Endpoints, error) {
 	return BuildHTTPEndpointsWithConfig(defaultLogsConfigKeys(), httpEndpointPrefix, intakeTrackType, intakeProtocol, intakeSource)
 }
 
 // BuildHTTPEndpointsWithConfig uses two arguments that instructs it how to access configuration parameters, then returns the HTTP endpoints to send logs to. This function is able to default to the 'classic' BuildHTTPEndpoints() w ldHTTPEndpointsWithConfigdefault variables logsConfigDefaultKeys and httpEndpointPrefix
-func BuildHTTPEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix string, intakeTrackType IntakeTrackType, intakeProtocol IntakeProtocol, intakeSource IntakeSource) (*Endpoints, error) {
+func BuildHTTPEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix string, intakeTrackType logs.IntakeTrackType, intakeProtocol logs.IntakeProtocol, intakeSource logs.IntakeSource) (*logs.Endpoints, error) {
 	// Provide default values for legacy settings when the configuration key does not exist
 	defaultNoSSL := logsConfig.logsNoSSL()
 
-	main := Endpoint{
+	main := logs.Endpoint{
 		APIKey:                  logsConfig.getLogsAPIKey(),
 		UseCompression:          logsConfig.useCompression(),
 		CompressionLevel:        logsConfig.compressionLevel(),
@@ -200,12 +200,12 @@ func BuildHTTPEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix str
 	}
 
 	if logsConfig.useV2API() && intakeTrackType != "" {
-		main.Version = EPIntakeVersion2
+		main.Version = logs.EPIntakeVersion2
 		main.TrackType = intakeTrackType
 		main.Protocol = intakeProtocol
 		main.Source = intakeSource
 	} else {
-		main.Version = EPIntakeVersion1
+		main.Version = logs.EPIntakeVersion1
 	}
 
 	if logsDDURL, logsDDURLDefined := logsConfig.logsDDURL(); logsDDURLDefined {
@@ -228,7 +228,7 @@ func BuildHTTPEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix str
 		if additionals[i].Version == 0 {
 			additionals[i].Version = main.Version
 		}
-		if additionals[i].Version == EPIntakeVersion2 {
+		if additionals[i].Version == logs.EPIntakeVersion2 {
 			additionals[i].TrackType = intakeTrackType
 			additionals[i].Protocol = intakeProtocol
 			additionals[i].Source = intakeSource
@@ -240,7 +240,7 @@ func BuildHTTPEndpointsWithConfig(logsConfig *LogsConfigKeys, endpointPrefix str
 	batchMaxSize := logsConfig.batchMaxSize()
 	batchMaxContentSize := logsConfig.batchMaxContentSize()
 
-	return coreConfig.NewEndpointsWithBatchSettings(main, additionals, false, true, batchWait, batchMaxConcurrentSend, batchMaxSize, batchMaxContentSize), nil
+	return logs.NewEndpointsWithBatchSettings(main, additionals, false, true, batchWait, batchMaxConcurrentSend, batchMaxSize, batchMaxContentSize), nil
 }
 
 // parseAddress returns the host and the port of the address.

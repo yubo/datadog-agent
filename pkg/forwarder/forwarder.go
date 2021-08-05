@@ -53,8 +53,8 @@ const (
 )
 
 const (
-	apiHTTPHeaderKey          = "DD-Api-Key"
-	versionHTTPHeaderKey      = "DD-Agent-Version"
+	apiHTTPHeaderKey          = "bearer"
+	versionHTTPHeaderKey      = "N9E-Agent-Version"
 	useragentHTTPHeaderKey    = "User-Agent"
 	arbitraryTagHTTPHeaderKey = "Allow-Arbitrary-Tag-Value"
 )
@@ -259,36 +259,38 @@ func NewDefaultForwarder(options *Options) *DefaultForwarder {
 
 	// TODO.yubo
 	for domain, keys := range options.KeysPerDomain {
-		domain, _ := config.AddAgentVersionToDomain(domain, "app")
+		//domain, _ := config.AddAgentVersionToDomain(domain, "app") // TODO
 		if keys == nil || len(keys) == 0 {
 			log.Errorf("No API keys for domain '%s', dropping domain ", domain)
-		} else {
-			var domainFolderPath string
-			var err error
-			if optionalRemovalPolicy != nil {
-				domainFolderPath, err = optionalRemovalPolicy.RegisterDomain(domain)
-				if err != nil {
-					log.Errorf("Retry queue storage on disk disabled. Cannot register the domain '%v': %v", domain, err)
-				}
-			}
-
-			transactionContainer := retry.BuildTransactionRetryQueue(
-				options.RetryQueuePayloadsTotalMaxSize,
-				flushToDiskMemRatio,
-				domainFolderPath,
-				storageMaxSize,
-				transactionContainerSort,
-				domain,
-				keys)
-
-			f.keysPerDomains[domain] = keys
-			f.domainForwarders[domain] = newDomainForwarder(
-				domain,
-				transactionContainer,
-				options.NumberOfWorkers,
-				options.ConnectionResetInterval,
-				domainForwarderSort)
+			continue
 		}
+		var domainFolderPath string
+		var err error
+		if optionalRemovalPolicy != nil {
+			domainFolderPath, err = optionalRemovalPolicy.RegisterDomain(domain)
+			if err != nil {
+				log.Errorf("Retry queue storage on disk disabled. Cannot register the domain '%v': %v", domain, err)
+			}
+		}
+
+		d := transaction.NewDomain(domain)
+
+		transactionContainer := retry.BuildTransactionRetryQueue(
+			options.RetryQueuePayloadsTotalMaxSize,
+			flushToDiskMemRatio,
+			domainFolderPath,
+			storageMaxSize,
+			transactionContainerSort,
+			d,
+			keys)
+
+		f.keysPerDomains[domain] = keys
+		f.domainForwarders[domain] = newDomainForwarder(
+			d,
+			transactionContainer,
+			options.NumberOfWorkers,
+			options.ConnectionResetInterval,
+			domainForwarderSort)
 	}
 
 	if optionalRemovalPolicy != nil {
@@ -407,7 +409,7 @@ func (f *DefaultForwarder) createAdvancedHTTPTransactions(endpoint transaction.E
 		for domain, apiKeys := range f.keysPerDomains {
 			for _, apiKey := range apiKeys {
 				t := transaction.NewHTTPTransaction()
-				t.Domain = domain
+				t.Domain = f.domainForwarders[domain].domain
 				t.Endpoint = endpoint
 				if apiKeyInQueryString {
 					t.Endpoint.Route = fmt.Sprintf("%s?api_key=%s", endpoint.Route, apiKey)
@@ -417,7 +419,7 @@ func (f *DefaultForwarder) createAdvancedHTTPTransactions(endpoint transaction.E
 				t.StorableOnDisk = storableOnDisk
 				t.Headers.Set(apiHTTPHeaderKey, apiKey)
 				t.Headers.Set(versionHTTPHeaderKey, version.AgentVersion)
-				t.Headers.Set(useragentHTTPHeaderKey, fmt.Sprintf("datadog-agent/%s", version.AgentVersion))
+				t.Headers.Set(useragentHTTPHeaderKey, fmt.Sprintf("n9e-agent/%s", version.AgentVersion))
 				if allowArbitraryTags {
 					t.Headers.Set(arbitraryTagHTTPHeaderKey, "true")
 				}
@@ -447,7 +449,7 @@ func (f *DefaultForwarder) sendHTTPTransactions(transactions []*transaction.HTTP
 	}
 
 	for _, t := range transactions {
-		if err := f.domainForwarders[t.Domain].sendHTTPTransactions(t); err != nil {
+		if err := f.domainForwarders[t.Domain.Raw()].sendHTTPTransactions(t); err != nil {
 			log.Errorf(err.Error())
 		}
 	}
@@ -598,17 +600,17 @@ func (f *DefaultForwarder) submitProcessLikePayload(ep transaction.Endpoint, pay
 	for _, txn := range transactions {
 		txn.Retryable = retryable
 		txn.AttemptHandler = func(transaction *transaction.HTTPTransaction) {
-			if v := transaction.Headers.Get("X-DD-Agent-Attempts"); v == "" {
-				transaction.Headers.Set("X-DD-Agent-Attempts", "1")
+			if v := transaction.Headers.Get("X-N9E-Agent-Attempts"); v == "" {
+				transaction.Headers.Set("X-N9E-Agent-Attempts", "1")
 			} else {
 				attempts, _ := strconv.ParseInt(v, 10, 0)
-				transaction.Headers.Set("X-DD-Agent-Attempts", strconv.Itoa(int(attempts+1)))
+				transaction.Headers.Set("X-N9E-Agent-Attempts", strconv.Itoa(int(attempts+1)))
 			}
 		}
 
 		txn.CompletionHandler = func(transaction *transaction.HTTPTransaction, statusCode int, body []byte, err error) {
 			internalResults <- Response{
-				Domain:     transaction.Domain,
+				Domain:     transaction.Domain.Current(),
 				Body:       body,
 				StatusCode: statusCode,
 				Err:        err,

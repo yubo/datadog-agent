@@ -5,8 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	pkgconfig "github.com/n9e/n9e-agentd/pkg/config"
-
 	"github.com/DataDog/datadog-agent/pkg/logs/auditor"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/client/http"
@@ -14,9 +12,9 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/message"
 	"github.com/DataDog/datadog-agent/pkg/logs/restart"
 	"github.com/DataDog/datadog-agent/pkg/logs/sender"
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	coreConfig "github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 const (
@@ -35,8 +33,8 @@ var passthroughPipelineDescs = []passthroughPipelineDesc{
 		intakeTrackType:        "databasequery",
 		// raise the default batch_max_concurrent_send from 0 to 10 to ensure this pipeline is able to handle 4k events/s
 		defaultBatchMaxConcurrentSend: 10,
-		defaultBatchMaxContentSize:    pkgconfig.DefaultBatchMaxContentSize,
-		defaultBatchMaxSize:           pkgconfig.DefaultBatchMaxSize,
+		defaultBatchMaxContentSize:    logs.DefaultBatchMaxContentSize,
+		defaultBatchMaxSize:           logs.DefaultBatchMaxSize,
 	},
 	{
 		eventType:              eventTypeDBMMetrics,
@@ -46,15 +44,15 @@ var passthroughPipelineDescs = []passthroughPipelineDesc{
 		// raise the default batch_max_concurrent_send from 0 to 10 to ensure this pipeline is able to handle 4k events/s
 		defaultBatchMaxConcurrentSend: 10,
 		defaultBatchMaxContentSize:    20e6,
-		defaultBatchMaxSize:           pkgconfig.DefaultBatchMaxSize,
+		defaultBatchMaxSize:           logs.DefaultBatchMaxSize,
 	},
 	{
 		eventType:                     EventTypeNetworkDevicesMetadata,
 		endpointsConfigPrefix:         "network_devices.metadata.",
 		hostnameEndpointPrefix:        "network-devices.",
 		defaultBatchMaxConcurrentSend: 10,
-		defaultBatchMaxContentSize:    pkgconfig.DefaultBatchMaxContentSize,
-		defaultBatchMaxSize:           pkgconfig.DefaultBatchMaxSize,
+		defaultBatchMaxContentSize:    logs.DefaultBatchMaxContentSize,
+		defaultBatchMaxSize:           logs.DefaultBatchMaxSize,
 	},
 }
 
@@ -137,7 +135,7 @@ type passthroughPipeline struct {
 
 type passthroughPipelineDesc struct {
 	eventType                     string
-	intakeTrackType               IntakeTrackType
+	intakeTrackType               logs.IntakeTrackType
 	endpointsConfigPrefix         string
 	hostnameEndpointPrefix        string
 	defaultBatchMaxConcurrentSend int
@@ -160,10 +158,10 @@ func newHTTPPassthroughPipeline(desc passthroughPipelineDesc, destinationsContex
 	if endpoints.BatchMaxConcurrentSend <= 0 {
 		endpoints.BatchMaxConcurrentSend = desc.defaultBatchMaxConcurrentSend
 	}
-	if endpoints.BatchMaxContentSize <= pkgconfig.DefaultBatchMaxContentSize {
+	if endpoints.BatchMaxContentSize <= logs.DefaultBatchMaxContentSize {
 		endpoints.BatchMaxContentSize = desc.defaultBatchMaxContentSize
 	}
-	if endpoints.BatchMaxSize <= pkgconfig.DefaultBatchMaxSize {
+	if endpoints.BatchMaxSize <= logs.DefaultBatchMaxSize {
 		endpoints.BatchMaxSize = desc.defaultBatchMaxSize
 	}
 	main := http.NewDestination(endpoints.Main, http.JSONContentType, destinationsContext, endpoints.BatchMaxConcurrentSend)
@@ -173,7 +171,7 @@ func newHTTPPassthroughPipeline(desc passthroughPipelineDesc, destinationsContex
 	}
 	destinations := client.NewDestinations(main, additionals)
 	inputChan := make(chan *message.Message, 100)
-	strategy := sender.NewBatchStrategy(sender.ArraySerializer, endpoints.BatchWait, endpoints.BatchMaxConcurrentSend, pkgconfig.DefaultBatchMaxSize, endpoints.BatchMaxContentSize, desc.eventType)
+	strategy := sender.NewBatchStrategy(sender.ArraySerializer, endpoints.BatchWait, endpoints.BatchMaxConcurrentSend, logs.DefaultBatchMaxSize, endpoints.BatchMaxContentSize, desc.eventType)
 	a := auditor.NewNullAuditor()
 	log.Debugf("Initialized event platform forwarder pipeline. eventType=%s mainHost=%s additionalHosts=%s batch_max_concurrent_send=%d batch_max_content_size=%d batch_max_size=%d",
 		desc.eventType, endpoints.Main.Host, joinHosts(endpoints.Additionals), endpoints.BatchMaxConcurrentSend, endpoints.BatchMaxContentSize, endpoints.BatchMaxSize)
@@ -196,7 +194,7 @@ func (p *passthroughPipeline) Stop() {
 	p.auditor.Stop()
 }
 
-func joinHosts(endpoints []Endpoint) string {
+func joinHosts(endpoints []logs.Endpoint) string {
 	var additionalHosts []string
 	for _, e := range endpoints {
 		additionalHosts = append(additionalHosts, e.Host)

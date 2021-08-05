@@ -16,11 +16,12 @@ import (
 	"github.com/gogo/protobuf/proto"
 	jsoniter "github.com/json-iterator/go"
 
-	agentpayload "github.com/n9e/agent-payload/gogen"
 	"github.com/DataDog/datadog-agent/pkg/serializer/marshaler"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	utiljson "github.com/DataDog/datadog-agent/pkg/util/json"
+	agentpayload "github.com/n9e/agent-payload/gogen"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 // EventPriority represents the priority of an event
@@ -125,7 +126,7 @@ func (events Events) Marshal() ([]byte, error) {
 				Ts:             e.Ts,
 				Priority:       string(e.Priority),
 				Host:           e.Host,
-				Tags:           e.Tags,
+				Tags:           config.TransformTags(e.Tags),
 				AlertType:      string(e.AlertType),
 				AggregationKey: e.AggregationKey,
 				SourceTypeName: e.SourceTypeName,

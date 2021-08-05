@@ -7,6 +7,7 @@
 
 package aggregator
 
+/*
 import (
 	// stdlib
 	"errors"
@@ -160,7 +161,7 @@ func TestDefaultData(t *testing.T) {
 	start := time.Now()
 
 	s.On("SendServiceChecks", metrics.ServiceChecks{{
-		CheckName: "datadog.agent.up",
+		CheckName: "n9e.agent.up",
 		Status:    metrics.ServiceCheckOK,
 		Tags:      []string{},
 		Ts:        start.Unix(),
@@ -168,14 +169,14 @@ func TestDefaultData(t *testing.T) {
 	}}).Return(nil).Times(1)
 
 	series := metrics.Series{&metrics.Serie{
-		Name:           fmt.Sprintf("datadog.%s.running", config.GetFlavor()),
+		Name:           fmt.Sprintf("n9e.%s.running", config.GetFlavor()),
 		Points:         []metrics.Point{{Value: 1, Ts: float64(start.Unix())}},
 		Tags:           []string{fmt.Sprintf("version:%s", version.AgentVersion)},
 		Host:           agg.hostname,
 		MType:          metrics.APIGaugeType,
 		SourceTypeName: "System",
 	}, &metrics.Serie{
-		Name:           fmt.Sprintf("n_o_i_n_d_e_x.datadog.%s.payload.dropped", config.GetFlavor()),
+		Name:           fmt.Sprintf("n_o_i_n_d_e_x.n9e.%s.payload.dropped", config.GetFlavor()),
 		Points:         []metrics.Point{{Value: 0, Ts: float64(start.Unix())}},
 		Host:           agg.hostname,
 		Tags:           []string{},
@@ -228,14 +229,14 @@ func TestRecurentSeries(t *testing.T) {
 		MType:          metrics.APIGaugeType,
 		SourceTypeName: "non default SourceTypeName",
 	}, &metrics.Serie{
-		Name:           fmt.Sprintf("datadog.%s.running", config.GetFlavor()),
+		Name:           fmt.Sprintf("n9e.%s.running", config.GetFlavor()),
 		Points:         []metrics.Point{{Value: 1, Ts: float64(start.Unix())}},
 		Tags:           []string{fmt.Sprintf("version:%s", version.AgentVersion)},
 		Host:           agg.hostname,
 		MType:          metrics.APIGaugeType,
 		SourceTypeName: "System",
 	}, &metrics.Serie{
-		Name:           fmt.Sprintf("n_o_i_n_d_e_x.datadog.%s.payload.dropped", config.GetFlavor()),
+		Name:           fmt.Sprintf("n_o_i_n_d_e_x.n9e.%s.payload.dropped", config.GetFlavor()),
 		Points:         []metrics.Point{{Value: 0, Ts: float64(start.Unix())}},
 		Host:           agg.hostname,
 		Tags:           []string{},
@@ -243,10 +244,10 @@ func TestRecurentSeries(t *testing.T) {
 		SourceTypeName: "System",
 	}}
 
-	// Check only the name for `datadog.agent.up` as the timestamp may not be the same.
+	// Check only the name for `n9e.agent.up` as the timestamp may not be the same.
 	agentUpMatcher := mock.MatchedBy(func(m metrics.ServiceChecks) bool {
 		require.Equal(t, 1, len(m))
-		require.Equal(t, "datadog.agent.up", m[0].CheckName)
+		require.Equal(t, "n9e.agent.up", m[0].CheckName)
 		require.Equal(t, metrics.ServiceCheckOK, m[0].Status)
 		require.Equal(t, []string{}, m[0].Tags)
 		require.Equal(t, agg.hostname, m[0].Host)
@@ -322,3 +323,4 @@ func TestTags(t *testing.T) {
 		})
 	}
 }
+*/

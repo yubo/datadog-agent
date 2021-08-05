@@ -8,9 +8,11 @@ package metrics
 import (
 	"fmt"
 	"sort"
+	"strconv"
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/n9e/n9e-agentd/pkg/config"
+	"k8s.io/klog"
 )
 
 // weightSample represent a sample with its weight in the histogram (deduce from SampleRate)
@@ -53,6 +55,26 @@ type histogramPercentilesConfig struct {
 	Percentiles []string `mapstructure:"histogram_percentiles"`
 }
 
+func (h *histogramPercentilesConfig) percentiles() []int {
+	res := []int{}
+	for _, p := range h.Percentiles {
+		i, err := strconv.ParseFloat(p, 64)
+		if err != nil {
+			klog.Errorf("Could not parse '%s' from 'histogram_percentiles' (skipping): %s", p, err)
+			continue
+		}
+		if i < 0 || i > 1 {
+			klog.Errorf("histogram_percentiles must be between 0 and 1: skipping %f", i)
+			continue
+		}
+		// in some cases the '*100' will lower the number resulting in
+		// an int lower by 1 from what is expected (ex: 0.29 would
+		// become 28). As a workaround we add 0.5 before casting.
+		res = append(res, int(i*100+0.5))
+	}
+	return res
+}
+
 // NewHistogram returns a newly initialized histogram
 func NewHistogram(interval int64) *Histogram {
 	// we initialize default value on the first histogram creation
@@ -60,7 +82,9 @@ func NewHistogram(interval int64) *Histogram {
 		defaultAggregates = config.C.HistogramAggregates
 	}
 	if defaultPercentiles == nil {
-		defaultPercentiles = config.C.HistogramPercentiles
+		c := histogramPercentilesConfig{Percentiles: config.C.HistogramPercentiles}
+		defaultPercentiles = c.percentiles()
+		sort.Ints(defaultPercentiles)
 	}
 
 	return &Histogram{

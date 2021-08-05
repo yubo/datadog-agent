@@ -19,15 +19,15 @@ type MetricType int
 
 // metric type constants enumeration
 const (
-	GaugeType MetricType = iota
-	RateType
-	CountType
-	MonotonicCountType
-	CounterType
-	HistogramType
-	HistorateType
-	SetType
-	DistributionType
+	GaugeType          MetricType = iota // gauge
+	RateType                             // rage ?
+	CountType                            // count ?
+	MonotonicCountType                   // ?
+	CounterType                          // counter ?
+	HistogramType                        // histogram
+	HistorateType                        // ?
+	SetType                              // ?
+	DistributionType                     // quantile
 )
 
 // DistributionMetricTypes contains the MetricTypes that are used for percentiles
@@ -40,7 +40,7 @@ var (
 	// pipeline improve memory allocation. We kept the old name to be
 	// backward compatible and because origin detection only affect
 	// dogstatsd metrics.
-	tlmUDPOriginDetectionError = telemetry.NewCounter("dogstatsd", "udp_origin_detection_error",
+	tlmUDPOriginDetectionError = telemetry.NewCounter("statsd", "udp_origin_detection_error",
 		nil, "Dogstatsd UDP origin detection error count")
 )
 

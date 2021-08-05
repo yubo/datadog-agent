@@ -329,7 +329,7 @@ func (agg *BufferedAggregator) SetHostname(hostname string) {
 func (agg *BufferedAggregator) AddAgentStartupTelemetry(agentVersion string) {
 
 	metric := &metrics.MetricSample{
-		Name:       fmt.Sprintf("datadog.%s.started", agg.agentName),
+		Name:       fmt.Sprintf("n9e.%s.started", agg.agentName),
 		Value:      1,
 		Tags:       agg.tags(true),
 		Host:       agg.hostname,
@@ -513,7 +513,7 @@ func (agg *BufferedAggregator) sendSeries(start time.Time, series metrics.Series
 	// Send along a metric that showcases that this Agent is running (internally, in backend,
 	// a `datadog.`-prefixed metric allows identifying this host as an Agent host, used for dogbone icon)
 	series = append(series, &metrics.Serie{
-		Name:           fmt.Sprintf("datadog.%s.running", agg.agentName),
+		Name:           fmt.Sprintf("n9e.%s.running", agg.agentName),
 		Points:         []metrics.Point{{Value: 1, Ts: float64(start.Unix())}},
 		Tags:           agg.tags(true),
 		Host:           agg.hostname,
@@ -523,7 +523,7 @@ func (agg *BufferedAggregator) sendSeries(start time.Time, series metrics.Series
 
 	// Send along a metric that counts the number of times we dropped some payloads because we couldn't split them.
 	series = append(series, &metrics.Serie{
-		Name:           fmt.Sprintf("n_o_i_n_d_e_x.datadog.%s.payload.dropped", agg.agentName),
+		Name:           fmt.Sprintf("n_o_i_n_d_e_x.n9e.%s.payload.dropped", agg.agentName),
 		Points:         []metrics.Point{{Value: float64(split.GetPayloadDrops()), Ts: float64(start.Unix())}},
 		Tags:           agg.tags(false),
 		Host:           agg.hostname,
@@ -593,7 +593,7 @@ func (agg *BufferedAggregator) sendServiceChecks(start time.Time, serviceChecks 
 func (agg *BufferedAggregator) flushServiceChecks(start time.Time, waitForSerializer bool) {
 	// Add a simple service check for the Agent status
 	agg.addServiceCheck(metrics.ServiceCheck{
-		CheckName: fmt.Sprintf("datadog.%s.up", agg.agentName),
+		CheckName: fmt.Sprintf("n9e.%s.up", agg.agentName),
 		Status:    metrics.ServiceCheckOK,
 		Tags:      agg.tags(false),
 		Host:      agg.hostname,

@@ -11,7 +11,7 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 // Transport is the transport used by logs-agent, i.e TCP or HTTP
@@ -66,7 +66,7 @@ type Status struct {
 }
 
 // Init instantiates the builder that builds the status on the fly.
-func Init(isRunning *int32, endpoints *Endpoints, sources *config.LogSources, logExpVars *expvar.Map) {
+func Init(isRunning *int32, endpoints *logs.Endpoints, sources *config.LogSources, logExpVars *expvar.Map) {
 	warnings = config.NewMessages()
 	errors = config.NewMessages()
 	builder = NewBuilder(isRunning, endpoints, sources, warnings, errors, logExpVars)

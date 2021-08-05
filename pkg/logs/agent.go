@@ -30,7 +30,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/pipeline"
 	"github.com/DataDog/datadog-agent/pkg/logs/restart"
 	"github.com/DataDog/datadog-agent/pkg/logs/service"
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 // Agent represents the data pipeline that collects, decodes,
@@ -50,10 +50,10 @@ type Agent struct {
 }
 
 // NewAgent returns a new Logs Agent
-func NewAgent(sources *config.LogSources, services *service.Services, processingRules []*ProcessingRule, endpoints *Endpoints) *Agent {
+func NewAgent(sources *config.LogSources, services *service.Services, processingRules []*logs.ProcessingRule, endpoints *logs.Endpoints) *Agent {
 	health := health.RegisterLiveness("logs-agent")
 
-	cf := coreConfig.C.LogsConfig
+	cf := coreConfig.C.Logs
 	// setup the auditor
 	// We pass the health handle to the auditor because it's the end of the pipeline and the most
 	// critical part. Arguably it could also be plugged to the destination.
@@ -122,7 +122,7 @@ func NewAgent(sources *config.LogSources, services *service.Services, processing
 // NewServerless returns a Logs Agent instance to run in a serverless environment.
 // The Serverless Logs Agent has only one input being the channel to receive the logs to process.
 // It is using a NullAuditor because we've nothing to do after having sent the logs to the intake.
-func NewServerless(sources *config.LogSources, services *service.Services, processingRules []*ProcessingRule, endpoints *Endpoints) *Agent {
+func NewServerless(sources *config.LogSources, services *service.Services, processingRules []*logs.ProcessingRule, endpoints *logs.Endpoints) *Agent {
 	health := health.RegisterLiveness("logs-agent")
 
 	diagnosticMessageReceiver := diagnostic.NewBufferedMessageReceiver()
@@ -189,7 +189,7 @@ func (a *Agent) Stop() {
 		stopper.Stop()
 		close(c)
 	}()
-	timeout := coreConfig.C.LogsConfig.StopGracePeriod
+	timeout := coreConfig.C.Logs.StopGracePeriod
 	select {
 	case <-c:
 	case <-time.After(timeout):

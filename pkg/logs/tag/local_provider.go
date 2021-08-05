@@ -31,7 +31,7 @@ func NewLocalProvider(t []string) Provider {
 
 	if config.IsExpectedTagsSet() {
 		p.expectedTags = append(p.tags, host.GetHostTags(context.TODO(), false).System...)
-		p.expectedTagsDeadline = coreConfig.StartTime.Add(coreConfig.C.LogsConfig.ExpectedTagsDuration)
+		p.expectedTagsDeadline = coreConfig.StartTime.Add(coreConfig.C.Logs.ExpectedTagsDuration)
 
 		// reset submitExpectedTags after deadline elapsed
 		go func() {

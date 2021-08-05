@@ -14,11 +14,12 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	"github.com/DataDog/datadog-agent/pkg/logs/config"
 	"github.com/DataDog/datadog-agent/pkg/logs/metrics"
-	. "github.com/DataDog/datadog-agent/pkg/logs/types"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/backoff"
 	httputils "github.com/DataDog/datadog-agent/pkg/util/http"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/api"
+	"github.com/n9e/n9e-agentd/pkg/config/logs"
 )
 
 // ContentType options,
@@ -52,19 +53,19 @@ type Destination struct {
 	backoff             backoff.Policy
 	nbErrors            int
 	blockedUntil        time.Time
-	protocol            IntakeProtocol
-	source              IntakeSource
+	protocol            logs.IntakeProtocol
+	source              logs.IntakeSource
 }
 
 // NewDestination returns a new Destination.
 // If `maxConcurrentBackgroundSends` > 0, then at most that many background payloads will be sent concurrently, else
 // there is no concurrency and the background sending pipeline will block while sending each payload.
 // TODO: add support for SOCKS5
-func NewDestination(endpoint Endpoint, contentType string, destinationsContext *client.DestinationsContext, maxConcurrentBackgroundSends int) *Destination {
+func NewDestination(endpoint logs.Endpoint, contentType string, destinationsContext *client.DestinationsContext, maxConcurrentBackgroundSends int) *Destination {
 	return newDestination(endpoint, contentType, destinationsContext, time.Second*10, maxConcurrentBackgroundSends)
 }
 
-func newDestination(endpoint Endpoint, contentType string, destinationsContext *client.DestinationsContext, timeout time.Duration, maxConcurrentBackgroundSends int) *Destination {
+func newDestination(endpoint logs.Endpoint, contentType string, destinationsContext *client.DestinationsContext, timeout time.Duration, maxConcurrentBackgroundSends int) *Destination {
 	if maxConcurrentBackgroundSends < 0 {
 		maxConcurrentBackgroundSends = 0
 	}
@@ -143,14 +144,14 @@ func (d *Destination) unconditionalSend(payload []byte) (err error) {
 		// this can happen when the method or the url are valid.
 		return err
 	}
-	req.Header.Set("DD-API-KEY", d.apiKey)
+	req.Header.Set("Bearer", d.apiKey)
 	req.Header.Set("Content-Type", d.contentType)
 	req.Header.Set("Content-Encoding", d.contentEncoding.name())
 	if d.protocol != "" {
-		req.Header.Set("DD-PROTOCOL", string(d.protocol))
+		req.Header.Set("N9E-PROTOCOL", string(d.protocol))
 	}
 	if d.source != "" {
-		req.Header.Set("DD-SOURCE", string(d.source))
+		req.Header.Set("N9E-SOURCE", string(d.source))
 	}
 	req = req.WithContext(ctx)
 
@@ -231,7 +232,7 @@ func httpClientFactory(timeout time.Duration) func() *http.Client {
 }
 
 // buildURL buils a url from a config endpoint.
-func buildURL(endpoint Endpoint) string {
+func buildURL(endpoint logs.Endpoint) string {
 	var scheme string
 	if endpoint.UseSSL {
 		scheme = "https"
@@ -248,15 +249,15 @@ func buildURL(endpoint Endpoint) string {
 		Scheme: scheme,
 		Host:   address,
 	}
-	if endpoint.Version == EPIntakeVersion2 && endpoint.TrackType != "" {
-		url.Path = fmt.Sprintf("/api/v2/%s", endpoint.TrackType)
+	if endpoint.Version == logs.EPIntakeVersion2 && endpoint.TrackType != "" {
+		url.Path = fmt.Sprintf("/api/v2/logs/%s", endpoint.TrackType)
 	} else {
-		url.Path = "/v1/input"
+		url.Path = api.RoutePathLogs
 	}
 	return url.String()
 }
 
-func buildContentEncoding(endpoint Endpoint) ContentEncoding {
+func buildContentEncoding(endpoint logs.Endpoint) ContentEncoding {
 	if endpoint.UseCompression {
 		return NewGzipContentEncoding(endpoint.CompressionLevel)
 	}
@@ -264,7 +265,7 @@ func buildContentEncoding(endpoint Endpoint) ContentEncoding {
 }
 
 // CheckConnectivity check if sending logs through HTTP works
-func CheckConnectivity(endpoint Endpoint) config.HTTPConnectivity {
+func CheckConnectivity(endpoint logs.Endpoint) config.HTTPConnectivity {
 	log.Info("Checking HTTP connectivity...")
 	ctx := client.NewDestinationsContext()
 	ctx.Start()
