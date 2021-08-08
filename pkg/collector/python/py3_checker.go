@@ -14,13 +14,8 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/n9e/n9e-agentd/pkg/config"
-)
-
-var (
-	linterTimeout = time.Duration(config.Datadog.GetInt("python3_linter_timeout")) * time.Second
 )
 
 type warning struct {
@@ -34,7 +29,7 @@ type warning struct {
 
 // validatePython3 checks that a check can run on python 3.
 func validatePython3(moduleName string, modulePath string) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), linterTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), config.C.Python3LinterTimeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, pythonBinPath, "-m", "pylint", "-f", "json", "--py3k", "-d", "W1618", "--persistent", "no", "--exit-zero", modulePath)

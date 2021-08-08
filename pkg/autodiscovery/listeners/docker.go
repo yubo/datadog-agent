@@ -19,13 +19,13 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/n9e/n9e-agentd/cmd/agentd/common/signals"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/util/containers"
 	"github.com/DataDog/datadog-agent/pkg/util/docker"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/util"
 )
 
 // DockerListener implements the ServiceListener interface.
@@ -96,7 +96,7 @@ func (l *DockerListener) Listen(newSvc chan<- Service, delSvc chan<- Service) {
 	messages, errs, err := l.dockerUtil.SubscribeToContainerEvents("DockerListener")
 	if err != nil {
 		log.Errorf("can't listen to docker events: %v", err)
-		signals.ErrorStopper <- true
+		util.Stop()
 		return
 	}
 
@@ -117,7 +117,7 @@ func (l *DockerListener) Listen(newSvc chan<- Service, delSvc chan<- Service) {
 			case err := <-errs:
 				if err != nil && err != io.EOF {
 					log.Errorf("docker listener error: %v", err)
-					signals.ErrorStopper <- true
+					util.Stop()
 				}
 				cancel()
 				return

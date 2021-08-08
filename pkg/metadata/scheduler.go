@@ -12,7 +12,6 @@ import (
 
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
-	"github.com/n9e/n9e-agentd/cmd/agentd/common/signals"
 	"github.com/DataDog/datadog-agent/pkg/serializer"
 	"github.com/DataDog/datadog-agent/pkg/status/health"
 )
@@ -148,8 +147,7 @@ func (c *Scheduler) TriggerAndResetCollectorTimer(name string, delay time.Durati
 func (c *Scheduler) firstRun() error {
 	p, found := catalog["host"]
 	if !found {
-		log.Error("Unable to find 'host' metadata collector in the catalog!")
-		signals.ErrorStopper <- true
+		return fmt.Errorf("Unable to find 'host' metadata collector in the catalog!")
 	}
 	return p.Send(context.TODO(), c.srl)
 }

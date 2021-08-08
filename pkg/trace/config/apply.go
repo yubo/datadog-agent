@@ -187,9 +187,9 @@ func (c *AgentConfig) applyDatadogConfig() error {
 		MaxRequestBytes: c.MaxRequestBytes,
 	}
 
-	if cf.Apm.Obfuscation != nil {
+	if cf.IsSet("apm_config.obfuscation") {
 		//var o ObfuscationConfig
-		c.Obfuscation = cf.Apm.Obfuscation
+		c.Obfuscation = &cf.Apm.Obfuscation
 		//if err == nil {
 		//	c.Obfuscation = &o
 		//	if c.Obfuscation.RemoveStackTraces {

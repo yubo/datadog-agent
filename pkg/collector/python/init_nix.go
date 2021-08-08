@@ -27,10 +27,10 @@ import "C"
 // Any platform-specific initialization belongs here.
 func initializePlatform() error {
 	// Setup crash handling specifics - *NIX-only
-	if config.Datadog.GetBool("c_stacktrace_collection") {
+	if config.C.CStacktraceCollection {
 		var cCoreDump int
 
-		if config.Datadog.GetBool("c_core_dump") {
+		if config.C.CCoreDump {
 			cCoreDump = 1
 		}
 

@@ -18,12 +18,12 @@ import (
 	"unsafe"
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metrics"
 	"github.com/DataDog/datadog-agent/pkg/util/cache"
 	"github.com/DataDog/datadog-agent/pkg/util/executable"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/version"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 /*
@@ -350,11 +350,11 @@ func resolvePythonExecPath(pythonVersion string, ignoreErrors bool) (string, err
 }
 
 func Initialize(paths ...string) error {
-	pythonVersion := config.Datadog.GetString("python_version")
-	allowPathHeuristicsFailure := config.Datadog.GetBool("allow_python_path_heuristics_failure")
+	pythonVersion := config.C.PythonVersion
+	allowPathHeuristicsFailure := config.C.AllowPythonPathHeuristicsFailure
 
 	// Memory related RTLoader-global initialization
-	if config.Datadog.GetBool("memtrack_enabled") {
+	if config.C.MemtrackEnabled {
 		C.initMemoryTracker()
 	}
 

@@ -14,10 +14,10 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/telemetry"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/cihub/seelog"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 /*
@@ -109,7 +109,7 @@ func MemoryTracker(ptr unsafe.Pointer, sz C.size_t, op C.rtloader_mem_ops_t) {
 func TrackedCString(str string) *C.char {
 	cstr := C.CString(str)
 
-	if config.Datadog.GetBool("memtrack_enabled") {
+	if config.C.MemtrackEnabled {
 		MemoryTracker(unsafe.Pointer(cstr), C.size_t(len(str)+1), C.DATADOG_AGENT_RTLOADER_ALLOCATION)
 	}
 

@@ -14,15 +14,15 @@ import (
 	"time"
 	"unsafe"
 
-	yaml "gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/DataDog/datadog-agent/pkg/aggregator"
 	"github.com/DataDog/datadog-agent/pkg/autodiscovery/integration"
 	"github.com/DataDog/datadog-agent/pkg/collector/check"
 	"github.com/DataDog/datadog-agent/pkg/collector/check/defaults"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	telemetry_utils "github.com/DataDog/datadog-agent/pkg/telemetry/utils"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 /*
@@ -263,7 +263,7 @@ func (c *PythonCheck) Configure(data integration.Data, initConfig integration.Da
 		log.Warnf("could not get a '%s' check instance with the new api: %s", c.ModuleName, rtLoaderError)
 		log.Warn("trying to instantiate the check with the old api, passing agentConfig to the constructor")
 
-		allSettings := config.Datadog.AllSettings()
+		allSettings := config.C
 		agentConfig, err := yaml.Marshal(allSettings)
 		if err != nil {
 			log.Errorf("error serializing agent config: %s", err)

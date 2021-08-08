@@ -3,6 +3,8 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+	"net"
+	"strconv"
 	"time"
 
 	pb "github.com/DataDog/datadog-agent/pkg/proto/pbgo"
@@ -56,5 +58,5 @@ func GetDDAgentClient(ctx context.Context, opts ...grpc.DialOption) (pb.AgentCli
 
 // getIPCAddressPort returns the host and port for connecting to the main agent
 func getIPCAddressPort() (string, error) {
-	return config.GetIPCAddress()
+	return net.JoinHostPort(config.C.BindHost, strconv.Itoa(config.C.BindPort)), nil
 }

@@ -15,16 +15,16 @@ import (
 	"github.com/mailru/easyjson/jlexer"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/metadata/externalhost"
 	"github.com/DataDog/datadog-agent/pkg/metadata/inventories"
 	"github.com/DataDog/datadog-agent/pkg/persistentcache"
-	traceconfig "github.com/DataDog/datadog-agent/pkg/trace/config"
 	"github.com/DataDog/datadog-agent/pkg/trace/obfuscate"
 	"github.com/DataDog/datadog-agent/pkg/util"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/clustername"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 	"github.com/DataDog/datadog-agent/pkg/version"
+	"github.com/n9e/n9e-agentd/pkg/config"
+	"github.com/n9e/n9e-agentd/pkg/config/apm"
 )
 
 /*
@@ -70,7 +70,7 @@ func GetClusterName(clusterName **C.char) {
 // TracemallocEnabled exposes the tracemalloc configuration of the agent to Python checks.
 //export TracemallocEnabled
 func TracemallocEnabled() C.bool {
-	return C.bool(config.Datadog.GetBool("tracemalloc_debug"))
+	return C.bool(config.C.TracemallocDebug)
 }
 
 // Headers returns a basic set of HTTP headers that can be used by clients in Python checks.
@@ -93,12 +93,13 @@ func Headers(yamlPayload **C.char) {
 //export GetConfig
 func GetConfig(key *C.char, yamlPayload **C.char) {
 	goKey := C.GoString(key)
-	if !config.Datadog.IsSet(goKey) {
+
+	value := config.C.Get(goKey)
+	if value == nil {
 		*yamlPayload = nil
 		return
 	}
 
-	value := config.Datadog.Get(goKey)
 	data, err := yaml.Marshal(value)
 	if err != nil {
 		log.Errorf("could not convert configuration value '%v' to YAML: %s", value, err)
@@ -205,11 +206,7 @@ var (
 // will definitely be initialized by the time one of the python checks runs
 func lazyInitObfuscator() *obfuscate.Obfuscator {
 	obfuscatorLoader.Do(func() {
-		var cfg traceconfig.ObfuscationConfig
-		if err := config.Datadog.UnmarshalKey("apm_config.obfuscation", &cfg); err != nil {
-			log.Errorf("Failed to unmarshal apm_config.obfuscation: %s", err.Error())
-			cfg = traceconfig.ObfuscationConfig{}
-		}
+		cfg := config.C.Apm.Obfuscation
 		if !cfg.SQLExecPlan.Enabled {
 			cfg.SQLExecPlan = defaultSQLPlanObfuscateSettings
 		}
@@ -265,7 +262,7 @@ func ObfuscateSQLExecPlan(jsonPlan *C.char, normalize C.bool, errResult **C.char
 
 // defaultSQLPlanNormalizeSettings are the default JSON obfuscator settings for both obfuscating and normalizing SQL
 // execution plans
-var defaultSQLPlanNormalizeSettings = traceconfig.JSONObfuscationConfig{
+var defaultSQLPlanNormalizeSettings = apm.JSONObfuscationConfig{
 	Enabled: true,
 	ObfuscateSQLValues: []string{
 		// mysql
@@ -415,7 +412,7 @@ var defaultSQLPlanNormalizeSettings = traceconfig.JSONObfuscationConfig{
 
 // defaultSQLPlanObfuscateSettings builds upon sqlPlanNormalizeSettings by including cost & row estimates in the keep
 // list
-var defaultSQLPlanObfuscateSettings = traceconfig.JSONObfuscationConfig{
+var defaultSQLPlanObfuscateSettings = apm.JSONObfuscationConfig{
 	Enabled: true,
 	KeepValues: append([]string{
 		// mysql

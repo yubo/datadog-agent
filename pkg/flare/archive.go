@@ -686,13 +686,8 @@ func zipTaggerList(tempDir, hostname string) error {
 	}
 	defer w.Close()
 
-	ipcAddress, err := config.GetIPCAddress()
-	if err != nil {
-		return err
-	}
-
 	if taggerListURL == "" {
-		taggerListURL = fmt.Sprintf("https://%v:%v/agent/tagger-list", ipcAddress, config.C.CmdPort)
+		taggerListURL = fmt.Sprintf("https://%v:%v/agent/tagger-list", config.C.BindHost, config.C.BindPort)
 	}
 
 	c := apiutil.GetClient(false) // FIX: get certificates right then make this true

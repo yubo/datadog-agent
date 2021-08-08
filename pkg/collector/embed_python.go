@@ -9,8 +9,8 @@ package collector
 
 import (
 	"github.com/DataDog/datadog-agent/pkg/collector/python"
-	"github.com/n9e/n9e-agentd/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
+	"github.com/n9e/n9e-agentd/pkg/config"
 )
 
 func pySetup(paths ...string) (pythonVersion, pythonHome, pythonPath string) {
@@ -21,8 +21,8 @@ func pySetup(paths ...string) (pythonVersion, pythonHome, pythonPath string) {
 }
 
 func pyPrepareEnv() error {
-	if config.Datadog.IsSet("procfs_path") {
-		procfsPath := config.Datadog.GetString("procfs_path")
+	if config.C.IsSet("procfs_path") {
+		procfsPath := config.C.ProcfsPath
 		return python.SetPythonPsutilProcPath(procfsPath)
 	}
 	return nil

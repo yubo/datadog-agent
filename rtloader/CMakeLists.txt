@@ -21,7 +21,7 @@ endif()
 ## Config options
 option(DISABLE_PYTHON2 "Do not build Python2 support")
 option(DISABLE_PYTHON3 "Do not build Python3 support")
-option(BUILD_DEMO "Build the demo app" ON)
+#option(BUILD_DEMO "Build the demo app" ON)
 
 ## Add Build Targets
 if (NOT DISABLE_PYTHON2)

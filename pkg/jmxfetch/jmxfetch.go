@@ -246,8 +246,8 @@ func (j *JMXFetch) Start(manage bool) error {
 		jmxLogLevel = "INFO"
 	}
 
-	ipcHost := config.C.CmdHost
-	ipcPort := config.C.CmdPort
+	ipcHost := config.C.BindHost
+	ipcPort := config.C.BindPort
 	if j.IPCHost != "" {
 		ipcHost = j.IPCHost
 	}
