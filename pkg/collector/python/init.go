@@ -309,10 +309,14 @@ func resolvePythonExecPath(pythonVersion string, ignoreErrors bool) (string, err
 		}
 	}
 
-	if pythonVersion == "2" {
-		PythonHome = pythonHome2
-	} else if pythonVersion == "3" {
-		PythonHome = pythonHome3
+	//if pythonVersion == "2" {
+	//	PythonHome = pythonHome2
+	//} else if pythonVersion == "3" {
+	//	PythonHome = pythonHome3
+	//}
+
+	if config.C.PythonHome != "" {
+		PythonHome = config.C.PythonHome
 	}
 
 	log.Infof("Using '%s' as Python home", PythonHome)

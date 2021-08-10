@@ -158,3 +158,5 @@ pkg/network/netlink/testdata/message_dump*
 # serverless
 .layers
 .extension
+
+*.sh

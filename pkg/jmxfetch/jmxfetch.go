@@ -170,7 +170,7 @@ func (j *JMXFetch) Start(manage bool) error {
 
 	cf := config.C.Jmx
 
-	classpath := filepath.Join(config.C.WorkDir, "dist", "jmx", jmxJarName)
+	classpath := filepath.Join(config.C.JmxPath, jmxJarName)
 	if j.JavaToolsJarPath != "" {
 		classpath = fmt.Sprintf("%s%s%s", j.JavaToolsJarPath, string(os.PathListSeparator), classpath)
 	}

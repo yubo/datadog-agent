@@ -450,6 +450,7 @@ func (f *DefaultForwarder) sendHTTPTransactions(transactions []*transaction.HTTP
 
 	for _, t := range transactions {
 		if err := f.domainForwarders[t.Domain.Raw()].sendHTTPTransactions(t); err != nil {
+			log.Errorf("t %v", t)
 			log.Errorf(err.Error())
 		}
 	}

@@ -29,6 +29,13 @@ import (
 	"github.com/n9e/n9e-agentd/pkg/config/apm"
 )
 
+// StatsOut specifies the file to write metrics to.
+var StatsOut string
+
+func init() {
+	flag.StringVar(&StatsOut, "stats-out", fmt.Sprintf("metrics-%s.stats", time.Now().Format("02-01-2006-15:04:05")), "file to write metrics to")
+}
+
 // ErrMissingAPIKey is returned when the config could not be validated due to missing API key.
 var ErrMissingAPIKey = errors.New("you must specify an API Key, either via a configuration file or the DD_API_KEY env var")
 
