@@ -201,7 +201,7 @@ func (d *Domain) Next() {
 	if now := time.Now(); now.After(d.ts) {
 		d.idx = (d.idx + 1) % len(d.domains)
 		d.ts = now.Add(time.Second * MinDomainChangeTime)
-		log.Debugf("domain.next() %d", d.idx)
+		log.Debugf("domain.next() got domains[%d]", d.idx)
 	}
 }
 
